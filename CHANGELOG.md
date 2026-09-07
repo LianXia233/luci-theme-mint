@@ -1,13 +1,38 @@
-# Changelog
+# 更新日志
 
-All notable changes to **luci-theme-mint** will be documented in this file.
+本文档记录 **luci-theme-mint** 的所有重要变更。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范，
+版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
 ---
 
 ## [Unreleased]
+
+### Fixed (2026-09-08 第二轮)
+
+**cbi-dropdown 全站不可用（严重，主题自发布以来的隐藏 bug）**
+- 根因：LuCI 的 cbi-dropdown 组件切换的是 `open` **属性**（`[open]`），主题 CSS 全部写成 `.open` **类**选择器，展开面板规则从未命中；再叠加 LuCI 核心自带 `!important` 隐藏规则 `.cbi-dropdown:not(.open) > ul > li:not([selected]):not(.hidden)`（特异性 0,4,2），下拉点开后选项全部 display:none——表现为"所有下拉无法选择/无法折叠"
+- 修复：全部选择器改为 `[open]` 属性形式，并以永不匹配的 `:not()` 垫高特异性至 (0,5,2) 反杀核心 `!important` 规则；`.hidden`（搜索过滤）项保持隐藏
+- 实测：接口页编辑弹窗设备下拉——点开 28 个选项全部可见、点选 eth0 后隐藏域值与选中态同步、面板自动收起
+
+**接口页（admin/network/network 接口标签）排版重构**
+- 设备行图标叠字根因：主题把 `.cbi-tooltip`（本应悬停显示）样式化为常驻内联卡片，设备类型/MAC/流量全部平铺挤在图标后面；恢复 LuCI 标准悬停语义（默认隐藏、悬停弹出实色面板），`.ifacebox` 改 `overflow: visible` 防裁切
+- 区域头降饱和：lan/wan 的原生亮绿/亮红改为区域色 16% 透明色条 + 3px 实色描边，保留区域辨识度且融入主题
+- 接口详情（协议/链路状态/MAC/IPv4/IPv6）从裸文本改为玻璃卡片
+- 选项卡（接口/设备/全局网络选项）改为胶囊式分段选择器
+
+**全站滚动条样式**
+- 此前无任何滚动条样式，侧栏/长列表显示为白色系统大滚动条；统一为 8px 半透明细滚动条（webkit + Firefox scrollbar-width），并补 `color-scheme` 让原生控件跟随深色模式
+
+**h5000m_netmode（网络出口）页对比度**
+- 应用样式回退白底卡片（`--background-color-high` 未定义）配主题近白文字，对比度仅 1.1；改为主题玻璃面板 + 明确文字色，提示条/协议芯片同步重制
+- 页面描述文字在亮色壁纸上补文字阴影与全强度颜色
+
+### Changed (2026-09-08 第二轮)
+
+- 顶栏布局：刷新指示器从面包屑旁改到顶栏最右侧，垂直居中对齐（补齐未定义的 `.pull-right`）
+- 总览页网格：≥1024px 的固定像素列（参差右边缘根因）全部改为 `auto-fit` + `1fr`，任意宽度下卡片行左右边缘对齐
 
 ### Fixed (2026-09-08)
 

@@ -1488,7 +1488,7 @@ table.cbi-section-table th {
 .cbi-dropdown > ul > li[selected] {
 	display: inline;
 }
-.cbi-dropdown.open > ul {
+.cbi-dropdown[open] > ul {
 	position: absolute;
 	top: 100%;
 	left: 0;
@@ -1502,7 +1502,7 @@ table.cbi-section-table th {
 	margin-top: 4px;
 	display: block;
 }
-.cbi-dropdown.open > ul > li {
+.cbi-dropdown[open] > ul > li {
 	display: block;
 	padding: 8px 12px;
 	border-radius: var(--mz-radius-sm);
@@ -1510,7 +1510,7 @@ table.cbi-section-table th {
 	font-size: .9rem;
 	white-space: nowrap;
 }
-.cbi-dropdown.open > ul > li:hover {
+.cbi-dropdown[open] > ul > li:hover {
 	background: var(--mz-color-surface-2);
 }
 .cbi-dropdown .more,
@@ -1576,7 +1576,7 @@ table.cbi-section-table th {
 	display: inline;
 	font-weight: 500;
 }
-.cbi-dropdown.open > ul {
+.cbi-dropdown[open] > ul {
 	position: absolute;
 	top: calc(100% + 4px);
 	left: 0;
@@ -1590,7 +1590,7 @@ table.cbi-section-table th {
 	margin: 0;
 	display: block;
 }
-.cbi-dropdown.open > ul > li {
+.cbi-dropdown[open] > ul > li {
 	display: block;
 	padding: 8px 12px;
 	border-radius: 6px;
@@ -1599,7 +1599,7 @@ table.cbi-section-table th {
 	font-weight: 400;
 	white-space: nowrap;
 }
-.cbi-dropdown.open > ul > li:hover {
+.cbi-dropdown[open] > ul > li:hover {
 	background: var(--mz-color-surface-2);
 }
 .cbi-dropdown .more,
@@ -2360,31 +2360,26 @@ table.cbi-section-table tbody tr:hover td {
 	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
 }
 
-/* Desktop: fixed column counts but still centered */
+/* Desktop: auto-fit columns, every row fills the full card width
+   (fixed pixel counts left ragged right edges on wide screens) */
 @media (min-width: 1024px) {
 	.mz-info-cards {
-		grid-template-columns: repeat(4, minmax(0, 280px)) !important;
-		justify-content: center !important;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
 	}
 	.mz-rings {
-		grid-template-columns: repeat(3, minmax(0, 320px)) !important;
-		justify-content: center !important;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
 	}
 	.mz-port-grid {
-		grid-template-columns: repeat(4, minmax(0, 240px)) !important;
-		justify-content: center !important;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
 	}
 	.mz-net-grid {
-		grid-template-columns: repeat(2, minmax(0, 400px)) !important;
-		justify-content: center !important;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
 	}
 	.mz-sys-grid {
-		grid-template-columns: repeat(3, minmax(0, 340px)) !important;
-		justify-content: center !important;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
 	}
 	.mz-wifi-radios {
-		grid-template-columns: repeat(2, minmax(0, 320px)) !important;
-		justify-content: center !important;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
 	}
 }
 
@@ -2453,13 +2448,13 @@ table.cbi-section-table tbody tr:hover td {
 	}
 }
 
-/* Ultra-wide: more columns but still centered */
+/* Ultra-wide: keep the fill behavior, raise the minimum card size */
 @media (min-width: 1400px) {
 	.mz-port-grid {
-		grid-template-columns: repeat(4, 260px) !important;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
 	}
 	.mz-sys-grid {
-		grid-template-columns: repeat(4, 280px) !important;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
 	}
 }
 /* ================================================================
@@ -4008,14 +4003,14 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
    uses the surface token, but the OPEN list had no shadow - it melted
    into the cards behind it. A real elevation shadow plus a stronger
    glass fill separates the floating menu from the page. */
-.cbi-dropdown.open > ul,
+.cbi-dropdown[open] > ul,
 .cbi-button-apply .dropdown,
 .cbi-button-apply + .dropdown-menu,
 .btn + .dropdown-menu {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-body.mz-has-wallpaper .cbi-dropdown.open > ul,
+body.mz-has-wallpaper .cbi-dropdown[open] > ul,
 body.mz-has-wallpaper .cbi-button-apply .dropdown,
 body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
 body.mz-has-wallpaper .btn + .dropdown-menu {
@@ -4024,7 +4019,7 @@ body.mz-has-wallpaper .btn + .dropdown-menu {
 	-webkit-backdrop-filter: none;
 }
 
-body.mz-has-wallpaper .cbi-dropdown.open > ul > li:hover {
+body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
 	background: rgba(255, 255, 255, 0.1);
 }
 
@@ -4094,4 +4089,272 @@ td, th {
 
 th, .mz-info-label, .mz-sys-label {
 	font-weight: 600;
+}
+
+/* ================================================================
+ * Scrollbars + interfaces page rework (2026-09-08, round 2)
+ * ================================================================ */
+/* The OS default scrollbar is a fat white strip that clashes with the
+   dark sidebar and glass cards. Thin translucent thumbs everywhere,
+   plus color-scheme so native popups follow the dark mode too. */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(148, 163, 184, 0.45);
+	border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(148, 163, 184, 0.7);
+}
+
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+html[data-theme="dark"] {
+	color-scheme: dark;
+}
+
+html:not([data-theme="dark"]) {
+	color-scheme: light;
+}
+
+/* Restore stock tooltip semantics: hidden until hover. The previous
+   rule styled .cbi-tooltip as a permanent inline card, which dumped
+   every device detail (type/MAC/traffic) into the flow and produced
+   the mangled icon-over-text rows on the interfaces page. */
+.cbi-tooltip-container {
+	position: relative;
+}
+
+.cbi-tooltip-container .cbi-tooltip {
+	display: none;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	z-index: 1000;
+	margin-top: 6px;
+	width: max-content;
+	max-width: 360px;
+	padding: 10px 14px;
+	background: #1c2736;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	color: var(--mz-color-text);
+	font-size: .85rem;
+	line-height: 1.7;
+	white-space: normal;
+}
+
+.cbi-tooltip-container:hover > .cbi-tooltip,
+.cbi-tooltip-container:focus-within > .cbi-tooltip {
+	display: block;
+}
+
+/* --- Interfaces page (admin/network/network, 接口 tab) ----------- */
+/* Zone head: the markup inlines a saturated zone color (bright green
+   lan / red wan). Keep the zone identity as a tinted strip with a
+   solid accent edge instead of a full-saturation slab. */
+.ifacebox-head {
+	background: rgba(var(--zone-color-rgb, 79, 110, 247), 0.16) !important;
+	color: var(--mz-color-text) !important;
+	border-left: 3px solid rgba(var(--zone-color-rgb, 79, 110, 247), 0.85);
+	border-bottom: 1px solid var(--mz-color-border);
+	font-weight: 600;
+	letter-spacing: .02em;
+}
+
+/* Zone body: device icons as a tidy wrap row. The markup contains
+   literal "(" separator spans between devices - hide them. */
+.ifacebox-body {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.ifacebox-body > span:not(.cbi-tooltip-container) {
+	display: none;
+}
+
+.ifacebox-body .cbi-tooltip-container {
+	display: inline-flex;
+	padding: 6px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-color-surface-2);
+	transition: border-color var(--mz-transition), background var(--mz-transition);
+}
+
+.ifacebox-body .cbi-tooltip-container:hover {
+	border-color: var(--mz-color-primary);
+	background: var(--mz-color-primary-soft);
+}
+
+.ifacebox-body .cbi-tooltip-container > img.middle {
+	display: block;
+	width: 30px;
+	height: 30px;
+}
+
+/* Interface description cells (协议/链路状态/MAC/...): bare text over
+   the wallpaper. Wrap them as glass cards matching the zone box. */
+.cbi-section-table td.cbi-value-field > div[id$="-ifc-description"] {
+	background: var(--mz-color-surface);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	padding: 12px 16px;
+	font-size: .9rem;
+	line-height: 1.8;
+}
+
+.cbi-section-table td.cbi-value-field > div[id$="-ifc-description"] strong {
+	color: var(--mz-color-text-muted);
+	font-weight: 500;
+	margin-right: 4px;
+}
+
+/* Tab bar (接口/设备/全局网络选项): pill tabs instead of raw links. */
+ul.cbi-tabmenu {
+	display: flex;
+	gap: 6px;
+	list-style: none;
+	margin: 0 0 var(--mz-spacing-md);
+	padding: 4px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-color-surface);
+	width: fit-content;
+}
+
+.cbi-tabmenu li a,
+.cbi-tabmenu li span {
+	display: block;
+	padding: 7px 18px;
+	border-radius: calc(var(--mz-radius-md) - 3px);
+	color: var(--mz-color-text-muted);
+	font-size: .9rem;
+	text-decoration: none;
+}
+
+.cbi-tabmenu li.cbi-tab a,
+.cbi-tabmenu li.cbi-tab span {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+	font-weight: 600;
+}
+
+.cbi-tabmenu li.cbi-tab-disabled a:hover {
+	background: var(--mz-color-surface-2);
+	color: var(--mz-color-text);
+}
+
+/* Hover tooltips pop below the zone card edge: overflow must not clip
+   them; re-apply the top radius on the head so corners stay round. */
+.ifacebox {
+	overflow: visible;
+}
+
+.ifacebox-head {
+	border-radius: var(--mz-radius-lg) var(--mz-radius-lg) 0 0;
+}
+
+/* ================================================================
+ * Dropdown attribute fix + topbar alignment + modem pages (2026-09-08)
+ * ================================================================ */
+/* cbi-dropdown options inside the open panel: device icons keep their
+   size and align with the text rows. */
+.cbi-dropdown[open] > ul > li img {
+	display: inline-block;
+	vertical-align: middle;
+	width: 20px;
+	height: 20px;
+	margin-right: 6px;
+}
+
+.cbi-dropdown[open] > ul > li .hide-open {
+	display: none;
+}
+
+.cbi-dropdown[open] > ul > li[placeholder] {
+	color: var(--mz-color-text-muted);
+	font-style: italic;
+}
+
+/* Topbar: breadcrumb left, poll indicator flush right. The markup
+   ships a .pull-right helper this theme does not define. */
+.mz-topbar #indicators.mz-indicators {
+	margin-left: auto;
+}
+
+/* --- h5000m_netmode (网络出口) ----------------------------------- */
+/* The app stylesheet assumes a light page: cards fall back to solid
+   white via var(--background-color-high, #fff) while the theme text
+   on them is near-white - invisible. Re-skin the cards with the dark
+   glass tokens instead of modifying the app. */
+.h5net-card {
+	background: var(--mz-color-surface) !important;
+	border-color: var(--mz-color-border) !important;
+}
+
+.h5net-card h3 {
+	color: var(--mz-color-text);
+}
+
+.h5net-role {
+	color: var(--mz-color-text-muted) !important;
+}
+
+.h5net-card.selected .h5net-role {
+	color: var(--mz-color-primary) !important;
+}
+
+.h5net-note {
+	color: var(--mz-color-text-muted) !important;
+	background: var(--mz-color-primary-soft) !important;
+	border: 1px solid var(--mz-color-border);
+	border-left: 3px solid var(--mz-color-primary);
+	border-radius: var(--mz-radius-md);
+	padding: 10px 14px;
+}
+
+.h5net-proto {
+	background: var(--mz-color-surface-2);
+	border: 1px solid var(--mz-color-border);
+	border-radius: 999px;
+	padding: 2px 10px;
+	color: var(--mz-color-text-muted);
+	font-size: .8rem;
+}
+
+/* Page description text over bright wallpaper: full-strength color
+   plus a subtle shadow for legibility. */
+body.mz-has-wallpaper .cbi-map-descr,
+body.mz-has-wallpaper .cbi-section-descr {
+	color: var(--mz-color-text);
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* LuCI core ships `.cbi-dropdown:not(.open) > ul > li:not([selected]):not(.hidden)`
+   { display: none !important } with specificity (0,4,2): the widget toggles
+   the [open] ATTRIBUTE (the class is never set), so that rule permanently
+   wins and open lists render empty. Outrank it with never-matching :not()
+   padding (0,5,2). Filtered-out (.hidden / [hidden]) items stay suppressed
+   because the show rule excludes them up front. */
+.cbi-dropdown[open] > ul > li:not(.hidden):not([hidden]):not([data-mz-x]):not(.mz-x) {
+	display: block !important;
 }

@@ -20,7 +20,10 @@
 - 国际化就绪（英文 + 简体中文，po 编译为 lmo 随包安装）
 - LuCI 弹窗系统主题化（#modal_overlay 遮罩 + 居中对话框，保存并应用进度可见）
 - cbi 选项卡（ul.cbi-tabmenu）完整样式与显隐规则
-- 第三方应用设计变量桥接（--brand/--surface/--text 等，兼容 taygedo 等应用）
+- cbi-dropdown 深度主题化：[open] 属性选择器 + 核心样式反制，全站下拉（含编辑弹窗设备选择）可正常展开选择
+- 全站 8px 半透明细滚动条（webkit + Firefox），color-scheme 跟随深色模式
+- 接口页定制：区域头降饱和色条、设备悬停详情面板、接口详情玻璃卡片
+- 第三方应用设计变量桥接（--brand/--surface/--text 等，兼容 taygedo 等应用）；h5000m_netmode 网络出口页对比度适配
 
 ## 目录结构
 
