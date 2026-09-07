@@ -23,13 +23,26 @@ const mzWp = (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUti
 	isMobileUA() {
 		return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
 	},
-	randomUrl(mobile) {
-		const api = mobile
-			? 'https://api.seaya.link/wap'
-			: 'https://api.paugram.com/wallpaper/';
+	randomUrl(mobile, sources) {
+		const list = (sources && sources.length) ? sources
+			: (mobile
+				? ['https://api.seaya.link/wap', 'https://t.alcy.cc/mp']
+				: ['https://api.paugram.com/wallpaper/', 'https://t.alcy.cc/bd']);
+		const api = list[Math.floor(Math.random() * list.length)];
 		return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 	}
 };
+
+/* Fisher-Yates shuffle; multi-source wallpaper mode tries every
+   configured source in random order, falling back to the next on error. */
+function shuffle(a) {
+	const out = a.slice();
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		const t = out[i]; out[i] = out[j]; out[j] = t;
+	}
+	return out;
+}
 
 return baseclass.extend({
 	__init__() {
@@ -64,30 +77,45 @@ return baseclass.extend({
 		if (document.getElementById('mz-login'))
 			return;
 
-		const grp = this.isMobileUA() ? (cfg.mobile || {}) : (cfg.pc || {});
-		let url;
-		if (grp.mode === 'custom' && grp.url)
-			url = grp.url;
-		else if (grp.mode === 'custom')
+		const mobile = this.isMobileUA();
+		const grp = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
+		let urls;
+		if (grp.mode === 'custom' && grp.url) {
+			urls = [grp.url];
+		}
+		else if (grp.mode === 'custom') {
 			return;
+		}
 		else {
-			url = mzWp.randomUrl(this.isMobileUA());
+			/* Random multi-source: shuffle the configured list and try each
+			   entry in turn, falling back to the next one on failure. */
+			const sources = (grp.sources && grp.sources.length) ? grp.sources : [mzWp.randomUrl(mobile)];
+			urls = shuffle(sources).map((u) => u + (u.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now());
 		}
 
-		const img = new Image();
-		img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
-		const timer = window.setTimeout(() => { img.src = ''; }, 12000);
-		img.onload = () => {
-			window.clearTimeout(timer);
-			document.documentElement.style.setProperty('--mz-wallpaper', 'url("' + url + '")');
-			if (cfg.overlay != null)
-				document.documentElement.style.setProperty('--mz-wallpaper-overlay', String(cfg.overlay));
-			if (cfg.blur && parseInt(cfg.blur) > 0)
-				document.documentElement.style.setProperty('--mz-wallpaper-blur', parseInt(cfg.blur) + 'px');
-			document.body.classList.add('mz-has-wallpaper');
+		let imgRef = null;
+		const timer = window.setTimeout(() => { if (imgRef) imgRef.src = ''; }, 16000);
+		const tryNext = (i) => {
+			if (i >= urls.length) {
+				window.clearTimeout(timer); /* all sources failed -> gradient stays */
+				return;
+			}
+			const img = new Image();
+			imgRef = img;
+			img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
+			img.onload = () => {
+				window.clearTimeout(timer);
+				document.documentElement.style.setProperty('--mz-wallpaper', 'url("' + urls[i] + '")');
+				if (cfg.overlay != null)
+					document.documentElement.style.setProperty('--mz-wallpaper-overlay', String(cfg.overlay));
+				if (cfg.blur && parseInt(cfg.blur) > 0)
+					document.documentElement.style.setProperty('--mz-wallpaper-blur', parseInt(cfg.blur) + 'px');
+				document.body.classList.add('mz-has-wallpaper');
+			};
+			img.onerror = () => { img.src = ''; tryNext(i + 1); };
+			img.src = urls[i];
 		};
-		img.onerror = () => window.clearTimeout(timer);
-		img.src = url;
+		tryNext(0);
 	},
 
 	/* ----- Sidebar menu ------------------------------------------ */

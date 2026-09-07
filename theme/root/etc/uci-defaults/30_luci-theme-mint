@@ -47,6 +47,11 @@ if ! uci -q get mint.wallpaper 2>/dev/null; then
 	uci -q set mint.wallpaper.mobile_mode=random
 	uci -q set mint.wallpaper.overlay=0.45
 	uci -q set mint.wallpaper.blur=0
+	# Random multi-source defaults (empty list -> backend built-ins)
+	uci -q add_list mint.wallpaper.pc_sources='https://api.paugram.com/wallpaper/'
+	uci -q add_list mint.wallpaper.pc_sources='https://t.alcy.cc/bd'
+	uci -q add_list mint.wallpaper.mobile_sources='https://api.seaya.link/wap'
+	uci -q add_list mint.wallpaper.mobile_sources='https://t.alcy.cc/mp'
 fi
 
 # Drop obsolete pre-2026-09-07 keys (Bing era) so upgrades don't accumulate

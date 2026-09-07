@@ -5,14 +5,20 @@ config mint 'wallpaper'
 	option enabled '1'
 	# Random wallpaper on admin pages (in addition to the login page)
 	option ui_random '1'
-	# Desktop source: 'random' (Paugram API) or 'custom'
+	# Desktop source: 'random' (multi-source) or 'custom'
 	option pc_mode 'random'
 	# Desktop custom image: direct http(s) link (an uploaded custom-pc.jpg wins)
 	option pc_url ''
-	# Mobile source: 'random' (Seaya ACG API) or 'custom'
+	# Desktop random sources: tried in random order; next one on failure
+	list pc_sources 'https://api.paugram.com/wallpaper/'
+	list pc_sources 'https://t.alcy.cc/bd'
+	# Mobile source: 'random' (multi-source) or 'custom'
 	option mobile_mode 'random'
 	# Mobile custom image: direct http(s) link (an uploaded custom-mobile.jpg wins)
 	option mobile_url ''
+	# Mobile random sources: tried in random order; next one on failure
+	list mobile_sources 'https://api.seaya.link/wap'
+	list mobile_sources 'https://t.alcy.cc/mp'
 	# Dark overlay opacity over the wallpaper (0.0 - 1.0)
 	option overlay '0.45'
 	# Background blur in px (0 = disabled, max 40)

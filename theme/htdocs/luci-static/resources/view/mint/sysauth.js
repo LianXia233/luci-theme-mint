@@ -28,13 +28,30 @@ function mzWp() {
 		isMobileUA() {
 			return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
 		},
-		randomUrl(mobile) {
-			const api = mobile
-				? 'https://api.seaya.link/wap'
-				: 'https://api.paugram.com/wallpaper/';
+		randomUrl(mobile, sources) {
+			const list = (sources && sources.length) ? sources
+				: (mobile
+					? ['https://api.seaya.link/wap', 'https://t.alcy.cc/mp']
+					: ['https://api.paugram.com/wallpaper/', 'https://t.alcy.cc/bd']);
+			const api = list[Math.floor(Math.random() * list.length)];
 			return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 		}
 	};
+}
+
+/* Fisher-Yates shuffle; multi-source mode tries every configured source
+   in random order and falls back to the next one on failure. */
+function shuffle(a) {
+	const out = a.slice();
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		const t = out[i]; out[i] = out[j]; out[j] = t;
+	}
+	return out;
+}
+
+function stampUrl(u) {
+	return u + (u.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 }
 
 function applyWallpaperSettings(wp) {
@@ -99,27 +116,39 @@ return view.extend({
 		if (cfg.enabled !== false && bg) {
 			applyWallpaperSettings(cfg);
 
-			const showWallpaper = (url, label) => {
-				const img = new Image();
-				img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
-				const timer = window.setTimeout(() => { img.src = ''; }, 12000);
+			const showWallpaper = (urls, labelFn) => {
+				let imgRef = null;
+				const timer = window.setTimeout(() => { if (imgRef) imgRef.src = ''; }, 16000);
 
-				img.onload = () => {
-					window.clearTimeout(timer);
-					document.documentElement.style.setProperty('--mz-wallpaper', `url("${url}")`);
-					bg.classList.add('is-loaded');
-					/* OT-16: the copyright corner used to stay empty forever. */
-					if (copyright && label)
-						copyright.textContent = label;
+				const tryNext = (i) => {
+					if (i >= urls.length) {
+						window.clearTimeout(timer); /* all sources failed -> gradient stays */
+						return;
+					}
+					const img = new Image();
+					imgRef = img;
+					img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
+					img.onload = () => {
+						window.clearTimeout(timer);
+						document.documentElement.style.setProperty('--mz-wallpaper', `url("${urls[i]}")`);
+						bg.classList.add('is-loaded');
+						/* OT-16: the copyright corner used to stay empty forever. */
+						if (copyright) {
+							const label = labelFn ? labelFn(urls[i]) : '';
+							if (label)
+								copyright.textContent = label;
+						}
+					};
+					img.onerror = () => { img.src = ''; tryNext(i + 1); };
+					img.src = urls[i];
 				};
-
-				img.onerror = () => window.clearTimeout(timer);
-				img.src = url;
+				tryNext(0);
 			};
 
 			/* Per-device source: desktop and mobile visitors get independent
-			   configurations (random API or custom image). No fallback to
-			   other sources - the CSS gradient stays as the only fallback. */
+			   configurations (random multi-source API list or custom image).
+			   Random mode shuffles the configured sources and tries each in
+			   turn; the CSS gradient stays as the final fallback. */
 			const group = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
 
 			if (group.mode === 'custom' && group.url) {
@@ -133,10 +162,13 @@ return view.extend({
 						label = _('Custom image');
 					}
 				}
-				showWallpaper(group.url, label);
+				showWallpaper([group.url], () => label);
 			} else {
-				showWallpaper(wp.randomUrl(mobile),
-					mobile ? _('Random wallpaper · Seaya') : _('Random wallpaper · Paugram'));
+				const sources = (group.sources && group.sources.length) ? group.sources : [wp.randomUrl(mobile)];
+				showWallpaper(shuffle(sources).map(stampUrl), (u) => {
+					try { return _('Random wallpaper · %s').format(new URL(u).hostname); }
+					catch (e) { return _('Random wallpaper'); }
+				});
 			}
 		}
 

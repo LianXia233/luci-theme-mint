@@ -94,11 +94,13 @@
 				ui_random: {{ (wp.ui_random == '0') ? 'false' : 'true' }},
 				pc: {
 					mode: {{ sprintf('%J', wallpaper.pc?.mode ?? 'random') }},
-					url: {{ sprintf('%J', wallpaper.pc?.url ?? '') }}
+					url: {{ sprintf('%J', wallpaper.pc?.url ?? '') }},
+					sources: {{ sprintf('%J', wallpaper.pc?.sources ?? []) }}
 				},
 				mobile: {
 					mode: {{ sprintf('%J', wallpaper.mobile?.mode ?? 'random') }},
-					url: {{ sprintf('%J', wallpaper.mobile?.url ?? '') }}
+					url: {{ sprintf('%J', wallpaper.mobile?.url ?? '') }},
+					sources: {{ sprintf('%J', wallpaper.mobile?.sources ?? []) }}
 				}
 			};
 		</script>
@@ -110,10 +112,14 @@
 				isMobileUA: function() {
 					return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
 				},
-				randomUrl: function(mobile) {
-					var api = mobile
-						? 'https://api.seaya.link/wap'
-						: 'https://api.paugram.com/wallpaper/';
+				/* Pick one random source from the configured list; falls back
+				   to the built-in per-device defaults when the list is empty. */
+				randomUrl: function(mobile, sources) {
+					var list = (sources && sources.length) ? sources
+						: (mobile
+							? ['https://api.seaya.link/wap', 'https://t.alcy.cc/mp']
+							: ['https://api.paugram.com/wallpaper/', 'https://t.alcy.cc/bd']);
+					var api = list[Math.floor(Math.random() * list.length)];
 					return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 				}
 			};

@@ -45,6 +45,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 变体更名 `mintzero-light/dark` → `mint-light/dark`（symlink 重建）、注册键 `MintLight/MintDark`
 - 注意：UCI 段名变更（`mintzero` → `mint`）会使升级后旧壁纸配置失效并回退默认，旧段有意不做迁移
 
+**随机壁纸多源化**
+- 随机壁纸支持多源：桌面端默认 `api.paugram.com/wallpaper/` + `t.alcy.cc/bd`，移动端默认 `api.seaya.link/wap` + `t.alcy.cc/mp`
+- 前端随机打乱源列表逐个尝试，单源失败自动切换下一源，全部失败才回退 CSS 渐变
+- 设置页新增「桌面随机源 / 移动随机源」多值列表（每行一个 URL），支持自定义增删；留空使用内置默认
+- 登录页来源标注改为动态显示实际命中的随机源域名
+
 **移动端壁纸 API 更换**
 - 移动端随机壁纸源由 `uapis.cn/api/v1/random/image?category=acg&type=mb` 更换为 `api.seaya.link/wap`（桌面端 Paugram 不变）；登录页/管理页来源标注与 po 文案同步更新
 

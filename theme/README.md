@@ -62,24 +62,27 @@ The login page can display a random wallpaper picked per device type.
 
 ```
 Third-party random image APIs (fetched directly by the browser,
-never proxied through the router)
-  desktop: api.paugram.com/wallpaper/
-  mobile (UA detected): api.seaya.link/wap
-        |
+never proxied through the router; multi-source, shuffled and retried)
+  desktop: api.paugram.com/wallpaper/, t.alcy.cc/bd
+  mobile (UA detected): api.seaya.link/wap, t.alcy.cc/mp
+        |   (source lists are editable in the settings page, one URL
+        |    per entry; empty list -> built-in defaults)
   custom image wins when set (uploaded custom-pc.jpg /
   custom-mobile.jpg, or an http(s) direct link)
         |
-  login/admin page JS (preloads via new Image(), fade-in,
-  referrer suppressed, failure fallback)
+  login/admin page JS (shuffles the sources and tries each in turn,
+  preloads via new Image(), fade-in, referrer suppressed)
         v
 built-in CSS gradient fallback (always available)
 ```
 
 - A fresh random image is picked on every login page visit and every admin
   page refresh (timestamp-busted URLs, no server-side cache - so there is no
-  "refresh cache" button).
+  "refresh cache" button). In random mode all configured sources are
+  shuffled and tried in turn; a failed source falls back to the next one.
 - The image source label is shown in the bottom-right corner of the login
-  page (local custom / Seaya / Paugram) and is never removed.
+  page (local custom / the hostname of the source that actually loaded) and
+  is never removed.
 
 ### Offline behavior
 
@@ -104,8 +107,10 @@ A settings page is provided under `System` > `Mint Wallpaper` >
 | ui_random | boolean | 1 | random wallpaper on admin pages too |
 | pc_mode | enum | random | desktop source (random / custom) |
 | pc_url | direct link | empty | desktop custom image http(s) link |
+| pc_sources | list | paugram + t.alcy.cc/bd | desktop random sources (one URL per entry, shuffled, retried on failure) |
 | mobile_mode | enum | random | mobile source (random / custom) |
 | mobile_url | direct link | empty | mobile custom image http(s) link |
+| mobile_sources | list | seaya + t.alcy.cc/mp | mobile random sources (one URL per entry, shuffled, retried on failure) |
 | overlay | float | 0.45 | dark overlay opacity (0.0 - 1.0) |
 | blur | px | 0 | background blur (0 disables, max 40) |
 

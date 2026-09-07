@@ -124,20 +124,20 @@ uci commit luci
 ## 壁纸机制
 
 ```
-第三方随机图 API（浏览器直连，不经路由器代理）
-  桌面端：api.paugram.com/wallpaper/
-  移动端（UA 检测）：api.seaya.link/wap
-        |
+第三方随机图 API（浏览器直连，不经路由器代理；多源随机，失败自动切换下一源）
+  桌面端：api.paugram.com/wallpaper/、t.alcy.cc/bd
+  移动端（UA 检测）：api.seaya.link/wap、t.alcy.cc/mp
+        |   （源列表可在设置页增删，每行一个 URL；留空用内置默认）
   自定义图片优先（已上传的 custom-pc.jpg / custom-mobile.jpg，或 http(s) 直链）
         |
-  登录页/管理页 JS（new Image() 预加载、淡入、referrer 抑制、失败回退）
+  登录页/管理页 JS（随机打乱源列表逐个尝试、new Image() 预加载、淡入、referrer 抑制）
         v
   内置 CSS 渐变兜底（永远可用）
 ```
 
-- 每次进入登录页、每次刷新管理页面都会随机选图（URL 带时间戳防缓存）
+- 每次进入登录页、每次刷新管理页面都会随机选图（URL 带时间戳防缓存）；随机模式下**多个源随机打乱逐个尝试**，单源失败自动换下一源，全部失败才回退渐变
 - 服务端**无壁纸缓存**（ucode 后端只读 UCI 配置 + 钳制数值），因此没有"刷新缓存"按钮
-- 图片来源标注在登录页右下角（本地自定义 / Seaya / Paugram），永不移除
+- 图片来源标注在登录页右下角（本地自定义 / 实际命中的随机源域名），永不移除
 
 ### 离线行为
 
@@ -157,8 +157,10 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 | ui_random | 布尔 | 1 | 管理页面也使用随机壁纸 |
 | pc_mode | 枚举 | random | 桌面端来源（random / custom） |
 | pc_url | 直链 | 空 | 桌面端自定义图片 http(s) 直链 |
+| pc_sources | 列表 | paugram + t.alcy.cc/bd | 桌面随机源（每行一个 URL，随机选取、失败自动切换） |
 | mobile_mode | 枚举 | random | 移动端来源（random / custom） |
 | mobile_url | 直链 | 空 | 移动端自定义图片 http(s) 直链 |
+| mobile_sources | 列表 | seaya + t.alcy.cc/mp | 移动随机源（每行一个 URL，随机选取、失败自动切换） |
 | overlay | 浮点 | 0.45 | 深色遮罩不透明度（0.0 - 1.0） |
 | blur | 像素 | 0 | 背景模糊（0 禁用，最大 40） |
 

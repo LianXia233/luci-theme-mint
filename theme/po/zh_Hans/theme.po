@@ -206,14 +206,6 @@ msgstr "图片来源：%s"
 msgid "Custom image"
 msgstr "自定义图片"
 
-#: htdocs/luci-static/resources/view/mint/sysauth.js:139
-msgid "Random wallpaper · Seaya"
-msgstr "随机壁纸 · Seaya"
-
-#: htdocs/luci-static/resources/view/mint/sysauth.js:139
-msgid "Random wallpaper · Paugram"
-msgstr "随机壁纸 · Paugram"
-
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:25
 msgid "Mint Wallpaper"
 msgstr "Mint 壁纸"
@@ -246,10 +238,6 @@ msgstr "启用后，每次加载登录页、每次刷新管理页面都会为当
 msgid "Desktop source"
 msgstr "桌面端来源"
 
-#: htdocs/luci-static/resources/view/mint/wallpaper.js:41
-msgid "Random (Paugram)"
-msgstr "随机（Paugram）"
-
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:45
 msgid "Desktop custom image URL"
 msgstr "桌面端自定义图片地址"
@@ -261,10 +249,6 @@ msgstr "图片的 http(s) 直链。仅在未上传桌面端图片时使用。"
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:51
 msgid "Mobile source"
 msgstr "移动端来源"
-
-#: htdocs/luci-static/resources/view/mint/wallpaper.js:52
-msgid "Random ACG (Seaya)"
-msgstr "随机二次元（Seaya）"
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:56
 msgid "Mobile custom image URL"
@@ -321,3 +305,24 @@ msgstr "上传失败：%s"
 #: root/usr/share/luci/menu.d/luci-theme-mint.json
 msgid "Wallpaper Settings"
 msgstr "壁纸设置"
+
+msgid "Random (multi-source)"
+msgstr "随机（多源）"
+
+msgid "Random ACG (multi-source)"
+msgstr "随机二次元（多源）"
+
+msgid "Desktop random sources"
+msgstr "桌面随机源"
+
+msgid "Mobile random sources"
+msgstr "移动随机源"
+
+msgid "One URL per entry. Sources are picked at random and the next one is tried when a source fails. Leave empty to use the built-in defaults."
+msgstr "每行一个 URL。随机选取，失败自动尝试下一个源。留空使用内置默认源。"
+
+msgid "Random wallpaper · %s"
+msgstr "随机壁纸 · %s"
+
+msgid "Random wallpaper"
+msgstr "随机壁纸"

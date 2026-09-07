@@ -27,7 +27,18 @@ const CUSTOM_MOBILE = '/www/luci-static/mint/custom-mobile.jpg';
 const DEFAULTS = {
 	enabled: '1',
 	pc_mode: 'random',
-	mobile_mode: 'random'
+	mobile_mode: 'random',
+	/* Random sources per device class; the frontend shuffles this list,
+	   tries entries in random order and falls back to the next source on
+	   failure. Empty UCI list -> built-in defaults. */
+	pc_sources: [
+		'https://api.paugram.com/wallpaper/',
+		'https://t.alcy.cc/bd'
+	],
+	mobile_sources: [
+		'https://api.seaya.link/wap',
+		'https://t.alcy.cc/mp'
+	]
 };
 
 // NOTE: ucode (libucode 20230711 era) does NOT hoist function declarations,
@@ -57,6 +68,35 @@ function sourceMode(v, dflt) {
 	return (v == 'custom') ? 'custom' : dflt;
 }
 
+function hasVal(arr, v) {
+	let i;
+	for (i = 0; i < length(arr); i++)
+		if (arr[i] == v)
+			return true;
+	return false;
+}
+
+/* Random source list: accepts a uci list (array) or a single string;
+   validates every URL, de-duplicates, and falls back to the built-in
+   defaults when nothing valid is configured. */
+function sourceList(v, dflt) {
+	let out = [];
+	let arr = (type(v) == 'array') ? v : (type(v) == 'string' && length(v) ? [v] : []);
+	let i, u;
+
+	for (i = 0; i < length(arr); i++) {
+		u = validCustomUrl(arr[i]);
+		if (u && !hasVal(out, u))
+			push(out, u);
+	}
+
+	if (length(out) == 0)
+		for (i = 0; i < length(dflt); i++)
+			push(out, dflt[i]);
+
+	return out;
+}
+
 function clampOverlay(v) {
 	if (type(v) == 'string' && v =~ /^(0(\.[0-9]+)?|1(\.0*)?)$/)
 		return v;
@@ -81,8 +121,10 @@ function loadConfig() {
 		ui_random: wp.ui_random ?? '1',
 		pc_mode: sourceMode(wp.pc_mode, DEFAULTS.pc_mode),
 		pc_url: validCustomUrl(wp.pc_url ?? ''),
+		pc_sources: sourceList(wp.pc_sources, DEFAULTS.pc_sources),
 		mobile_mode: sourceMode(wp.mobile_mode, DEFAULTS.mobile_mode),
 		mobile_url: validCustomUrl(wp.mobile_url ?? ''),
+		mobile_sources: sourceList(wp.mobile_sources, DEFAULTS.mobile_sources),
 		overlay: clampOverlay(wp.overlay),
 		blur: clampBlur(wp.blur)
 	};
@@ -105,7 +147,8 @@ function deviceGroup(cfg, kind) {
 
 	return {
 		mode: isCustom ? 'custom' : 'random',
-		url: resolveCustom(customPath, customUrl)
+		url: resolveCustom(customPath, customUrl),
+		sources: (kind == 'mobile') ? cfg.mobile_sources : cfg.pc_sources
 	};
 }
 

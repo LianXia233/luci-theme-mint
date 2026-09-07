@@ -38,7 +38,7 @@ return view.extend({
 
 		/* ---- PC source ---- */
 		const pcMode = s.option(form.ListValue, 'pc_mode', _('Desktop source'));
-		pcMode.value('random', _('Random (Paugram)'));
+		pcMode.value('random', _('Random (multi-source)'));
 		pcMode.value('custom', _('Custom image'));
 		pcMode.default = 'random';
 
@@ -47,9 +47,14 @@ return view.extend({
 		pcUrl.rmempty = true;
 		pcUrl.depends('pc_mode', 'custom');
 
+		const pcSources = s.option(form.DynamicList, 'pc_sources', _('Desktop random sources'),
+			_('One URL per entry. Sources are picked at random and the next one is tried when a source fails. Leave empty to use the built-in defaults.'));
+		pcSources.rmempty = true;
+		pcSources.depends('pc_mode', 'random');
+
 		/* ---- Mobile source ---- */
 		const mMode = s.option(form.ListValue, 'mobile_mode', _('Mobile source'));
-		mMode.value('random', _('Random ACG (Seaya)'));
+		mMode.value('random', _('Random ACG (multi-source)'));
 		mMode.value('custom', _('Custom image'));
 		mMode.default = 'random';
 
@@ -57,6 +62,11 @@ return view.extend({
 			_('Direct http(s) link to an image. Used when no mobile image has been uploaded.'));
 		mUrl.rmempty = true;
 		mUrl.depends('mobile_mode', 'custom');
+
+		const mSources = s.option(form.DynamicList, 'mobile_sources', _('Mobile random sources'),
+			_('One URL per entry. Sources are picked at random and the next one is tried when a source fails. Leave empty to use the built-in defaults.'));
+		mSources.rmempty = true;
+		mSources.depends('mobile_mode', 'random');
 
 		/* ---- Global ---- */
 		const overlay = s.option(form.Value, 'overlay', _('Overlay opacity'),

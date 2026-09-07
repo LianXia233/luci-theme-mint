@@ -204,14 +204,6 @@ msgstr ""
 msgid "Custom image"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/mint/sysauth.js:139
-msgid "Random wallpaper · Seaya"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/mint/sysauth.js:139
-msgid "Random wallpaper · Paugram"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:25
 msgid "Mint Wallpaper"
 msgstr ""
@@ -244,10 +236,6 @@ msgstr ""
 msgid "Desktop source"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/mint/wallpaper.js:41
-msgid "Random (Paugram)"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:45
 msgid "Desktop custom image URL"
 msgstr ""
@@ -258,10 +246,6 @@ msgstr ""
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:51
 msgid "Mobile source"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/mint/wallpaper.js:52
-msgid "Random ACG (Seaya)"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:56
@@ -318,4 +302,25 @@ msgstr ""
 
 #: root/usr/share/luci/menu.d/luci-theme-mint.json
 msgid "Wallpaper Settings"
+msgstr ""
+
+msgid "Random (multi-source)"
+msgstr ""
+
+msgid "Random ACG (multi-source)"
+msgstr ""
+
+msgid "Desktop random sources"
+msgstr ""
+
+msgid "Mobile random sources"
+msgstr ""
+
+msgid "One URL per entry. Sources are picked at random and the next one is tried when a source fails. Leave empty to use the built-in defaults."
+msgstr ""
+
+msgid "Random wallpaper · %s"
+msgstr ""
+
+msgid "Random wallpaper"
 msgstr ""
