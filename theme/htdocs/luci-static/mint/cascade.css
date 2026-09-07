@@ -3910,3 +3910,51 @@ table.table .cbi-button,
 		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important;
 	}
 }
+
+/* ================================================================
+ * Mobile adaptation (2026-09-08)
+ * ================================================================ */
+/* Login page: on phones the card lets noticeably more wallpaper through.
+   The desktop value (rgba(15,21,36,.55) on .mz-login-card) is untouched
+   above 640px. */
+@media (max-width: 640px) {
+	.mz-login-card {
+		background: rgba(15, 21, 36, .38);
+	}
+}
+
+/* Overview: below the desktop breakpoint show at least two cards per
+   row. The old 4-up info row truncated long values (model names) and the
+   3-up ring row stretched its gauges on phones. Card panel alphas stay
+   shared with desktop - the same --mz-panel-bg drives both. */
+@media (max-width: 1023.98px) {
+	.mz-info-cards {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		justify-content: stretch !important;
+	}
+	.mz-rings {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		justify-content: stretch !important;
+	}
+}
+
+@media (max-width: 480px) {
+	/* Half-width cells: stack the gauge above its labels so nothing is
+	   squeezed into a 170px row layout. */
+	.mz-ring-card {
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 8px;
+		padding: 12px;
+	}
+	.mz-ring {
+		width: 80px;
+		height: 80px;
+	}
+	/* Long values wrap instead of being cut off mid-word. */
+	.mz-info-value {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+}

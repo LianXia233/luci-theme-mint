@@ -79,12 +79,26 @@ return baseclass.extend({
 
 		const mobile = this.isMobileUA();
 		const grp = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
+		/* OT-35: 5-minute wallpaper cache. The chosen URL is remembered per
+		   device type in sessionStorage (survives LuCI's full page loads).
+		   Within the TTL page switches reuse the same URL, so the image
+		   comes straight from the browser HTTP cache instead of pulling a
+		   fresh random picture on every navigation. */
+		const CACHE_KEY = 'mz-wp-url-' + (mobile ? 'mobile' : 'pc');
+		const CACHE_TTL = 5 * 60 * 1000;
+		let cached = null;
+		try { cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null'); } catch (e) { cached = null; }
+		const cacheFresh = cached && cached.url && (Date.now() - (cached.ts || 0)) < CACHE_TTL;
+
 		let urls;
 		if (grp.mode === 'custom' && grp.url) {
 			urls = [grp.url];
 		}
 		else if (grp.mode === 'custom') {
 			return;
+		}
+		else if (cacheFresh) {
+			urls = [cached.url];
 		}
 		else {
 			/* Random multi-source: shuffle the configured list and try each
@@ -111,6 +125,11 @@ return baseclass.extend({
 				if (cfg.blur && parseInt(cfg.blur) > 0)
 					document.documentElement.style.setProperty('--mz-wallpaper-blur', parseInt(cfg.blur) + 'px');
 				document.body.classList.add('mz-has-wallpaper');
+				/* remember the working URL for the 5-minute reuse window;
+				   custom URLs are stable and skip the cache on purpose */
+				if (grp.mode !== 'custom') {
+					try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ url: urls[i], ts: Date.now() })); } catch (e) {}
+				}
 			};
 			img.onerror = () => { img.src = ''; tryNext(i + 1); };
 			img.src = urls[i];
