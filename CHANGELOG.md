@@ -35,6 +35,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 修复因遮罩值无效导致的壁纸过曝、卡片文字显示不清的问题
 - 壁纸、卡片、侧栏、顶栏、底部等层级与毛玻璃效果在 1600/1280/768/390 等常见分辨率下均正常工作
 
+### Fixed (2026-09-08)
+
+**概览页卡片行宽不一致（各行右边缘参差不齐）**
+- 根因：`@media (min-width: 1024px)` 下 `.mz-info-cards` / `.mz-rings` 使用**固定像素轨道**（`repeat(4, 220px)` / `repeat(3, 300px)`），在 1224px 内容区里只占 910px / 928px；而 `.mz-port-grid` / `.mz-net-grid` 用 `minmax(..., 1fr)` 自动撑满 1224px。上下行宽差约 300px，视觉上就是「卡片没对齐」
+- 实测（1600 视口）：info 行末尾 x=996、环形行 x=1244、端口行 x=1540 —— 参差不齐
+- 修复：文件末尾新增对齐块，`min-width: 1024px` 下改用 `repeat(auto-fit, minmax(Npx, 1fr))`（info 200px / rings 280px / sys 240px / port·net·wifi 400px），行数不变但每行都撑满容器
+- 复测：各行 `unusedRight=0`，卡片左右边缘统一在 316..1540（sys-grid 末行 11 项填 4 列留下的空位属正常换行，非错行）
+
+**卡片不够透——毛玻璃把壁纸"洗白"**
+- 根因（量化）：`--mz-panel-bg` 为 `rgba(255,255,255,0.72)`。截图采样显示卡片内部像素均值 (219,220,224)，而页面壁纸背景为 (147,150,159)，差值约 73 —— 卡片近似实色白板，壁纸完全透不出来
+- 修复：透明度调至经典 glassmorphism 区间——亮色 `0.38 / 0.58 / 0.22`（bg / bg-strong / bg-soft），暗色 `0.42 / 0.64 / 0.26`；文字 halo 同步加强保证可读
+- 复测：卡片均值降到 (180-190)，与壁纸差值由 73 降到约 23，壁纸清晰可透；四分辨率无横向溢出、无 pageerror
+
+**概览页标题未汉化（System information / DHCP leases / UPnP port mappings 等）**
+- 根因：`po` 译文一直齐全（`系统信息` / `DHCP 租约` / `UPnP 端口映射` 等均在 `theme.po` 中），但更名 `luci-theme-mintzero → luci-theme-mint` 后设备上只有旧的 `luci-theme-mintzero.zh-cn.lmo`，**不存在** `luci-theme-mint.zh-cn.lmo`，LuCI 查不到对应语言目录，于是回退英文原文
+- 修复：`scripts/po2lmo.py` 重新编译生成 `luci-theme-mint.zh-cn.lmo` 并部署到 `/usr/lib/lua/luci/i18n/`；同时把 `po/zh_Hans/theme.po` 更名为 `luci-theme-mint.po`，使 `luci.mk` 构建时稳定产出与包名一致的 lmo，避免下次再缺
+- 复测：概览标题全部中文（端口状态 / 网络 / 系统信息 / DHCP 租约 / 无线 / UPnP 端口映射），英文串消失
+
 ### Added (2026-09-07)
 
 **随机壁纸按设备切换 + NTP 列表样式**

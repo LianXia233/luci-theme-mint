@@ -3603,18 +3603,22 @@ body.mz-has-wallpaper #modal_overlay {
  * while a slightly stronger background on hover/focus plus a text
  * halo keeps every label readable in light and dark mode.
  * ================================================================ */
+/* Tuned 2026-09-08: the old 0.72 / 0.88 values rendered as near-solid white
+   slabs (measured card interior ~220 vs wallpaper ~147), which hid the
+   wallpaper completely. These alphas sit in the classic glassmorphism range
+   so the wallpaper reads through while labels stay legible. */
 body.mz-has-wallpaper {
-	--mz-panel-bg: rgba(255, 255, 255, 0.72);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.88);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.58);
-	--mz-panel-halo: 0 1px 2px rgba(255, 255, 255, 0.65);
+	--mz-panel-bg: rgba(255, 255, 255, 0.38);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.58);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.22);
+	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.85);
 }
 
 html[data-theme="dark"] body.mz-has-wallpaper {
-	--mz-panel-bg: rgba(23, 30, 44, 0.72);
-	--mz-panel-bg-strong: rgba(23, 30, 44, 0.88);
-	--mz-panel-bg-soft: rgba(23, 30, 44, 0.58);
-	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.65);
+	--mz-panel-bg: rgba(23, 30, 44, 0.42);
+	--mz-panel-bg-strong: rgba(23, 30, 44, 0.64);
+	--mz-panel-bg-soft: rgba(23, 30, 44, 0.26);
+	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.75);
 }
 
 body.mz-has-wallpaper .cbi-map,
@@ -3876,3 +3880,29 @@ table.table .cbi-button,
    absolutely-positioned dropdowns inside it clip vertically by CSS spec.
    In practice LuCI dropdowns live in .cbi-page-actions (outside any
    scroll container), so this is a documented non-issue. */
+
+/* ================================================================
+ * Overview row alignment (2026-09-08)
+ * The overview card rows used fixed pixel tracks (info 4x220px,
+ * rings 3x300px) on wide screens, so those rows ended ~300px short of
+ * the content width while the port/network rows stretched to it. The
+ * ragged right edge is what made the layout look broken.
+ * auto-fit + 1fr keeps the same column counts at current widths but
+ * lets every row span the full container, so all rows line up.
+ * ================================================================ */
+@media (min-width: 1024px) {
+	.mz-info-cards {
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+	}
+	.mz-rings {
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+	}
+	.mz-sys-grid {
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+	}
+	.mz-port-grid,
+	.mz-net-grid,
+	.mz-wifi-radios {
+		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important;
+	}
+}
