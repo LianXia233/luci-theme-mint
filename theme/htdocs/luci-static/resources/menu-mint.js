@@ -211,12 +211,11 @@ return baseclass.extend({
 		if (titles.length === 0)
 			return;
 
+		/* The topbar shows ONLY the current page (second-level) title:
+		   the parent menu name is already visible in the sidebar and
+		   just noise here. */
 		crumb.innerHTML = '';
-		titles.forEach((t, i) => {
-			crumb.appendChild(E('li', {}, [ _(t) ]));
-			if (i < titles.length - 1)
-				crumb.appendChild(E('li', { 'class': 'mz-crumb-sep' }, [ '/' ]));
-		});
+		crumb.appendChild(E('li', {}, [ _(titles[titles.length - 1]) ]));
 		crumb.style.display = '';
 	},
 

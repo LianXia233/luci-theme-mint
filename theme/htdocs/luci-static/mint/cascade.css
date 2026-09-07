@@ -4358,3 +4358,25 @@ body.mz-has-wallpaper .cbi-section-descr {
 .cbi-dropdown[open] > ul > li:not(.hidden):not([hidden]):not([data-mz-x]):not(.mz-x) {
 	display: block !important;
 }
+
+/* ================================================================
+ * Page title + sidebar hierarchy (2026-09-08, round 3)
+ * ================================================================ */
+/* The topbar breadcrumb now carries ONLY the current page title
+   (renderBreadcrumb emits one entry) - style it as a real page
+   heading instead of a muted crumb. */
+.mz-breadcrumb {
+	font-size: 1.08rem;
+	font-weight: 700;
+	color: var(--mz-color-text);
+	letter-spacing: .01em;
+}
+
+/* Sidebar top-level entries: heavier and larger than the sub items
+   so the two menu levels read apart at a glance. */
+#mainmenu.mz-menu > li > a,
+.mz-menu-group > a {
+	font-size: 1.02rem !important;
+	font-weight: 700 !important;
+	letter-spacing: .02em;
+}
