@@ -112,7 +112,7 @@
 				},
 				randomUrl: function(mobile) {
 					var api = mobile
-						? 'https://uapis.cn/api/v1/random/image?category=acg&type=mb'
+						? 'https://api.seaya.link/wap'
 						: 'https://api.paugram.com/wallpaper/';
 					return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 				}

@@ -205,7 +205,7 @@ msgid "Custom image"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mint/sysauth.js:139
-msgid "Random wallpaper · Uapis"
+msgid "Random wallpaper · Seaya"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mint/sysauth.js:139
@@ -261,7 +261,7 @@ msgid "Mobile source"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:52
-msgid "Random ACG (Uapis)"
+msgid "Random ACG (Seaya)"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:56

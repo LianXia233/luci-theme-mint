@@ -207,8 +207,8 @@ msgid "Custom image"
 msgstr "自定义图片"
 
 #: htdocs/luci-static/resources/view/mint/sysauth.js:139
-msgid "Random wallpaper · Uapis"
-msgstr "随机壁纸 · Uapis"
+msgid "Random wallpaper · Seaya"
+msgstr "随机壁纸 · Seaya"
 
 #: htdocs/luci-static/resources/view/mint/sysauth.js:139
 msgid "Random wallpaper · Paugram"
@@ -263,8 +263,8 @@ msgid "Mobile source"
 msgstr "移动端来源"
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:52
-msgid "Random ACG (Uapis)"
-msgstr "随机二次元（Uapis）"
+msgid "Random ACG (Seaya)"
+msgstr "随机二次元（Seaya）"
 
 #: htdocs/luci-static/resources/view/mint/wallpaper.js:56
 msgid "Mobile custom image URL"

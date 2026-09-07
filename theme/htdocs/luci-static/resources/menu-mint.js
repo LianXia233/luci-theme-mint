@@ -25,7 +25,7 @@ const mzWp = (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUti
 	},
 	randomUrl(mobile) {
 		const api = mobile
-			? 'https://uapis.cn/api/v1/random/image?category=acg&type=mb'
+			? 'https://api.seaya.link/wap'
 			: 'https://api.paugram.com/wallpaper/';
 		return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 	}

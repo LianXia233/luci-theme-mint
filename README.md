@@ -126,7 +126,7 @@ uci commit luci
 ```
 第三方随机图 API（浏览器直连，不经路由器代理）
   桌面端：api.paugram.com/wallpaper/
-  移动端（UA 检测）：uapis.cn/api/v1/random/image?category=acg&type=mb
+  移动端（UA 检测）：api.seaya.link/wap
         |
   自定义图片优先（已上传的 custom-pc.jpg / custom-mobile.jpg，或 http(s) 直链）
         |
@@ -137,7 +137,7 @@ uci commit luci
 
 - 每次进入登录页、每次刷新管理页面都会随机选图（URL 带时间戳防缓存）
 - 服务端**无壁纸缓存**（ucode 后端只读 UCI 配置 + 钳制数值），因此没有"刷新缓存"按钮
-- 图片来源标注在登录页右下角（本地自定义 / Uapis / Paugram），永不移除
+- 图片来源标注在登录页右下角（本地自定义 / Seaya / Paugram），永不移除
 
 ### 离线行为
 

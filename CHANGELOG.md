@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 变体更名 `mintzero-light/dark` → `mint-light/dark`（symlink 重建）、注册键 `MintLight/MintDark`
 - 注意：UCI 段名变更（`mintzero` → `mint`）会使升级后旧壁纸配置失效并回退默认，旧段有意不做迁移
 
+**移动端壁纸 API 更换**
+- 移动端随机壁纸源由 `uapis.cn/api/v1/random/image?category=acg&type=mb` 更换为 `api.seaya.link/wap`（桌面端 Paugram 不变）；登录页/管理页来源标注与 po 文案同步更新
+
 **壁纸设置迁移 + 按钮挂载加固**
 - 移除 mint 独立菜单与 Dashboard 页面（与概览页功能冲突）：删除 `admin/mint/*` 全部路由与 `view/mint/dashboard.js`
 - 壁纸设置迁移至「系统」菜单下，更名「Mint壁纸设置」（`admin/system/mintwallpaper/settings`），刷新端点同步迁移至 `admin/system/mintwallpaper/refresh`

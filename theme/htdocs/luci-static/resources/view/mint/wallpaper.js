@@ -49,7 +49,7 @@ return view.extend({
 
 		/* ---- Mobile source ---- */
 		const mMode = s.option(form.ListValue, 'mobile_mode', _('Mobile source'));
-		mMode.value('random', _('Random ACG (Uapis)'));
+		mMode.value('random', _('Random ACG (Seaya)'));
 		mMode.value('custom', _('Custom image'));
 		mMode.default = 'random';
 

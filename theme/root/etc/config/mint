@@ -9,7 +9,7 @@ config mint 'wallpaper'
 	option pc_mode 'random'
 	# Desktop custom image: direct http(s) link (an uploaded custom-pc.jpg wins)
 	option pc_url ''
-	# Mobile source: 'random' (Uapis ACG API) or 'custom'
+	# Mobile source: 'random' (Seaya ACG API) or 'custom'
 	option mobile_mode 'random'
 	# Mobile custom image: direct http(s) link (an uploaded custom-mobile.jpg wins)
 	option mobile_url ''

@@ -64,7 +64,7 @@ The login page can display a random wallpaper picked per device type.
 Third-party random image APIs (fetched directly by the browser,
 never proxied through the router)
   desktop: api.paugram.com/wallpaper/
-  mobile (UA detected): uapis.cn/api/v1/random/image?category=acg&type=mb
+  mobile (UA detected): api.seaya.link/wap
         |
   custom image wins when set (uploaded custom-pc.jpg /
   custom-mobile.jpg, or an http(s) direct link)
@@ -79,7 +79,7 @@ built-in CSS gradient fallback (always available)
   page refresh (timestamp-busted URLs, no server-side cache - so there is no
   "refresh cache" button).
 - The image source label is shown in the bottom-right corner of the login
-  page (local custom / Uapis / Paugram) and is never removed.
+  page (local custom / Seaya / Paugram) and is never removed.
 
 ### Offline behavior
 

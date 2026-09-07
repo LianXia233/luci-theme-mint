@@ -30,7 +30,7 @@ function mzWp() {
 		},
 		randomUrl(mobile) {
 			const api = mobile
-				? 'https://uapis.cn/api/v1/random/image?category=acg&type=mb'
+				? 'https://api.seaya.link/wap'
 				: 'https://api.paugram.com/wallpaper/';
 			return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
 		}
@@ -136,7 +136,7 @@ return view.extend({
 				showWallpaper(group.url, label);
 			} else {
 				showWallpaper(wp.randomUrl(mobile),
-					mobile ? _('Random wallpaper · Uapis') : _('Random wallpaper · Paugram'));
+					mobile ? _('Random wallpaper · Seaya') : _('Random wallpaper · Paugram'));
 			}
 		}
 
