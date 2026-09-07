@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (2026-09-07)
+
+**壁纸遮罩值被 ucode 字符串生命周期 bug 污染**
+- 修复 `wallpaper.uc` 中 `clampOverlay`/`validCustomUrl`/`sourceMode`/`deviceGroup` 直接返回裸字符串时，在某些 libucode 构建（20230711 时代）下被格式化为 `18446744073709551615`（2^64-1）垃圾值的问题
+- 通过 `copyStr()` 做一次字符串拼接复制，确保返回的字符串稳定，渲染后 `overlay` 恢复为合法的 `0.45` 等值，壁纸暗化蒙层正常生效、文字可读性恢复
+
+**壁纸设置页空白（CBI TypedSection 类型不匹配）—— 核心根因**
+- 设置页一直显示「尚无任何配置」、`uci/get` 偶发 `-32002 Access denied`，但经 `ubus call session login` + 浏览器会话抓包（`capture_session.py` / `capture_rpc.py`）三重验证，rpcd ACL 本身**完全正确**（root 会话含 `wallpaper` 组 + `allow-full-uci-access`，真实会话调 `uci get network` / `file read` 均成功）。ACL 不是根因
+- 真正的根因在 CBI 表单：`wallpaper.js` 旧代码用 `form.TypedSection('wallpaper', ...)` 按**类型** `'wallpaper'` 查找段，但实机 `/etc/config/mint` 是 `config mint 'wallpaper'`（段**类型**为 `mint`、段**名**为 `wallpaper`），类型不匹配 → `uci.sections('mint','wallpaper')` 返回 0 段 → 表单判定「无配置」
+- 后端 `wallpaper.uc` 用 `get_all('mint','wallpaper')` 按**段名**读取（类型无所谓），所以随机壁纸一直能工作，但设置页因类型错位始终空白——这正是「随机壁纸正常、设置页空白」并存的矛盾点
+- 修复：`wallpaper.js` 改用 `form.NamedSection('wallpaper', 'mint', _('Settings'))` + `s.anonymous=false` 直接编辑既有具名段；`uci-defaults/30_luci-theme-mint` 建段类型由 `wallpaper` 改为 `mint`，与新装/升级段类型对齐，避免类型错位复发
+
+**匿名会话 uci 缓存污染（导致偶发 Access denied）**
+- 首屏加载时第一批 RPC（含 `uci get mint`）在真实 ubus 会话建立前发出，使用匿名会话 ID `00000000000000000000000000000000` 被 `-32002` 拒绝
+- LuCI 的 `uci.js` 在 `callLoad` 带 `reject:true`，会把这次被拒的 load **永久缓存**进 `loaded['mint']`，之后所有 `uci.load('mint')` 都复用这个失败 promise，设置页因此持续空白
+- 修复：`wallpaper.js` 新增 `loadMintReady()`，用 `uci.unload('mint')` 清除被污染的缓存后重试 `uci.load('mint')`（最多 12 次 × 200ms），等真实会话就绪再渲染表单
+- 注：首屏匿名会话残存的 `Access denied` console 日志无害（重试后真实会话正常工作），不影响功能与保存
+
+**ACL 加固（非根因，但保留为有效改进）**
+- 在 `Makefile` 中新增 `postinst` 安装后自动重启 `rpcd` + `uhttpd`，`postrm` 同步重启，确保 ACL 变更立即生效
+- 旧构建遗留的 `/usr/share/luci/acl.d/luci-theme-mint.json`（格式为 `uci: [["mint","wallpaper"]]`）会覆盖 `/usr/share/rpcd/acl.d/` 中的新 ACL；`postinst` 与 `uci-defaults` 现在会清理该遗留文件，避免潜在权限遮蔽
+
+**界面排版与壁纸透显**
+- 修复因遮罩值无效导致的壁纸过曝、卡片文字显示不清的问题
+- 壁纸、卡片、侧栏、顶栏、底部等层级与毛玻璃效果在 1600/1280/768/390 等常见分辨率下均正常工作
+
 ### Added (2026-09-07)
 
 **随机壁纸按设备切换 + NTP 列表样式**

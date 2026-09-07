@@ -18,6 +18,12 @@ uci set luci.themes.mint=/luci-static/mint
 uci set luci.themes.MintLight=/luci-static/mint-light
 uci set luci.themes.MintDark=/luci-static/mint-dark
 
+# Remove stale ACL files left in the legacy luci acl.d directory by older
+# builds. The theme now ships ACLs in /usr/share/rpcd/acl.d/; a leftover
+# file here can override rpcd grants and break wallpaper settings.
+rm -f /usr/share/luci/acl.d/luci-theme-mint.json
+rm -f /usr/share/luci/acl.d/luci-theme-mintzero.json
+
 # Migrate the pre-rename (luci-theme-mintzero) wallpaper configuration so
 # upgrades keep their custom images/URLs. The old section is only moved
 # when no new 'mint' section exists yet, so a fresh config is never
@@ -37,9 +43,9 @@ fi
 # Wallpaper defaults for the mint UCI section. Only written when the
 # section does not exist yet, so user config survives upgrades.
 if ! uci -q get mint.wallpaper 2>/dev/null; then
-	uci -q set mint.wallpaper=wallpaper 2>/dev/null || {
+	uci -q set mint.wallpaper=mint 2>/dev/null || {
 		[ -f /etc/config/mint ] || touch /etc/config/mint
-		uci set mint.wallpaper=wallpaper
+		uci set mint.wallpaper=mint
 	}
 	uci -q set mint.wallpaper.enabled=1
 	uci -q set mint.wallpaper.ui_random=1

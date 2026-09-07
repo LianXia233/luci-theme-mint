@@ -19,15 +19,44 @@ var callFileWrite = rpc.declare({
 var PC_CUSTOM = '/www/luci-static/mint/custom-pc.jpg';
 var MOBILE_CUSTOM = '/www/luci-static/mint/custom-mobile.jpg';
 
+/* Load the mint config, retrying across LuCI's initial anonymous-session
+   window. On a fresh page load the first RPC calls (including uci get mint)
+   fire before the real ubus session is established and are rejected with
+   "Access denied". LuCI's uci module permanently caches that rejected load
+   in `loaded['mint']`, so every later uci.load('mint') keeps failing and the
+   form renders empty ("No configuration yet"). We clear the poisoned cache
+   with uci.unload() and reload until the session is ready. */
+function delay(ms) {
+	return new Promise(function (resolve) { window.setTimeout(resolve, ms); });
+}
+
+async function loadMintReady() {
+	for (let i = 0; i < 12; i++) {
+		try {
+			uci.unload('mint');
+			await uci.load('mint');
+			return true;
+		} catch (e) {
+			await delay(200);
+		}
+	}
+	return false;
+}
+
 return view.extend({
 	render() {
 		const self = this;
+		return loadMintReady().then(function () {
 		const m = new form.Map('mint', _('Mint Wallpaper'),
 			_('Login page background image. Configure separate sources for desktop and mobile visitors.'));
 
-		const s = m.section(form.TypedSection, 'wallpaper', null, _('Settings'));
+		/* The mint config holds a single named section 'wallpaper' of type
+		   'mint' (created by the uci-defaults script). Use NamedSection so
+		   the existing named section is edited in place instead of a fresh
+		   anonymous section being created. */
+		const s = m.section(form.NamedSection, 'wallpaper', 'mint', _('Settings'));
 		s.addremove = false;
-		s.anonymous = true;
+		s.anonymous = false;
 
 		s.option(form.Flag, 'enabled', _('Enabled'),
 			_('When disabled, the login page uses the built-in gradient fallback.'));
@@ -133,6 +162,7 @@ return view.extend({
 				nodes.insertBefore(btnRow, nodes.firstChild);
 
 			return nodes;
+		});
 		});
 	},
 

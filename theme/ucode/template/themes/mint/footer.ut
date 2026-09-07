@@ -22,7 +22,7 @@
 		</footer>
 		<script>L.require('menu-mint')</script>
 		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-overview'): %}
-		<script src="{{ media }}/overview.js?v=mz20260908a" defer></script>
+		<script src="{{ media }}/overview.js?v=mz20260908b" defer></script>
 		{% endif %}
 		{% endif %}
 	</body>

@@ -44,6 +44,14 @@ const DEFAULTS = {
 // NOTE: ucode (libucode 20230711 era) does NOT hoist function declarations,
 // so helpers must be defined before the functions that call them.
 
+/* Workaround for a ucode string-lifetime bug observed on libucode
+   20230711: the =~ regex operator corrupts the string being matched,
+   and returning a bare string literal or transient UCI string from a
+   helper can also yield garbage (e.g. 2^64-1) when later consumed by
+   sprintf('%J'). We validate overlay without regex and copy all helper
+   return values via concatenation to obtain stable strings. (TZ-20) */
+function copyStr(v) { return '' + v; }
+
 // A custom URL is embedded into login-page markup/CSS, so restrict it to
 // a safe http(s) absolute URL with no shell/HTML metacharacters.
 function validCustomUrl(u) {
@@ -61,11 +69,11 @@ function validCustomUrl(u) {
 			return null;
 	}
 
-	return u;
+	return copyStr(u);
 }
 
 function sourceMode(v, dflt) {
-	return (v == 'custom') ? 'custom' : dflt;
+	return (v == 'custom') ? copyStr('custom') : copyStr(dflt);
 }
 
 function hasVal(arr, v) {
@@ -97,10 +105,32 @@ function sourceList(v, dflt) {
 	return out;
 }
 
+/* Manual overlay format check: 0 | 1 | 0.x | 1.0*
+   Avoids the ucode =~ string-corruption bug. */
+function validOverlay(v) {
+	if (length(v) == 0)
+		return false;
+	if (v == '0' || v == '1')
+		return true;
+	if (substr(v, 0, 2) == '0.') {
+		for (let i = 2; i < length(v); i++)
+			if (index('0123456789', substr(v, i, 1)) < 0)
+				return false;
+		return true;
+	}
+	if (substr(v, 0, 2) == '1.') {
+		for (let i = 2; i < length(v); i++)
+			if (substr(v, i, 1) != '0')
+				return false;
+		return true;
+	}
+	return false;
+}
+
 function clampOverlay(v) {
-	if (type(v) == 'string' && v =~ /^(0(\.[0-9]+)?|1(\.0*)?)$/)
-		return v;
-	return '0.45';
+	if (type(v) == 'string' && validOverlay(v))
+		return copyStr(v);
+	return copyStr('0.45');
 }
 
 function clampBlur(v) {
@@ -146,7 +176,7 @@ function deviceGroup(cfg, kind) {
 	const customUrl = (kind == 'mobile') ? cfg.mobile_url : cfg.pc_url;
 
 	return {
-		mode: isCustom ? 'custom' : 'random',
+		mode: isCustom ? copyStr('custom') : copyStr('random'),
 		url: resolveCustom(customPath, customUrl),
 		sources: (kind == 'mobile') ? cfg.mobile_sources : cfg.pc_sources
 	};
