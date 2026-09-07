@@ -3925,7 +3925,9 @@ table.table .cbi-button,
 
 /* Overview: below the desktop breakpoint show at least two cards per
    row. The old 4-up info row truncated long values (model names) and the
-   3-up ring row stretched its gauges on phones. Card panel alphas stay
+   3-up ring row stretched its gauges on phones. The ring row holds
+   exactly three cards (CPU / memory / storage), so it gets a fixed
+   three-column track and stays on a single line. Card panel alphas stay
    shared with desktop - the same --mz-panel-bg drives both. */
 @media (max-width: 1023.98px) {
 	.mz-info-cards {
@@ -3933,24 +3935,28 @@ table.table .cbi-button,
 		justify-content: stretch !important;
 	}
 	.mz-rings {
-		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 		justify-content: stretch !important;
 	}
 }
 
 @media (max-width: 480px) {
-	/* Half-width cells: stack the gauge above its labels so nothing is
-	   squeezed into a 170px row layout. */
+	/* Third-of-width cells: stack the gauge above its labels so nothing is
+	   squeezed into a ~112px row layout. */
 	.mz-ring-card {
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		gap: 8px;
-		padding: 12px;
+		gap: 6px;
+		padding: 8px 6px;
 	}
 	.mz-ring {
-		width: 80px;
-		height: 80px;
+		width: 72px;
+		height: 72px;
+	}
+	.mz-ring-card .mz-ring-label,
+	.mz-ring-card .mz-ring-sub {
+		font-size: 12px;
 	}
 	/* Long values wrap instead of being cut off mid-word. */
 	.mz-info-value {
