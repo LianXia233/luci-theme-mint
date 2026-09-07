@@ -3603,22 +3603,23 @@ body.mz-has-wallpaper #modal_overlay {
  * while a slightly stronger background on hover/focus plus a text
  * halo keeps every label readable in light and dark mode.
  * ================================================================ */
-/* Tuned 2026-09-08: the old 0.72 / 0.88 values rendered as near-solid white
-   slabs (measured card interior ~220 vs wallpaper ~147), which hid the
-   wallpaper completely. These alphas sit in the classic glassmorphism range
-   so the wallpaper reads through while labels stay legible. */
+/* Tuned 2026-09-08 (reference style: dark glass home page): the wallpaper
+   is the dominant layer and every panel is a barely-there glass sheet -
+   one shared ~7% white wash plus blur - with light typography on top.
+   A single set of values drives BOTH themes so every card shares the
+   exact same transparency; flipping the text variables here keeps labels
+   readable on the darkened wallpaper without per-element overrides. */
 body.mz-has-wallpaper {
-	--mz-panel-bg: rgba(255, 255, 255, 0.38);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.58);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.22);
-	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.85);
-}
-
-html[data-theme="dark"] body.mz-has-wallpaper {
-	--mz-panel-bg: rgba(23, 30, 44, 0.42);
-	--mz-panel-bg-strong: rgba(23, 30, 44, 0.64);
-	--mz-panel-bg-soft: rgba(23, 30, 44, 0.26);
-	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.75);
+	--mz-panel-bg: rgba(255, 255, 255, 0.07);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.13);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.045);
+	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.55);
+	--mz-color-text: #eef2f8;
+	--mz-color-text-muted: rgba(228, 235, 246, 0.72);
+	--mz-color-surface: rgba(255, 255, 255, 0.07);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
+	--mz-color-border: rgba(255, 255, 255, 0.12);
+	--mz-color-background: #16202f;
 }
 
 body.mz-has-wallpaper .cbi-map,
@@ -3722,9 +3723,12 @@ body.mz-has-wallpaper .mz-sys-grid {
 }
 
 /* Overview page translucent headers / titles over wallpaper */
+/* Headers share the panel alpha family (reference style: no loud opaque
+   bars) - a 0.4 primary tint keeps white labels readable without turning
+   the header into a solid slab. */
 body.mz-has-wallpaper .mz-net-header,
 body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.9);
+	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.4);
 }
 body.mz-has-wallpaper .mz-net-header {
 	color: #fff;
@@ -3733,7 +3737,7 @@ body.mz-has-wallpaper .mz-net-header {
 
 html[data-theme="dark"] body.mz-has-wallpaper .mz-net-header,
 html[data-theme="dark"] body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 125, 147, 255), 0.85);
+	background: rgba(var(--mz-color-primary-rgb, 125, 147, 255), 0.4);
 }
 
 /* LuCI ifacebox headers use inline background-color for firewall zones;

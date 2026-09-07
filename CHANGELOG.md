@@ -37,6 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed (2026-09-08)
 
+**卡片风格重做：参照「星境导航」深色微透玻璃（全部卡片同一透明度）**
+- 参考图特征：壁纸是绝对主角，卡片只是一层约 6-10% 白的极淡玻璃板，浅色文字，所有卡片完全一致，没有任何白色实心块
+- 根因（上一版 0.38 白 + 深色文字依旧偏"白卡片"）：亮色主题变量 `--mz-color-surface: #ffffff` / 文字 `#1a2233` 在壁纸模式下仍按浅色页面设计
+- 修复：`body.mz-has-wallpaper` 统一覆写整套变量——`--mz-panel-bg: rgba(255,255,255,0.07)`（strong 0.13 / soft 0.045）、`--mz-color-surface: rgba(255,255,255,0.07)`、`--mz-color-border: rgba(255,255,255,0.12)`、文字翻转 `--mz-color-text: #eef2f8`（muted 72% 透明）、底色 `--mz-color-background: #16202f`；亮暗两主题共用同一套值，所有卡片透明度严格一致
+- 卡片表头同步：`.mz-net-header` / `.mz-data-table thead th` 由 `rgba(primary,0.9)` 不透明色条降为 `0.4` 微透，与面板同风格
+- 实测（1600 视口）：info/环形/网络卡内部像素 (151-157, 156-160, 168-173)，与页面壁纸间隙 (147,150,159) 仅差 7-10——壁纸完整透出，卡片是"若隐若现的面板"；文字计算色全部为浅色（`rgb(238,242,248)`），深色壁纸上的对比度良好
+- 回归：1600/1280/768/390 四分辨率无横向溢出、无 pageerror、overlay 0.45、设置页正常渲染
+
 **概览页卡片行宽不一致（各行右边缘参差不齐）**
 - 根因：`@media (min-width: 1024px)` 下 `.mz-info-cards` / `.mz-rings` 使用**固定像素轨道**（`repeat(4, 220px)` / `repeat(3, 300px)`），在 1224px 内容区里只占 910px / 928px；而 `.mz-port-grid` / `.mz-net-grid` 用 `minmax(..., 1fr)` 自动撑满 1224px。上下行宽差约 300px，视觉上就是「卡片没对齐」
 - 实测（1600 视口）：info 行末尾 x=996、环形行 x=1244、端口行 x=1540 —— 参差不齐

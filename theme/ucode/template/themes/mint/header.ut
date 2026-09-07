@@ -72,7 +72,7 @@
 		{% else %}
 		<meta name="theme-color" content="#0f172a">
 		{% endif %}
-		<link rel="stylesheet" href="{{ media }}/cascade.css?v=mz20260908d">
+		<link rel="stylesheet" href="{{ media }}/cascade.css?v=mz20260908e">
 		<link rel="icon" href="{{ media }}/favicon/favicon.svg" sizes="any" type="image/svg+xml">
 		<link rel="icon" href="{{ media }}/favicon/favicon-48.png" sizes="48x48">
 		<link rel="apple-touch-icon" href="{{ media }}/favicon/favicon-180.png">
