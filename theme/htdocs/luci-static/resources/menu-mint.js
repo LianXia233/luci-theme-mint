@@ -79,11 +79,17 @@ return baseclass.extend({
 
 		const mobile = this.isMobileUA();
 		const grp = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
-		/* OT-35: 5-minute wallpaper cache. The chosen URL is remembered per
-		   device type in sessionStorage (survives LuCI's full page loads).
-		   Within the TTL page switches reuse the same URL, so the image
-		   comes straight from the browser HTTP cache instead of pulling a
-		   fresh random picture on every navigation. */
+		/* OT-35: 5-minute wallpaper cache, two layers deep.
+		   Layer 1 (server): the random APIs 302-redirect to a different
+		   image on EVERY request, so no browser-side trick can pin one
+		   picture. A cron job fetches a random image into
+		   /luci-static/mint/wallpaper-<kind>.img every 5 minutes; while
+		   that local file exists the admin UI points at it and uhttpd
+		   answers repeat views with 304 - the browser keeps ONE image for
+		   the whole window and it never changes between navigations.
+		   Layer 2 (browser sessionStorage): remembers the last URL for 5
+		   minutes as before - it covers the window where the cron file
+		   changed mid-session and keeps the fallback path identical. */
 		const CACHE_KEY = 'mz-wp-url-' + (mobile ? 'mobile' : 'pc');
 		const CACHE_TTL = 5 * 60 * 1000;
 		let cached = null;
@@ -96,6 +102,12 @@ return baseclass.extend({
 		}
 		else if (grp.mode === 'custom') {
 			return;
+		}
+		else if (grp.proxy) {
+			/* Server-side cached random image: stable URL, real HTTP
+			   caching, refreshed by cron every 5 minutes. No per-navigation
+			   cache-busting stamp - stamping would defeat the 304 reuse. */
+			urls = [grp.proxy];
 		}
 		else if (cacheFresh) {
 			urls = [cached.url];

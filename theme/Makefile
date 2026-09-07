@@ -44,6 +44,15 @@ define Package/luci-theme-mint/postrm
 	rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
 	rm -f /www/luci-static/mint/custom-pc.jpg
 	rm -f /www/luci-static/mint/custom-mobile.jpg
+	rm -f /www/luci-static/mint/wallpaper-pc.img
+	rm -f /www/luci-static/mint/wallpaper-mobile.img
+	# Remove the wallpaper cache refresher cron line (marked) and the helper.
+	if [ -f /etc/crontabs/root ]; then
+		grep -v 'mz-wallpaper-fetch' /etc/crontabs/root > /tmp/mz-crontab.$$
+		mv /tmp/mz-crontab.$$ /etc/crontabs/root
+		/etc/init.d/cron restart >/dev/null 2>&1 || true
+	fi
+	rm -f /usr/bin/mz-wallpaper-fetch.sh
 	/etc/init.d/rpcd restart >/dev/null 2>&1 || true
 	/etc/init.d/uhttpd restart >/dev/null 2>&1 || true
 }

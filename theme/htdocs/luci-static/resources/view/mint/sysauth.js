@@ -147,8 +147,14 @@ return view.extend({
 
 			/* Per-device source: desktop and mobile visitors get independent
 			   configurations (random multi-source API list or custom image).
-			   Random mode shuffles the configured sources and tries each in
-			   turn; the CSS gradient stays as the final fallback. */
+			   Random mode prefers the server-side cached image
+			   (wallpaper-pc.img / wallpaper-mobile.img, refreshed by cron
+			   every 5 minutes): the random APIs 302 to a different image on
+			   every request, so the local proxy file is the only way the
+			   login page keeps one picture for the whole cache window. When
+			   the file is missing the flow falls back to shuffling the
+			   configured remote sources; the CSS gradient stays as the
+			   final fallback. */
 			const group = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
 
 			if (group.mode === 'custom' && group.url) {
@@ -163,6 +169,8 @@ return view.extend({
 					}
 				}
 				showWallpaper([group.url], () => label);
+			} else if (group.proxy) {
+				showWallpaper([group.proxy], () => _('Cached random wallpaper'));
 			} else {
 				const sources = (group.sources && group.sources.length) ? group.sources : [wp.randomUrl(mobile)];
 				showWallpaper(shuffle(sources).map(stampUrl), (u) => {

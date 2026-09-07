@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (2026-09-08)
+
+**壁纸缓存真正生效：路由器侧代理缓存（PC / 移动 / 登录页独立）**
+- 根因（第二层）：此前的 sessionStorage URL 缓存确实命中（跨页 URL 一致），但随机壁纸 API（paugram / alcy / seaya）对**每次请求都 302 重定向到不同图片**（实测 alcy `/bd` 两次请求分别落到 `233.WEBP` / `230.WEBP`），浏览器 HTTP 缓存对重定向无效——URL 一样、图却每页都换
+- 修复：新增 `/usr/bin/mz-wallpaper-fetch.sh`（ash 脚本，cron 每 5 分钟），从配置源拉图校验签名（JPEG/PNG/WEBP/GIF + ≥3KB）后**原子替换**到 `/www/luci-static/mint/wallpaper-pc.img` / `wallpaper-mobile.img`；`wallpaper.uc` 在 random 模式且本地文件存在时向前端注入 `proxy` 字段；管理页（`menu-mint.js`）与登录页（`sysauth.js`）优先使用本地代理文件，文件缺失自动回退原随机 API 流程
+- 效果：uhttpd 静态服务带 Last-Modified/ETag，浏览器跨页 304 复用——5 分钟窗口内**切页零下载、图片不换**；cron 刷新后下次加载自然拿到新图。实测 PC / 移动 / 登录页三份独立文件各自生效（移动 UA → `wallpaper-mobile.img`，PC UA → `wallpaper-pc.img`，登录页与管理页独立键控）
+- uci-defaults 幂等安装 cron 行（`#mz-wallpaper` 标记，保留用户既有条目）；postrm 卸载时清理 cron 行、脚本与缓存文件
+- 环境坑记录：脚本上传路由器必须 LF 行尾（CRLF 会让 BusyBox ash 报 `not found`），已修正仓库文件并 `core.autocrlf=false`
+
+**网络管理页（admin/network/network）排版与视觉统一**
+- 操作栏透明度与卡片不一致：sticky 保存栏用 `--mz-panel-bg-strong`(0.13)，比所有卡片(0.07)重一档，观感像"更实的板子"；统一为 `--mz-panel-bg`(0.07) 同族
+- 接口/设备表格信息密度过高：单元格 padding 10px→12px 16px、字号 .88rem→.92rem、行内按钮缩小到 .82rem 并均分间距，信息层级清晰
+- 下拉面板无立体感：cbi-dropdown 打开列表与 dropdown-menu 补 elevation 阴影；壁纸/暗色模式下选项面板改用实色 `#1c2736`（带投影），不再与背后玻璃卡糊在一起；原生 `<select>` 的 option 弹出层同步深色配色
+
+**顶栏"刷新"指示器样式（poll-status）**
+- 状态页顶栏的自动刷新指示器原是透明裸文本，壁纸下几乎不可见；改为与 `.label` 同族的胶囊按钮（surface-2 底 + 边框，active 态 primary-soft 高亮），悬停态补齐
+
+**全局字体可读性**
+- 根因：rem 级联后正文实际 ~14px（.88rem）且 system-ui 渲染偏细，壁纸玻璃底上文字存在感弱
+- 修复：基础字号 16px→16.5px（全部 rem 尺寸等比放大，网格布局不受影响）、行高 1.5→1.55、启用 `text-rendering: optimizeLegibility`；表头与信息标签字重提到 600
+
 ### Fixed (2026-09-07)
 
 **壁纸遮罩值被 ucode 字符串生命周期 bug 污染**

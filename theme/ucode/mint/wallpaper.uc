@@ -24,6 +24,17 @@ import { cursor } from 'uci';
 const CUSTOM_PC = '/www/luci-static/mint/custom-pc.jpg';
 const CUSTOM_MOBILE = '/www/luci-static/mint/custom-mobile.jpg';
 
+/* OT-35: server-side random wallpaper cache. The random APIs 302-redirect
+   to a different image on every request, so no browser caching strategy
+   can pin one picture. The cron job (/usr/bin/mz-wallpaper-fetch.sh, every
+   5 minutes) resolves the randomness router-side; the frontends reference
+   these stable local files instead and get real HTTP caching (304 reuse)
+   until the next refresh. */
+const PROXY_PC = '/www/luci-static/mint/wallpaper-pc.img';
+const PROXY_MOBILE = '/www/luci-static/mint/wallpaper-mobile.img';
+const PROXY_PC_URL = '/luci-static/mint/wallpaper-pc.img';
+const PROXY_MOBILE_URL = '/luci-static/mint/wallpaper-mobile.img';
+
 const DEFAULTS = {
 	enabled: '1',
 	pc_mode: 'random',
@@ -174,10 +185,18 @@ function deviceGroup(cfg, kind) {
 	const isCustom = (kind == 'mobile') ? (cfg.mobile_mode == 'custom') : (cfg.pc_mode == 'custom');
 	const customPath = (kind == 'mobile') ? CUSTOM_MOBILE : CUSTOM_PC;
 	const customUrl = (kind == 'mobile') ? cfg.mobile_url : cfg.pc_url;
+	const proxyPath = (kind == 'mobile') ? PROXY_MOBILE : PROXY_PC;
+	const proxyUrl = (kind == 'mobile') ? PROXY_MOBILE_URL : PROXY_PC_URL;
+
+	/* The local proxy file only backs the "random" mode (it IS the cached
+	   random image); custom mode uses the uploaded file / direct link. */
+	const st = stat(proxyPath);
+	const proxy = (!isCustom && st && st.type == 'file' && st.size) ? copyStr(proxyUrl) : null;
 
 	return {
 		mode: isCustom ? copyStr('custom') : copyStr('random'),
 		url: resolveCustom(customPath, customUrl),
+		proxy: proxy,
 		sources: (kind == 'mobile') ? cfg.mobile_sources : cfg.pc_sources
 	};
 }

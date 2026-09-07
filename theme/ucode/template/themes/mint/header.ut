@@ -72,7 +72,7 @@
 		{% else %}
 		<meta name="theme-color" content="#0f172a">
 		{% endif %}
-		<link rel="stylesheet" href="{{ media }}/cascade.css?v=mz20260908g">
+		<link rel="stylesheet" href="{{ media }}/cascade.css?v=mz20260908h">
 		<link rel="icon" href="{{ media }}/favicon/favicon.svg" sizes="any" type="image/svg+xml">
 		<link rel="icon" href="{{ media }}/favicon/favicon-48.png" sizes="48x48">
 		<link rel="apple-touch-icon" href="{{ media }}/favicon/favicon-180.png">
@@ -95,11 +95,13 @@
 				pc: {
 					mode: {{ sprintf('%J', wallpaper.pc?.mode ?? 'random') }},
 					url: {{ sprintf('%J', wallpaper.pc?.url ?? '') }},
+					proxy: {{ sprintf('%J', wallpaper.pc?.proxy ?? '') }},
 					sources: {{ sprintf('%J', wallpaper.pc?.sources ?? []) }}
 				},
 				mobile: {
 					mode: {{ sprintf('%J', wallpaper.mobile?.mode ?? 'random') }},
 					url: {{ sprintf('%J', wallpaper.mobile?.url ?? '') }},
+					proxy: {{ sprintf('%J', wallpaper.mobile?.proxy ?? '') }},
 					sources: {{ sprintf('%J', wallpaper.mobile?.sources ?? []) }}
 				}
 			};

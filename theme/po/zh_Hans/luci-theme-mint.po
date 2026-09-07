@@ -326,3 +326,6 @@ msgstr "随机壁纸 · %s"
 
 msgid "Random wallpaper"
 msgstr "随机壁纸"
+
+msgid "Cached random wallpaper"
+msgstr "缓存随机壁纸"

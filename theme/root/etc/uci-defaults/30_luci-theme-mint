@@ -66,6 +66,16 @@ for _opt in market cache_ttl random mode count; do
 	uci -q delete mint.wallpaper.$_opt
 done
 
+# OT-35: install the server-side wallpaper cache refresher (cron, every 5
+# minutes). Idempotent: the marker comment keeps us from adding a second
+# line on upgrades; user cron entries are preserved.
+if [ -f /etc/crontabs/root ] && grep -q 'mz-wallpaper-fetch' /etc/crontabs/root; then
+	: # already installed
+else
+	echo '*/5 * * * * /usr/bin/mz-wallpaper-fetch.sh #mz-wallpaper' >> /etc/crontabs/root
+	/etc/init.d/cron restart >/dev/null 2>&1 || true
+fi
+
 if [ "$PKG_UPGRADE" != 1 ]; then
 	uci -q set luci.main.mediaurlbase=/luci-static/mint
 fi

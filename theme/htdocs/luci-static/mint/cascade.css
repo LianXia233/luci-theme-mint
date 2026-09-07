@@ -3964,3 +3964,134 @@ table.table .cbi-button,
 		overflow-wrap: anywhere;
 	}
 }
+
+/* ================================================================
+ * Network page + chrome polish (2026-09-08)
+ * ================================================================ */
+/* The status page "Refresh" poll indicator sits in the topbar as a bare
+   transparent text. Give it the pill treatment (same family as .label)
+   so it reads as a button and stays visible over the wallpaper. */
+.mz-indicators [data-indicator] {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 12px;
+	border-radius: 999px;
+	font-size: .75rem;
+	font-weight: 600;
+	cursor: pointer;
+	background: var(--mz-color-surface-2);
+	color: var(--mz-color-text-muted);
+	border: 1px solid var(--mz-color-border);
+	transition: background var(--mz-transition), color var(--mz-transition);
+}
+
+.mz-indicators [data-indicator]:hover {
+	background: var(--mz-color-surface);
+	color: var(--mz-color-text);
+}
+
+.mz-indicators [data-indicator][data-style="active"] {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+	border-color: transparent;
+}
+
+/* Page action bar shares the card alpha family: it was --panel-bg-strong
+   (0.13), one step ABOVE every card (0.07). Same tint, same blur, so the
+   sticky bar reads as part of the page instead of a heavier slab. */
+body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
+body.mz-has-wallpaper #maincontent .cbi-page-actions {
+	background: var(--mz-panel-bg);
+}
+
+/* cbi-dropdown / native select option panels: the closed control already
+   uses the surface token, but the OPEN list had no shadow - it melted
+   into the cards behind it. A real elevation shadow plus a stronger
+   glass fill separates the floating menu from the page. */
+.cbi-dropdown.open > ul,
+.cbi-button-apply .dropdown,
+.cbi-button-apply + .dropdown-menu,
+.btn + .dropdown-menu {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+body.mz-has-wallpaper .cbi-dropdown.open > ul,
+body.mz-has-wallpaper .cbi-button-apply .dropdown,
+body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
+body.mz-has-wallpaper .btn + .dropdown-menu {
+	background: #1c2736; /* solid enough to stay readable over any wallpaper */
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+body.mz-has-wallpaper .cbi-dropdown.open > ul > li:hover {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+/* Native select option lists pick up the dark scheme so the OS popup is
+   not blinding white in dark / wallpaper mode. */
+body.mz-has-wallpaper select option,
+html[data-theme="dark"] select option {
+	background-color: #1c2736;
+	color: #eef2f8;
+}
+
+/* --- Network interfaces page (admin/network/network) ------------- */
+/* The interface rows are dense CBI tables: modest breathing room in the
+   cells and slightly larger type lift the information hierarchy without
+   touching LuCI's markup. */
+table.cbi-section-table th,
+table.cbi-section-table td {
+	padding: 12px 16px;
+}
+
+#cbi-network-interface table.cbi-section-table td,
+#cbi-network-device table.cbi-section-table td {
+	font-size: .92rem;
+	vertical-align: top;
+}
+
+/* Row action buttons (Edit/Delete/Restart...) inside interface cells:
+   keep them small and evenly spaced instead of a wrapping crowd. */
+#cbi-network-interface td .btn,
+#cbi-network-device td .btn {
+	font-size: .82rem;
+	padding: 4px 10px;
+	margin: 2px;
+}
+
+/* The create-new-interface row sits inside the card: soften it. */
+.cbi-section-create {
+	padding: 10px 0 2px;
+}
+
+.cbi-section-create > .cbi-value {
+	padding: 4px 0;
+}
+
+/* ================================================================
+ * Global typography readability (2026-09-08)
+ * ================================================================ */
+/* The rem cascade (body 16px -> .88/.9rem = ~14px) plus thin system-ui
+   rendering made body text feel small and washed out, especially over
+   the wallpaper. Bump the base scale one notch and strengthen glyph
+   rendering; the rem-based layout scales up proportionally without
+   breaking any grid. */
+html {
+	font-size: 16.5px;
+}
+
+body {
+	line-height: 1.55;
+	text-rendering: optimizeLegibility;
+}
+
+/* Tables and dense CBI text keep their relative sizes but gain weight so
+   labels stop disappearing into glass backgrounds. */
+td, th {
+	font-weight: 400;
+}
+
+th, .mz-info-label, .mz-sys-label {
+	font-weight: 600;
+}
