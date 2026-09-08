@@ -26,16 +26,29 @@
 #   sdk_dir, sdk_url, sdk_file, openwrt_release, openwrt_series,
 #   openwrt_base_url, kernel_version, supports_apk, supports_ipk
 #
+# Progress and diagnostics go to stderr so callers can safely capture the
+# machine-readable key=value summary from stdout.
+#
 # The script is also safe to source from build-package.sh: main() only runs
 # when the file is executed directly.
 
 set -euo pipefail
 
-# Official mirror. Overridable so downstream users (and the offline tests in
-# this repo) can point at a local mirror without touching the logic.
+# Official mirrors. downloads.openwrt.org is the primary; archive.openwrt.org
+# keeps older point releases after they rotate off the live mirror.
+# Overridable so downstream users (and offline tests) can point elsewhere.
 OPENWRT_BASE_URL="${OPENWRT_BASE_URL:-https://downloads.openwrt.org}"
+if [ -z "${OPENWRT_MIRRORS:-}" ]; then
+	if [ "$OPENWRT_BASE_URL" = "https://downloads.openwrt.org" ]; then
+		OPENWRT_MIRRORS="https://downloads.openwrt.org https://archive.openwrt.org"
+	else
+		# Custom/local BASE_URL: do not also hit the public archive mirror.
+		OPENWRT_MIRRORS="$OPENWRT_BASE_URL"
+	fi
+fi
 
-log()  { printf '[sdk] %s\n' "$*"; }
+# log/warn/die -> stderr. Callers capture stdout for key=value metadata only.
+log()  { printf '[sdk] %s\n' "$*" >&2; }
 warn() { printf '[sdk] warning: %s\n' "$*" >&2; }
 die()  { printf '[sdk] error: %s\n' "$*" >&2; exit 1; }
 
@@ -49,12 +62,14 @@ github_out() {
 # index helpers
 # ---------------------------------------------------------------------------
 
-# Fetch a directory index (or any URL) with retries. GitHub runners
-# occasionally get a transient 5xx from the download mirrors.
+# Fetch a directory index (or any URL). Retries only on transient transport
+# failures - NOT on HTTP 404 (which --retry-all-errors would thrash on).
 fetch_into() {
 	local url="$1" dest="$2"
-	curl -fsSL --retry 4 --retry-delay 5 --retry-all-errors \
-		--connect-timeout 20 --max-time 300 "$url" -o "$dest" 2>/dev/null
+	curl -fsSL --retry 2 --retry-delay 2 \
+		--connect-timeout 15 --max-time 60 \
+		-A "luci-theme-mint-sdk-resolver/1.0" \
+		"$url" -o "$dest" 2>/dev/null
 }
 
 fetch_url() {
@@ -77,40 +92,48 @@ fetch_url() {
 # Does the URL resolve? Used for the "25.12.x" style rolling directories that
 # only exist for some series.
 url_exists() {
-	curl -fsSIL --retry 2 --retry-delay 2 --connect-timeout 15 \
-		--max-time 60 -o /dev/null "$1" 2>/dev/null
+	curl -fsSIL --retry 2 --retry-delay 2 --connect-timeout 10 \
+		--max-time 30 -o /dev/null "$1" 2>/dev/null
+}
+
+# Run grep without tripping set -e/pipefail when there are no matches.
+safe_grep() {
+	grep "$@" || true
 }
 
 # Latest concrete release of a series, e.g. series 25.12 -> 25.12.5.
 # Release candidates (25.12.0-rc1) are excluded.
 latest_release_of_series() {
-	local series="$1" idx
-	idx="$(fetch_url "${OPENWRT_BASE_URL}/releases/")" \
-		|| die "cannot read ${OPENWRT_BASE_URL}/releases/"
-	printf '%s' "$idx" \
-		| grep -oE "${series//./\\.}[0-9]*\.[0-9]+/" \
-		| grep -vE 'rc|RC' \
+	local series="$1" base="$2" idx latest
+	idx="$(fetch_url "${base}/releases/")" || return 1
+	# Match "25.12.5/" but not "25.12.0-rc1/" or unrelated "25.120.1/".
+	latest="$(printf '%s' "$idx" \
+		| safe_grep -oE "${series//./\\.}\\.[0-9]+/" \
+		| safe_grep -vE 'rc|RC' \
 		| tr -d '/' \
 		| sort -V \
-		| tail -n1
+		| tail -n1)"
+	[ -n "$latest" ] || return 1
+	printf '%s' "$latest"
 }
 
-# Resolve a user supplied version into a concrete download base URL.
+# Resolve a user supplied version into a concrete download path suffix
+# (without the mirror host):
 #   25.12      -> releases/25.12.x if it exists, else releases/25.12.<latest>
 #   25.12.5    -> releases/25.12.5
 #   snapshot   -> snapshots
-resolve_base_url() {
-	local version="$1" series latest
+resolve_path_prefix() {
+	local version="$1" base="$2" series latest
 
 	case "$version" in
 	snapshot|SNAPSHOT|main|master)
-		printf '%s/snapshots' "$OPENWRT_BASE_URL"
+		printf 'snapshots'
 		return 0
 		;;
 	esac
 
 	if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-		printf '%s/releases/%s' "$OPENWRT_BASE_URL" "$version"
+		printf 'releases/%s' "$version"
 		return 0
 	fi
 
@@ -118,38 +141,111 @@ resolve_base_url() {
 		series="$version"
 		# Preferred: the rolling "<series>.x" directory that always points at
 		# the newest point release (kept for series that publish it).
-		if url_exists "${OPENWRT_BASE_URL}/releases/${series}.x/targets/"; then
-			printf '%s/releases/%s.x' "$OPENWRT_BASE_URL" "$series"
+		if url_exists "${base}/releases/${series}.x/targets/"; then
+			printf 'releases/%s.x' "$series"
 			return 0
 		fi
-		latest="$(latest_release_of_series "$series")"
-		[ -n "$latest" ] || die "no release found for series ${series}"
-		warn "no ${series}.x directory, using ${latest}"
-		printf '%s/releases/%s' "$OPENWRT_BASE_URL" "$latest"
+		latest="$(latest_release_of_series "$series" "$base")" || return 1
+		warn "no ${series}.x directory on ${base}, using ${latest}"
+		printf 'releases/%s' "$latest"
 		return 0
 	fi
 
 	die "unsupported version '${version}' (use 25.12, 25.12.5, 24.10 or snapshot)"
 }
 
-# Pick the SDK tarball from a target directory index.
-# Stable releases and snapshots name SDK archives with "sdk" in the filename,
-# but the exact position varies (for example, openwrt-25.12.5-...-SDK...).
-find_sdk_file() {
-	local dir_url="$1" idx sdk
+# Extract an SDK tarball name from an index body (sha256sums or HTML).
+# Always returns 0; prints the best match or nothing.
+extract_sdk_name() {
+	local body="$1" sdk=""
 
-	idx="$(fetch_url "$dir_url")" \
-		|| die "cannot read SDK index ${dir_url}"
-
-	sdk="$(printf '%s' "$idx" \
-		| grep -ioE 'openwrt-[A-Za-z0-9._+-]*sdk[A-Za-z0-9._+-]*\.tar\.(zst|xz|zstd)' \
+	# 1. Prefer the plain-text sha256sums / HTML href form used by the
+	#    working build.yml workflow:
+	#      openwrt-sdk-....Linux-x86_64.tar.zst
+	sdk="$(printf '%s' "$body" \
+		| safe_grep -oE 'openwrt-sdk-[^"<>[:space:]]+\.tar\.(zst|xz|zstd|gz)' \
+		| safe_grep -E 'Linux-x86_64' \
 		| sort -u \
-		| grep -E 'Linux-x86_64' \
 		| sort -V \
 		| tail -n1)"
 
-	[ -n "$sdk" ] || die "no openwrt-sdk-*.tar.zst|xz found under ${dir_url}"
+	# 2. Broader pattern: "sdk" anywhere after the openwrt- prefix (covers
+	#    unusual layouts such as openwrt-25.12.5-...-sdk-...).
+	if [ -z "$sdk" ]; then
+		sdk="$(printf '%s' "$body" \
+			| safe_grep -ioE 'openwrt-[A-Za-z0-9._+-]*sdk[A-Za-z0-9._+-]*\.tar\.(zst|xz|zstd|gz)' \
+			| safe_grep -iE 'Linux-x86_64' \
+			| sort -u \
+			| sort -V \
+			| tail -n1)"
+	fi
+
+	# 3. Last resort: any openwrt-sdk-*.tar.* entry (host tag may vary).
+	if [ -z "$sdk" ]; then
+		sdk="$(printf '%s' "$body" \
+			| safe_grep -oE 'openwrt-sdk-[^"<>[:space:]]+\.tar\.(zst|xz|zstd|gz)' \
+			| sort -u \
+			| sort -V \
+			| tail -n1)"
+	fi
+
 	printf '%s' "$sdk"
+}
+
+# Pick the SDK tarball from a target directory. Tries sha256sums first (plain
+# text, stable), then the HTML directory index. Prints
+# "mirror|path_prefix|filename" on success.
+find_sdk_on_mirrors() {
+	local version="$1" target="$2"
+	local mirror path_prefix dir_url body sdk
+	local -a tried=()
+
+	for mirror in $OPENWRT_MIRRORS; do
+		mirror="${mirror%/}"
+		path_prefix="$(resolve_path_prefix "$version" "$mirror")" || {
+			warn "cannot resolve ${version} on ${mirror}"
+			continue
+		}
+		dir_url="${mirror}/${path_prefix}/targets/${target}/"
+		tried+=("$dir_url")
+
+		# sha256sums is a small plain-text file - far more reliable than HTML.
+		body="$(fetch_url "${dir_url}sha256sums" 2>/dev/null || true)"
+		if [ -n "$body" ]; then
+			sdk="$(extract_sdk_name "$body")"
+			if [ -n "$sdk" ]; then
+				log "found via sha256sums on ${mirror}"
+				printf '%s|%s|%s\n' "$mirror" "$path_prefix" "$sdk"
+				return 0
+			fi
+			warn "sha256sums at ${dir_url} has no SDK entry"
+		fi
+
+		# Fall back to the directory listing HTML.
+		body="$(fetch_url "$dir_url" 2>/dev/null || true)"
+		if [ -n "$body" ]; then
+			sdk="$(extract_sdk_name "$body")"
+			if [ -n "$sdk" ]; then
+				log "found via directory index on ${mirror}"
+				printf '%s|%s|%s\n' "$mirror" "$path_prefix" "$sdk"
+				return 0
+			fi
+			warn "directory index at ${dir_url} has no SDK entry"
+		else
+			warn "cannot read ${dir_url}"
+		fi
+	done
+
+	printf '[sdk] error: no openwrt-sdk-*.tar.* found for %s / %s\n' \
+		"$version" "$target" >&2
+	if [ "${#tried[@]}" -gt 0 ]; then
+		printf '[sdk] error: tried:\n' >&2
+		local u
+		for u in "${tried[@]}"; do
+			printf '[sdk] error:   %s\n' "$u" >&2
+		done
+	fi
+	return 1
 }
 
 # Which package backends does this SDK actually provide?
@@ -187,14 +283,13 @@ detect_kernel_version() {
 
 	if [ -f "$sdk/include/kernel-version.mk" ]; then
 		# e.g. "LINUX_VERSION-6.12 = .94" -> 6.12.94
-		# "LINUX_VERSION-6.12 = .94" (or ":=") -> 6.12.94
-		ver="$(grep -oE '^LINUX_VERSION-[0-9.]+[[:space:]]*:?=[[:space:]]*[0-9.]+' \
+		ver="$(safe_grep -oE '^LINUX_VERSION-[0-9.]+[[:space:]]*:?=[[:space:]]*[0-9.]+' \
 			"$sdk/include/kernel-version.mk" \
 			| sed -E 's/^LINUX_VERSION-([0-9.]+)[[:space:]]*:?=[[:space:]]*\.?([0-9.]+)/\1.\2/' \
 			| sort -V | tail -n1)"
 	fi
 	if [ -z "$ver" ] && [ -f "$sdk/include/kernel.mk" ]; then
-		ver="$(grep -m1 -oE '^LINUX_VERSION[[:space:]]*:=[[:space:]]*[0-9.]+' \
+		ver="$(safe_grep -m1 -oE '^LINUX_VERSION[[:space:]]*:=[[:space:]]*[0-9.]+' \
 			"$sdk/include/kernel.mk" | awk '{print $NF}')"
 	fi
 	printf '%s' "${ver:-unknown}"
@@ -204,7 +299,7 @@ detect_kernel_version() {
 detect_release() {
 	local sdk="$1"
 	if [ -f "$sdk/include/version.mk" ]; then
-		grep -m1 -oE '^VERSION_NUMBER[[:space:]]*:=[[:space:]]*[A-Za-z0-9.~+-]+' \
+		safe_grep -m1 -oE '^VERSION_NUMBER[[:space:]]*:=[[:space:]]*[A-Za-z0-9.~+-]+' \
 			"$sdk/include/version.mk" | sed -E 's/.*:=[[:space:]]*//'
 	fi
 }
@@ -218,14 +313,21 @@ unpack_sdk() {
 			:
 		else
 			# Older tar without --zstd: decompress first, then unpack.
-			zstd -d -f "$file" -o "${file%.zst*}.tar" \
-				|| zstd -d -f "$file" -o "${file%.zstd}.tar"
-			tar -xf "${file%.zst*}.tar" -C "$dest_parent" 2>/dev/null \
-				|| tar -xf "${file%.zstd}.tar" -C "$dest_parent"
+			local tar_out="${file%.tar.zst}"
+			tar_out="${tar_out%.tar.zstd}.tar"
+			zstd -d -f "$file" -o "$tar_out" \
+				|| die "zstd decompress failed for $file"
+			tar -xf "$tar_out" -C "$dest_parent" \
+				|| die "tar extract failed for $tar_out"
 		fi
 		;;
 	*.tar.xz)
-		tar -xJf "$file" -C "$dest_parent"
+		tar -xJf "$file" -C "$dest_parent" \
+			|| die "tar -xJf failed for $file"
+		;;
+	*.tar.gz|*.tgz)
+		tar -xzf "$file" -C "$dest_parent" \
+			|| die "tar -xzf failed for $file"
 		;;
 	*)
 		die "unsupported SDK archive: $file"
@@ -233,10 +335,10 @@ unpack_sdk() {
 	esac
 
 	extracted="$(find "$dest_parent" -maxdepth 1 -type d -name 'openwrt-sdk-*' \
-		| sort -V | tail -n1)"
+		| sort -V | tail -n1 || true)"
 	# Fallback: some snapshot tarballs use a differently named top directory.
 	[ -n "$extracted" ] || extracted="$(find "$dest_parent" -mindepth 1 -maxdepth 1 \
-		-type d | sort | head -n1)"
+		-type d | sort | head -n1 || true)"
 	[ -n "$extracted" ] || die "no openwrt-sdk-* directory after unpacking $file"
 	printf '%s' "$extracted"
 }
@@ -267,42 +369,55 @@ sdk_main() {
 
 	[ -n "$sdk_dir" ] || sdk_dir="$workdir/sdk"
 
-	local base_url dir_url sdk_file sdk_url release kernel backends s_apk s_ipk
-	base_url="$(resolve_base_url "$version")"
-	dir_url="${base_url}/targets/${target}/"
+	local mirror path_prefix sdk_file sdk_url base_url release kernel s_apk s_ipk
+	local resolved
+
+	log "resolving SDK for version=${version} target=${target}"
+	resolved="$(find_sdk_on_mirrors "$version" "$target")" \
+		|| die "SDK discovery failed for ${version}/${target}"
+
+	IFS='|' read -r mirror path_prefix sdk_file <<<"$resolved"
+	base_url="${mirror}/${path_prefix}"
+	sdk_url="${base_url}/targets/${target}/${sdk_file}"
 
 	if [ "$print_only" = 1 ]; then
-		sdk_file="$(find_sdk_file "$dir_url")"
 		printf 'base_url=%s\n' "$base_url"
-		printf 'dir_url=%s\n' "$dir_url"
-		printf 'sdk_url=%s\n' "${dir_url}${sdk_file}"
+		printf 'dir_url=%s\n' "${base_url}/targets/${target}/"
+		printf 'sdk_url=%s\n' "$sdk_url"
 		printf 'sdk_file=%s\n' "$sdk_file"
 		return 0
 	fi
 
 	mkdir -p "$workdir"
-	sdk_file="$(find_sdk_file "$dir_url")"
-	sdk_url="${dir_url}${sdk_file}"
 
 	log "version      : ${version}"
-	log "index        : ${dir_url}"
+	log "mirror       : ${mirror}"
+	log "index        : ${base_url}/targets/${target}/"
 	log "sdk          : ${sdk_file}"
 
-	local archive="$workdir/$sdk_file"
+	local archive="$workdir/$(basename "$sdk_file")"
 	if [ -s "$archive" ]; then
 		log "reusing cached $(basename "$archive")"
 	else
 		log "downloading ${sdk_url}"
 		curl -fsSL --retry 4 --retry-delay 5 --retry-all-errors \
 			--connect-timeout 20 --max-time 1800 \
+			-A "luci-theme-mint-sdk-resolver/1.0" \
 			"$sdk_url" -o "$archive.part" \
 			|| die "download failed: ${sdk_url}"
+		# Reject tiny "downloads" that are clearly error pages.
+		local sz
+		sz="$(wc -c < "$archive.part" | tr -d ' ')"
+		if [ "${sz:-0}" -lt 1000000 ]; then
+			rm -f "$archive.part"
+			die "downloaded file too small (${sz} bytes) from ${sdk_url}"
+		fi
 		mv "$archive.part" "$archive"
 	fi
 
 	rm -rf "$sdk_dir"
 	mkdir -p "$(dirname "$sdk_dir")"
-	local tmp_parent="$workdir/.unpack"
+	local tmp_parent="$workdir/.unpack-$$"
 	rm -rf "$tmp_parent"
 	mkdir -p "$tmp_parent"
 
@@ -337,7 +452,7 @@ sdk_main() {
 	github_out supports_apk "$s_apk"
 	github_out supports_ipk "$s_ipk"
 
-	# Also emit a machine readable summary for build-package.sh / humans.
+	# Machine readable summary for build-package.sh / humans (stdout only).
 	printf 'sdk_dir=%s\n' "$sdk_dir"
 	printf 'sdk_url=%s\n' "$sdk_url"
 	printf 'openwrt_release=%s\n' "${release:-unknown}"

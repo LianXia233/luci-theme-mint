@@ -48,7 +48,17 @@ jobs:
         run: |
           sudo apt-get update
           # zstd: SDK tarballs; apk-tools: real "apk add" install test
-          sudo apt-get install -y --no-install-recommends zstd apk-tools || true
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates curl zstd apk-tools || true
+
+      - name: Resolve OpenWrt SDK URL
+        run: |
+          set -euo pipefail
+          ./scripts/get-openwrt-sdk.sh \
+            --version "${{ matrix.openwrt }}" \
+            --target "${{ matrix.target }}" \
+            --format apk \
+            --print
 
       - name: Build with the official OpenWrt SDK
         id: build
