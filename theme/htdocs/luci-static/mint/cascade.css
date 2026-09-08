@@ -946,7 +946,10 @@ th {
 .mz-login-overlay {
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(180deg, rgba(8, 12, 22, var(--mz-wallpaper-overlay)) 0%, rgba(8, 12, 22, calc(var(--mz-wallpaper-overlay) + 0.15)) 100%);
+	/* Light wash (2026-09-09, reference: light frosted login) - the
+	   wallpaper stays vivid; the overlay only softens it. The user's
+	   overlay alpha is scaled 0.55 like the admin pages. */
+	background: linear-gradient(180deg, rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay) * 0.55)) 0%, rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay) * 0.55 + 0.12)) 100%);
 }
 
 .mz-login-card {
@@ -956,15 +959,15 @@ th {
 	box-sizing: border-box;
 	padding: var(--mz-spacing-xl);
 	border-radius: var(--mz-radius-xl);
-	/* P2-2 (2026-09-07 review round 2): 0.72 -> 0.55 so the login card no
-	   longer masks the wallpaper (~18-25% show-through vs ~11-15%); the
-	   14px backdrop blur keeps text contrast. */
-	background: rgba(15, 21, 36, .55);
-	border: 1px solid rgba(255, 255, 255, .09);
+	/* Light frosted glass card (2026-09-09): 62% white + 14px blur keeps
+	   dark slate text at WCAG contrast while the wallpaper shows through
+	   just like the reference page. */
+	background: rgba(255, 255, 255, .62);
+	border: 1px solid rgba(255, 255, 255, .65);
 	backdrop-filter: blur(14px);
 	-webkit-backdrop-filter: blur(14px);
-	box-shadow: var(--mz-shadow-lg);
-	color: #f2f4fa;
+	box-shadow: 0 12px 32px rgba(31, 45, 61, 0.16);
+	color: #1c2736;
 	text-align: center;
 	animation: mz-fade-in 300ms ease;
 }
@@ -981,7 +984,7 @@ th {
 .mz-login-welcome {
 	margin: var(--mz-spacing-xs) 0 var(--mz-spacing-lg);
 	font-size: .86rem;
-	color: rgba(242, 244, 250, .65);
+	color: rgba(40, 54, 74, .66);
 }
 
 .mz-login-form {
@@ -994,23 +997,23 @@ th {
 .mz-field label {
 	display: block;
 	font-size: .8rem;
-	color: rgba(242, 244, 250, .75);
+	color: rgba(40, 54, 74, .75);
 	margin-bottom: 5px;
 }
 
 .mz-field input {
 	width: 100%;
 	box-sizing: border-box;
-	background: rgba(255, 255, 255, .07);
-	border-color: rgba(255, 255, 255, .14);
-	color: #ffffff;
+	background: rgba(255, 255, 255, .75);
+	border-color: rgba(120, 134, 156, .45);
+	color: #16202f;
 	border-radius: var(--mz-radius-md);
 	padding: 9px 12px;
 	font-size: .92rem;
 }
 
 .mz-field input::placeholder {
-	color: rgba(242, 244, 250, .4);
+	color: rgba(40, 54, 74, .42);
 }
 
 .mz-field input:focus {
@@ -1023,14 +1026,14 @@ th {
 	align-items: center;
 	gap: 7px;
 	font-size: .82rem;
-	color: rgba(242, 244, 250, .75);
+	color: rgba(40, 54, 74, .75);
 	user-select: none;
 }
 
 .mz-login-version {
 	margin: var(--mz-spacing-lg) 0 0;
 	font-size: .72rem;
-	color: rgba(242, 244, 250, .45);
+	color: rgba(40, 54, 74, .48);
 }
 
 .mz-login .alert-message {
@@ -1039,9 +1042,9 @@ th {
 }
 
 .mz-login .alert-message.error {
-	background: rgba(217, 72, 79, .2);
+	background: rgba(217, 72, 79, .14);
 	border-color: var(--mz-color-danger);
-	color: #ffd7d9;
+	color: #9f2429;
 }
 
 .mz-login-copyright {
@@ -3567,9 +3570,17 @@ body.mz-has-wallpaper::before {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
-	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
+	/* Light theme: a soft WHITE wash (user's overlay alpha scaled by 0.55,
+	   so the default 0.45 lands on ~0.25) - the wallpaper stays vivid
+	   like the reference page instead of being dimmed. */
+	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 0.55));
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+}
+
+/* Dark theme keeps the dimming wash so light text stays readable. */
+html[data-theme="dark"] body.mz-has-wallpaper::before {
+	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
 }
 
 /* NOTE: never touch .mz-sidebar positioning here - it is fixed/sticky
@@ -3640,13 +3651,51 @@ body.mz-has-wallpaper #modal_overlay .modal table.table {
  * while a slightly stronger background on hover/focus plus a text
  * halo keeps every label readable in light and dark mode.
  * ================================================================ */
-/* Tuned 2026-09-08 (reference style: dark glass home page): the wallpaper
-   is the dominant layer and every panel is a barely-there glass sheet -
-   one shared ~7% white wash plus blur - with light typography on top.
-   A single set of values drives BOTH themes so every card shares the
-   exact same transparency; flipping the text variables here keeps labels
-   readable on the darkened wallpaper without per-element overrides. */
+/* Tuned 2026-09-09 (reference style: light frosted glass, cf. the GitHub
+   proxy landing page): the wallpaper stays vivid under a LIGHT wash, and
+   every panel is a white frosted sheet (55% white + blur) with dark slate
+   typography on top - the same hierarchy as the reference: wallpaper <
+   light page wash < white glass cards < dark text < solid color buttons.
+   html[data-theme="dark"] restores the previous dark-glass palette below,
+   so both color schemes keep a readable, dedicated palette. */
 body.mz-has-wallpaper {
+	--mz-panel-bg: rgba(255, 255, 255, 0.55);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.68);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.4);
+	--mz-panel-halo: 0 1px 2px rgba(255, 255, 255, 0.6);
+	--mz-color-text: #1c2736;
+	--mz-color-text-muted: rgba(40, 54, 74, 0.68);
+	--mz-color-surface: rgba(255, 255, 255, 0.55);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.7);
+	--mz-color-border: rgba(255, 255, 255, 0.55);
+	--mz-color-background: #e9eff7;
+
+	/* Glass tokens (glass-morphism pass, 2026-09-08): single source of
+	   truth for blur radii, borders, shadows and the elevated fills used
+	   by inputs / modals / open dropdowns. Tune here, not per-element. */
+	--mz-glass-blur: 14px;          /* cards, alerts, panels */
+	--mz-glass-blur-strong: 16px;   /* app chrome: sidebar/topbar/footer */
+	--mz-glass-blur-input: 8px;     /* inputs: cheaper, they are small */
+	--mz-glass-saturate: 1.25;
+	--mz-glass-border: rgba(255, 255, 255, 0.6);
+	--mz-glass-border-strong: rgba(255, 255, 255, 0.8);
+	--mz-glass-shadow: 0 4px 16px rgba(31, 45, 61, 0.1);
+	--mz-glass-shadow-lg: 0 12px 32px rgba(31, 45, 61, 0.16);
+	/* Brighter "readable glass" fills: inputs and modals carry dense text,
+	   so they need more ink than the 55% card wash (documented ladder:
+	   page transparent < cards 0.55 < chrome 0.68 < input 0.66 < modal
+	   0.88 - all white glass over the light page wash). */
+	--mz-input-bg: rgba(255, 255, 255, 0.66);
+	--mz-input-bg-hover: rgba(255, 255, 255, 0.78);
+	--mz-input-border: rgba(120, 134, 156, 0.45);
+	--mz-modal-bg: rgba(255, 255, 255, 0.88);
+}
+
+/* Dark theme keeps the original dark-glass palette (2026-09-08 look):
+   barely-there 7% white washes, light typography, dark input/modal
+   fills. Every token is restated so the light values above never leak
+   into dark mode. */
+html[data-theme="dark"] body.mz-has-wallpaper {
 	--mz-panel-bg: rgba(255, 255, 255, 0.07);
 	--mz-panel-bg-strong: rgba(255, 255, 255, 0.13);
 	--mz-panel-bg-soft: rgba(255, 255, 255, 0.045);
@@ -3657,24 +3706,13 @@ body.mz-has-wallpaper {
 	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
 	--mz-color-border: rgba(255, 255, 255, 0.12);
 	--mz-color-background: #16202f;
-
-	/* Glass tokens (glass-morphism pass, 2026-09-08): single source of
-	   truth for blur radii, borders, shadows and the darker fills used
-	   by inputs / modals / open dropdowns. Tune here, not per-element.
-	   Light and dark share the values - the wallpaper overlay darkens
-	   the page enough that one palette keeps text readable in both. */
-	--mz-glass-blur: 12px;          /* cards, alerts, panels */
-	--mz-glass-blur-strong: 14px;   /* app chrome: sidebar/topbar/footer */
-	--mz-glass-blur-input: 8px;     /* inputs: cheaper, they are small */
+	--mz-glass-blur: 12px;
+	--mz-glass-blur-strong: 14px;
 	--mz-glass-saturate: 1.15;
 	--mz-glass-border: rgba(148, 163, 184, 0.3);
 	--mz-glass-border-strong: rgba(148, 163, 184, 0.45);
 	--mz-glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 	--mz-glass-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
-	/* Darker "readable glass" fills: inputs and modals carry dense text,
-	   so they need more ink than the 7% card wash (documented ladder:
-	   page transparent < chrome 0.13 < cards 0.07 < modal 0.86 < input
-	   0.42 dark slate). */
 	--mz-input-bg: rgba(15, 23, 42, 0.42);
 	--mz-input-bg-hover: rgba(15, 23, 42, 0.52);
 	--mz-input-border: rgba(148, 163, 184, 0.42);
@@ -3805,20 +3843,31 @@ body.mz-has-wallpaper textarea:focus {
 }
 
 /* Firefox paints autofill in an opaque system color; normalize it so a
-   saved password never pops a bright yellow chip on the glass. */
+   saved password never pops a bright yellow chip on the glass. Light
+   theme fills near-white, dark theme keeps the dark slate fill. */
 body.mz-has-wallpaper input:-webkit-autofill,
 body.mz-has-wallpaper input:-webkit-autofill:hover,
 body.mz-has-wallpaper input:-webkit-autofill:focus {
-	-webkit-box-shadow: 0 0 0 1000px #16202f inset;
+	-webkit-box-shadow: 0 0 0 1000px #f4f7fb inset;
 	-webkit-text-fill-color: var(--mz-color-text);
 	caret-color: var(--mz-color-text);
 	transition: background-color 99999s ease-in-out 0s;
 }
 
 body.mz-has-wallpaper input:autofill {
-	box-shadow: 0 0 0 1000px #16202f inset;
+	box-shadow: 0 0 0 1000px #f4f7fb inset;
 	-webkit-text-fill-color: var(--mz-color-text);
 	caret-color: var(--mz-color-text);
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper input:-webkit-autofill,
+html[data-theme="dark"] body.mz-has-wallpaper input:-webkit-autofill:hover,
+html[data-theme="dark"] body.mz-has-wallpaper input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0 1000px #16202f inset;
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper input:autofill {
+	box-shadow: 0 0 0 1000px #16202f inset;
 }
 
 /* Disabled controls under wallpaper keep the soft fill and muted text
@@ -3838,21 +3887,24 @@ body.mz-has-wallpaper .mz-sys-grid {
 }
 
 /* Overview page translucent headers / titles over wallpaper */
-/* Headers share the panel alpha family (reference style: no loud opaque
-   bars) - a 0.4 primary tint keeps white labels readable without turning
-   the header into a solid slab. */
+/* Light theme: a soft primary tint (0.16) under dark text; dark theme
+   keeps the 0.4 tint with light text (rules below). */
 body.mz-has-wallpaper .mz-net-header,
 body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.4);
+	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.16);
 }
 body.mz-has-wallpaper .mz-net-header {
-	color: #fff;
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+	color: var(--mz-color-text);
+	text-shadow: var(--mz-panel-halo);
 }
 
 html[data-theme="dark"] body.mz-has-wallpaper .mz-net-header,
 html[data-theme="dark"] body.mz-has-wallpaper .mz-data-table thead th {
 	background: rgba(var(--mz-color-primary-rgb, 125, 147, 255), 0.4);
+}
+html[data-theme="dark"] body.mz-has-wallpaper .mz-net-header {
+	color: #fff;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 /* LuCI ifacebox headers use inline background-color for firewall zones;
@@ -4030,11 +4082,11 @@ table.table .cbi-button,
  * Mobile adaptation (2026-09-08)
  * ================================================================ */
 /* Login page: on phones the card lets noticeably more wallpaper through.
-   The desktop value (rgba(15,21,36,.55) on .mz-login-card) is untouched
+   The desktop value (rgba(255,255,255,.62) on .mz-login-card) is untouched
    above 640px. */
 @media (max-width: 640px) {
 	.mz-login-card {
-		background: rgba(15, 21, 36, .38);
+		background: rgba(255, 255, 255, .5);
 	}
 }
 
@@ -4134,20 +4186,37 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul,
 body.mz-has-wallpaper .cbi-button-apply .dropdown,
 body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
 body.mz-has-wallpaper .btn + .dropdown-menu {
-	background: #1c2736; /* solid enough to stay readable over any wallpaper */
+	background: rgba(255, 255, 255, 0.96); /* near-solid frost; readable over any wallpaper */
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
 	border: 1px solid var(--mz-glass-border);
 }
 
+/* Dark theme keeps the dark chip for its light text. */
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-dropdown[open] > ul,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-button-apply .dropdown,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
+html[data-theme="dark"] body.mz-has-wallpaper .btn + .dropdown-menu {
+	background: #1c2736;
+}
+
 body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
+	background: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
 	background: rgba(255, 255, 255, 0.1);
 }
 
-/* Native select option lists pick up the dark scheme so the OS popup is
-   not blinding white in dark / wallpaper mode. */
-body.mz-has-wallpaper select option,
-html[data-theme="dark"] select option {
+/* Native select option lists follow the active wallpaper palette so the
+   OS popup never clashes with the glass. */
+body.mz-has-wallpaper select option {
+	background-color: #f4f7fb;
+	color: #1c2736;
+}
+
+html[data-theme="dark"] select option,
+html[data-theme="dark"] body.mz-has-wallpaper select option {
 	background-color: #1c2736;
 	color: #eef2f8;
 }
@@ -4462,12 +4531,12 @@ ul.cbi-tabmenu {
 	font-size: .8rem;
 }
 
-/* Page description text over bright wallpaper: full-strength color
-   plus a subtle shadow for legibility. */
+/* Page description text over the wallpaper: full-strength color plus the
+   theme halo (white in light mode, dark in dark mode). */
 body.mz-has-wallpaper .cbi-map-descr,
 body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text);
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+	text-shadow: var(--mz-panel-halo);
 }
 
 /* Open dropdown: show every option.
@@ -4562,7 +4631,20 @@ table.nft-rules td:last-child {
    show bare 7% washes - text drowned on bright wallpapers. Raise the
    fills to opaque-ish values; NO blur is simulated, readability wins. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	/* Light theme: raise the white washes to near-opaque so dark text
+	   survives on busy wallpapers without any blur. */
 	body.mz-has-wallpaper {
+		--mz-panel-bg: rgba(255, 255, 255, 0.88);
+		--mz-panel-bg-strong: rgba(255, 255, 255, 0.93);
+		--mz-panel-bg-soft: rgba(255, 255, 255, 0.84);
+		--mz-color-surface: rgba(255, 255, 255, 0.88);
+		--mz-color-surface-2: rgba(255, 255, 255, 0.93);
+		--mz-input-bg: rgba(255, 255, 255, 0.94);
+		--mz-input-bg-hover: rgba(255, 255, 255, 0.97);
+		--mz-modal-bg: rgba(255, 255, 255, 0.97);
+	}
+	/* Dark theme: same idea with the dark slate fills. */
+	html[data-theme="dark"] body.mz-has-wallpaper {
 		--mz-panel-bg: rgba(22, 32, 47, 0.82);
 		--mz-panel-bg-strong: rgba(22, 32, 47, 0.88);
 		--mz-panel-bg-soft: rgba(22, 32, 47, 0.78);
@@ -4578,13 +4660,13 @@ table.nft-rules td:last-child {
 }
 
 /* Mobile: big blur radii are the single most expensive paint op on
-   low-end SoCs. Drop one notch (12->8, 14->10) below 768px and keep
-   every fill unchanged so the look only softens slightly. */
+   low-end SoCs. Drop one notch below 768px and keep every fill
+   unchanged so the look only softens slightly. */
 @media (max-width: 768px) {
 	body.mz-has-wallpaper {
-		--mz-glass-blur: 8px;
-		--mz-glass-blur-strong: 10px;
+		--mz-glass-blur: 10px;
+		--mz-glass-blur-strong: 12px;
 		--mz-glass-blur-input: 6px;
-		--mz-glass-shadow-lg: 0 4px 14px rgba(0, 0, 0, 0.3);
+		--mz-glass-shadow-lg: 0 4px 14px rgba(31, 45, 61, 0.18);
 	}
 }
