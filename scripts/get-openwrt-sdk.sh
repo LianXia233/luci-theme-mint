@@ -133,8 +133,8 @@ resolve_base_url() {
 }
 
 # Pick the SDK tarball from a target directory index.
-# Stable releases ship  openwrt-sdk-<ver>-<target>_gcc-..._musl.Linux-x86_64.tar.zst
-# snapshots ship        openwrt-sdk-<target>_gcc-..._musl.Linux-x86_64.tar.zst
+# Stable releases and snapshots name SDK archives with "sdk" in the filename,
+# but the exact position varies (for example, openwrt-25.12.5-...-SDK...).
 find_sdk_file() {
 	local dir_url="$1" idx sdk
 
@@ -142,7 +142,7 @@ find_sdk_file() {
 		|| die "cannot read SDK index ${dir_url}"
 
 	sdk="$(printf '%s' "$idx" \
-		| grep -oE 'openwrt-sdk-[A-Za-z0-9._+-]+\.tar\.(zst|xz|zstd)' \
+		| grep -ioE 'openwrt-[A-Za-z0-9._+-]*sdk[A-Za-z0-9._+-]*\.tar\.(zst|xz|zstd)' \
 		| sort -u \
 		| grep -E 'Linux-x86_64' \
 		| sort -V \
