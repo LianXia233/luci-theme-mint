@@ -126,18 +126,36 @@ LEGACY=0
 for cand in $CANDIDATES; do
 	sdk_dir="$WORKDIR/sdk-$FORMAT"
 	rm -rf "$sdk_dir"
+	mkdir -p "$WORKDIR"
+	meta_file="$WORKDIR/sdk-meta-${FORMAT}-${cand//\//_}.txt"
+	rm -f "$meta_file"
 
 	log "resolving SDK: version=${cand} target=${TARGET}"
-	out="$(GITHUB_OUTPUT= "$SCRIPT_DIR/get-openwrt-sdk.sh" \
+	# Progress logs from get-openwrt-sdk.sh go to stderr (visible in CI).
+	# Only the final key=value summary is written to stdout / meta_file.
+	# GITHUB_OUTPUT is cleared so nested github_out calls do not clobber
+	# the caller's step outputs with intermediate keys.
+	rc=0
+	GITHUB_OUTPUT= "$SCRIPT_DIR/get-openwrt-sdk.sh" \
 		--version "$cand" --target "$TARGET" \
-		--workdir "$WORKDIR" --sdk-dir "$sdk_dir")" \
-		|| { warn "SDK resolution failed for ${cand}"; continue; }
+		--workdir "$WORKDIR" --sdk-dir "$sdk_dir" \
+		--format "$FORMAT" >"$meta_file" || rc=$?
+	if [ "$rc" -ne 0 ]; then
+		warn "SDK resolution failed for ${cand} (exit ${rc})"
+		continue
+	fi
+	out="$(cat "$meta_file" 2>/dev/null || true)"
 
 	s_apk="$(printf '%s\n' "$out" | sed -n 's/^supports_apk=//p' | tail -n1)"
 	s_ipk="$(printf '%s\n' "$out" | sed -n 's/^supports_ipk=//p' | tail -n1)"
 	sdk_url="$(printf '%s\n' "$out" | sed -n 's/^sdk_url=//p' | tail -n1)"
 	release="$(printf '%s\n' "$out" | sed -n 's/^openwrt_release=//p' | tail -n1)"
 	kernel="$(printf '%s\n' "$out" | sed -n 's/^kernel_version=//p' | tail -n1)"
+
+	if [ -z "$sdk_url" ] && [ -z "$s_apk$s_ipk" ]; then
+		warn "${cand} SDK produced no machine-readable summary"
+		continue
+	fi
 
 	if [ "$FORMAT" = apk ] && [ "$s_apk" != 1 ]; then
 		warn "${cand} SDK cannot build apk (${sdk_url})"

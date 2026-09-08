@@ -52,7 +52,23 @@ jobs:
       - name: Install host tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends zstd binutils opkg || true
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates curl zstd binutils opkg || true
+
+      - name: Resolve OpenWrt SDK URL
+        run: |
+          set -euo pipefail
+          # For ipk, a modern series may only ship apk; discovery of the
+          # requested series is best-effort. The build step still falls back
+          # to 24.10/23.05 via --allow-legacy when needed.
+          ./scripts/get-openwrt-sdk.sh \
+            --version "${{ matrix.openwrt }}" \
+            --target "${{ matrix.target }}" \
+            --print \
+            || ./scripts/get-openwrt-sdk.sh \
+              --version 24.10 \
+              --target "${{ matrix.target }}" \
+              --print
 
       - name: Build with the official OpenWrt SDK
         id: build
