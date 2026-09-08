@@ -1,0 +1,89 @@
+name: Build IPK packages
+
+# Compatibility build for devices still running opkg.
+#
+# The package format is chosen by the OpenWrt build system itself, never by
+# renaming: the SDK is asked for its ipk backend (CONFIG_USE_APK unset ->
+# scripts/ipkg-build, or include/package-ipkg.mk on 23.05). If the requested
+# OpenWrt series no longer ships an ipk backend, build-package.sh falls back
+# to the newest official SDK that still does (24.10, then 23.05) and marks
+# the result as a compatibility build in its .buildinfo.txt.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g. v1.0.0, nightly)'
+        required: false
+        default: 'nightly'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'nightly') }}
+
+jobs:
+  build:
+    name: ipk · OpenWrt ${{ matrix.openwrt }} · ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        openwrt: ['25.12', snapshot]
+        target: [x86/64, mediatek/filogic]
+        include:
+          - target: x86/64
+            slug: x86_64
+          - target: mediatek/filogic
+            slug: mediatek_filogic
+
+    steps:
+      - name: Checkout theme sources
+        uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zstd binutils opkg || true
+
+      - name: Build with the official OpenWrt SDK
+        id: build
+        run: |
+          ./scripts/build-package.sh \
+            --version "${{ matrix.openwrt }}" \
+            --target "${{ matrix.target }}" \
+            --format ipk \
+            --allow-legacy \
+            --release-version "${{ env.VERSION }}" \
+            --workdir build \
+            --out dist
+
+      - name: Verify package metadata and payload
+        run: ./scripts/verify-package.sh --dir dist --expect-arch all
+
+      - name: Install test
+        run: |
+          rm -rf rootfs
+          for f in dist/*.ipk; do
+            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
+          done
+
+      - name: Show build info
+        run: cat dist/*.buildinfo.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # A compatibility SDK is flagged in the artifact name so nobody
+          # mistakes it for a native build of the requested series.
+          name: luci-theme-mint-ipk-${{ matrix.openwrt }}-${{ matrix.slug }}${{ steps.build.outputs.legacy_compat_sdk == '1' && '-legacy' || '' }}
+          path: dist/*
+          if-no-files-found: error

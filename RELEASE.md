@@ -14,26 +14,53 @@
 
 ### 工作流说明
 
-#### main 分支构建
+#### build-apk.yml（APK）
 
-每次推送到 `main` 分支都会：
-- 对两个目标架构编译：x86_64 和 mediatek/filogic
-- 将产物上传到 workflow artifacts（供下载）
-- 发布到 `nightly` prerelease（预发布版本）
+- 矩阵：OpenWrt `25.12` / `snapshot` × `x86/64` / `mediatek/filogic`
+- 使用官方 SDK 的 apk 后端（`CONFIG_USE_APK=y`）真实构建
+- 每个产物都经过结构校验与安装测试
 
-#### 版本标签构建 (v*.*.*)
+#### build-ipk.yml（IPK，兼容构建）
 
-创建形如 `v1.0.0` 的版本标签会：
-- 对两个目标架构编译
-- 将产物上传到 workflow artifacts
-- 发布到同名 Release（正式版本）
-- 产物文件名包含版本号前缀
+- 矩阵同上；包格式由 SDK 的 ipk 后端产生（`CONFIG_USE_APK` 关闭）
+- 若该系列官方 SDK 已不提供 ipk 后端，自动回退到仍提供的官方 SDK（24.10 → 23.05），
+  并在文件名、`.buildinfo.txt` 与 Release 表格中标注为「兼容构建」
+- 绝不通过改名 / 换后缀伪造 ipk
+
+#### release.yml（汇总发布）
+
+两个构建工作流都成功完成后，`release.yml` 汇总全部产物并发布：
+
+```
+nightly
+├── APK   # 推荐用于 OpenWrt 25.12+
+│   ├── OpenWrt 25.12 (x86_64 / mediatek_filogic)
+│   └── OpenWrt snapshot (x86_64 / mediatek_filogic)
+└── IPK   # 用于仍使用 opkg/ipkg 的兼容系统
+    ├── OpenWrt 25.12 兼容（或直接原生）
+    └── OpenWrt legacy 兼容（24.10 / 23.05 SDK）
+```
+
+Release 说明中会明确写出：**APK 与 IPK 不能互换**——APK 包无法被 opkg 安装，IPK 包无法被 apk 安装。
 
 ### 产物说明
 
-编译产物为架构无关的 OpenWrt 安装包（主题无 `src/`，luci.mk 设 `PKGARCH=all`；双目标构建仅作验证，产物内容相同）：
-- `luci-theme-mint-v1.0.0-x86_64.ipk` - x86_64 架构
-- `luci-theme-mint-v1.0.0-mediatek_filogic.ipk` - MediaTek Filogic 架构
+编译产物为架构无关的 OpenWrt 安装包（主题无 `src/`，luci.mk 设 `PKGARCH=all`，架构恒为 `all`；
+多 target 构建仅用于验证不同 SDK 环境，产物内容相同）：
+
+```
+luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.apk
+luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.ipk
+```
+
+例如：
+
+- `luci-theme-mint-v1.0.0-25.12-x86_64-all.apk` - OpenWrt 25.12 SDK / x86_64 环境下构建，架构 all
+- `luci-theme-mint-v1.0.0-snapshot-mediatek_filogic-all.apk` - main 快照 SDK / filogic 环境下构建
+- `luci-theme-mint-v1.0.0-25.12-x86_64-all.ipk` - ipk 兼容构建（包名中的系列为实际使用的 SDK 系列）
+
+每个产物附带同名 `.buildinfo.txt`，记录 SDK 下载地址、OpenWrt 版本、Kernel 版本、LuCI 分支与 commit、
+是否为兼容构建。
 
 每个版本在两个位置都可下载：
 1. **GitHub Releases** - 正式版本页面
@@ -139,11 +166,16 @@ git push origin --tags
 
 # 安装
 
-下载对应架构的 `.ipk` 文件后安装到 OpenWrt 设备：
+按设备的包管理器选择对应格式（**APK 与 IPK 不能互换**）：
 
 ```sh
-scp luci-theme-mint-v1.0.0-x86_64.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-v1.0.0-x86_64.ipk"
+# OpenWrt 25.12+（apk）
+scp luci-theme-mint-v1.0.0-25.12-x86_64-all.apk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "apk add --allow-untrusted /tmp/luci-theme-mint-*.apk"
+
+# 仍使用 opkg 的系统
+scp luci-theme-mint-v1.0.0-25.12-x86_64-all.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-*.ipk"
 ```
 
 # 致谢

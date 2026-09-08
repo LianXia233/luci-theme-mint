@@ -1,0 +1,82 @@
+name: Build APK packages
+
+# APK is the native package format of OpenWrt 25.12+ and of main snapshots,
+# so this is the primary build. Every package here is produced by the
+# official SDK's own package backend (CONFIG_USE_APK=y) - never converted.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g. v1.0.0, nightly)'
+        required: false
+        default: 'nightly'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'nightly') }}
+
+jobs:
+  build:
+    name: apk · OpenWrt ${{ matrix.openwrt }} · ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        openwrt: ['25.12', snapshot]
+        target: [x86/64, mediatek/filogic]
+        include:
+          - target: x86/64
+            slug: x86_64
+          - target: mediatek/filogic
+            slug: mediatek_filogic
+
+    steps:
+      - name: Checkout theme sources
+        uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update
+          # zstd: SDK tarballs; apk-tools: real "apk add" install test
+          sudo apt-get install -y --no-install-recommends zstd apk-tools || true
+
+      - name: Build with the official OpenWrt SDK
+        id: build
+        run: |
+          ./scripts/build-package.sh \
+            --version "${{ matrix.openwrt }}" \
+            --target "${{ matrix.target }}" \
+            --format apk \
+            --release-version "${{ env.VERSION }}" \
+            --workdir build \
+            --out dist
+
+      - name: Verify package metadata and payload
+        run: ./scripts/verify-package.sh --dir dist --expect-arch all
+
+      - name: Install test
+        run: |
+          rm -rf rootfs
+          for f in dist/*.apk; do
+            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
+          done
+
+      - name: Show build info
+        run: cat dist/*.buildinfo.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-theme-mint-apk-${{ matrix.openwrt }}-${{ matrix.slug }}
+          path: dist/*
+          if-no-files-found: error

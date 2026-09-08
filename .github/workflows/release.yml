@@ -1,0 +1,127 @@
+name: Release
+
+# Collects the artifacts of both build workflows and publishes one release.
+# Runs once per completed build workflow; the first one to finish sees that
+# its sibling is still missing and exits without publishing, so the release
+# is always assembled from a complete APK + IPK set.
+
+on:
+  workflow_run:
+    workflows: ["Build APK packages", "Build IPK packages"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to publish (e.g. nightly, v1.0.0)'
+        required: false
+        default: 'nightly'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: release-${{ github.event.workflow_run.head_sha || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve tag and build runs
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.release_tag }}"
+            sha="$(git rev-parse HEAD)"
+          else
+            sha="${{ github.event.workflow_run.head_sha }}"
+            branch="${{ github.event.workflow_run.head_branch }}"
+            default="${{ github.event.repository.default_branch }}"
+            if [ "$branch" = "$default" ]; then
+              tag="nightly"
+            else
+              tag="$branch"
+            fi
+            if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+              echo "build workflow failed - nothing to publish"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          runs="$(gh api "repos/${repo}/actions/runs?head_sha=${sha}&per_page=100" \
+            --jq '.workflow_runs[]
+                  | select(.status=="completed" and .conclusion=="success")
+                  | "\(.name)=\(.id)"' | sort -u || true)"
+
+          apk_run="$(printf '%s\n' "$runs" | sed -n 's/^Build APK packages=//p' | tail -n1)"
+          ipk_run="$(printf '%s\n' "$runs" | sed -n 's/^Build IPK packages=//p' | tail -n1)"
+
+          if [ -z "$apk_run" ] || [ -z "$ipk_run" ]; then
+            echo "waiting for the other build workflow (apk=${apk_run:-none} ipk=${ipk_run:-none})"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "tag=${tag}"          >> "$GITHUB_OUTPUT"
+          echo "sha=${sha}"          >> "$GITHUB_OUTPUT"
+          echo "apk_run=${apk_run}"  >> "$GITHUB_OUTPUT"
+          echo "ipk_run=${ipk_run}"  >> "$GITHUB_OUTPUT"
+          echo "skip=false"          >> "$GITHUB_OUTPUT"
+
+      - name: Download APK artifacts
+        if: steps.resolve.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.resolve.outputs.apk_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: luci-theme-mint-apk-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Download IPK artifacts
+        if: steps.resolve.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.resolve.outputs.ipk_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: luci-theme-mint-ipk-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Re-verify every downloaded package
+        if: steps.resolve.outputs.skip == 'false'
+        run: |
+          ls -l release-assets
+          ./scripts/verify-package.sh --dir release-assets --expect-arch all
+
+      - name: Build release notes
+        if: steps.resolve.outputs.skip == 'false'
+        run: |
+          ./scripts/make-release-notes.sh \
+            --assets release-assets \
+            --tag "${{ steps.resolve.outputs.tag }}" \
+            --out release-assets/RELEASE-NOTES.md
+          cat release-assets/RELEASE-NOTES.md
+
+      - name: Publish release
+        if: steps.resolve.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.resolve.outputs.tag }}
+          name: ${{ steps.resolve.outputs.tag == 'nightly' && 'nightly' || steps.resolve.outputs.tag }}
+          body_path: release-assets/RELEASE-NOTES.md
+          prerelease: ${{ steps.resolve.outputs.tag == 'nightly' }}
+          files: release-assets/*
+          allowUpdates: true
+          tag_overwrite: ${{ steps.resolve.outputs.tag == 'nightly' }}
