@@ -28,18 +28,8 @@
 ## 目录结构
 
 ```
-.github/workflows/
-├── build-apk.yml         # APK 构建矩阵：OpenWrt 25.12 / snapshot × x86_64 / filogic
-├── build-ipk.yml         # IPK 兼容构建矩阵（同上，必要时自动回退兼容 SDK）
-└── release.yml           # 汇总两个构建的产物，发布 nightly / tag Release
-scripts/
-├── get-openwrt-sdk.sh    # 自动探测最新官方 SDK（版本 / target / 文件名全部动态解析）
-├── build-package.sh      # 用官方 SDK 真实构建 apk 或 ipk
-├── verify-package.sh     # 校验包结构与元数据（能识别并拒绝"改名伪造"的包）
-├── install-test.sh       # 安装到临时 root 并校验文件/脚本/JSON
-├── make-release-notes.sh # 由 buildinfo 生成 Release 说明
-└── create-release.sh     # 创建并推送版本标签
-theme/                    # 主题源码（放入 buildroot 的 feeds/luci/themes/ 下编译）
+.github/workflows/build.yml   # GitHub Actions 云编译（x86_64 + mediatek/filogic）
+theme/                        # 主题源码（放入 buildroot 的 feeds/luci/themes/ 下编译）
 ├── Makefile                  # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
 │   ├── cascade.css           # 设计系统 + 布局 + 组件
@@ -70,23 +60,11 @@ theme/                    # 主题源码（放入 buildroot 的 feeds/luci/theme
 
 ## 云编译（GitHub Actions）
 
-推送到 `main` 分支自动触发流水线；推送 `v*` 标签发布正式版本。构建矩阵：
+推送到 `main` 分支自动触发构建（x86_64 与 mediatek/filogic 两个目标）：
 
-| 工作流 | OpenWrt | 包格式 | 架构 |
-| --- | --- | --- | --- |
-| build-apk | 25.12 / snapshot | apk | all |
-| build-ipk | 25.12 / snapshot（必要时回退兼容 SDK） | ipk | all |
-
-两个工作流都会覆盖 `x86/64` 与 `mediatek/filogic` 两个 target（主题是 `all` 包，双 target 仅用于验证不同 SDK 环境）。
-
-要点：
-
-- SDK 版本、target、文件名**全部运行时自动探测**（读取官方目录索引），OpenWrt 发布新版本后无需改代码
-- SDK 与 Kernel、LuCI 分支严格配套：`25.12 → LuCI openwrt-25.12`，`snapshot → LuCI master`，不做混搭
-- **包格式由 OpenWrt 包构建系统自己决定**：apk 走 `CONFIG_USE_APK=y`，ipk 走 SDK 的 ipk 后端；不存在任何改名/后缀替换
-- 若某系列官方 SDK 已不提供 ipk 后端，则回退到仍提供该后端的官方 SDK（24.10 → 23.05），并在 `.buildinfo.txt` 与 Release 表格中标注为「兼容构建」
-- 每个产物都经过结构校验（`.PKGINFO` / ar 成员）、安装测试与文件清单检查
-- `release.yml` 汇总产物后发布 `nightly` prerelease 或版本 Release
+- 基于官方**预编译 SDK**（跳过工具链编译，单次构建从约 40-60 分钟降到 5-10 分钟）
+- 构建产物上传至 workflow artifacts
+- 同时发布到 `nightly` prerelease
 
 也可在 Actions 页面手动触发（workflow_dispatch）。
 
@@ -96,50 +74,22 @@ theme/                    # 主题源码（放入 buildroot 的 feeds/luci/theme
 
 ### 方式一：官方预编译 SDK（推荐）
 
-一条命令完成「探测 SDK → 下载 → 初始化 LuCI feed → 构建 → 校验」：
-
 ```sh
-# APK（OpenWrt 25.12 / x86_64）
-./scripts/build-package.sh --version 25.12 --target x86/64 --format apk --out dist
-
-# APK（main 快照 / mediatek-filogic）
-./scripts/build-package.sh --version snapshot --target mediatek/filogic --format apk
-
-# IPK（若目标系列无 ipk 后端，自动回退兼容 SDK）
-./scripts/build-package.sh --version 25.12 --target x86/64 --format ipk --allow-legacy
-
-# 校验与安装测试
-./scripts/verify-package.sh --dir dist --expect-arch all
-./scripts/install-test.sh --file dist/luci-theme-mint-*.apk
-```
-
-只需要 SDK 本身时：
-
-```sh
-./scripts/get-openwrt-sdk.sh --version 25.12 --target x86/64 --workdir build --sdk-dir build/sdk
-# 或只看解析结果、不下载
-./scripts/get-openwrt-sdk.sh --version 25.12 --target x86/64 --print
-```
-
-产物命名：`luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.<apk|ipk>`，同时生成同名 `.buildinfo.txt`
-（记录 SDK 下载地址、OpenWrt 版本、Kernel 版本、LuCI 分支与 commit、是否兼容构建）。
-
-手动走完整流程（等价，仅供理解）：
-
-```sh
-BASE=https://downloads.openwrt.org/releases/25.12.5/targets/x86/64
-SDK=$(curl -fsSL "$BASE/" | grep -o 'openwrt-sdk-[^"]*\.tar\.zst' | head -1)
+# 以 x86/64 为例；其他目标把路径换成对应的 targets/架构/
+BASE=https://downloads.openwrt.org/snapshots/targets/x86/64
+SDK=$(curl -fsSL "$BASE/" | grep -o 'openwrt-sdk-.*tar.zst' | head -1)
 curl -fsSLO "$BASE/$SDK"
-tar --zstd -xf "$SDK" && mv openwrt-sdk-* sdk && cd sdk
+tar --zstd -xf "$SDK"
+mv openwrt-sdk-* sdk
+cd sdk
 
-echo "src-git luci https://github.com/openwrt/luci.git;openwrt-25.12" > feeds.conf.default
+echo "src-git luci https://github.com/openwrt/luci.git;master" > feeds.conf.default
 ./scripts/feeds update luci
 mkdir -p feeds/luci/themes/luci-theme-mint
 cp -a /本地路径/luci-theme-mint/theme/* feeds/luci/themes/luci-theme-mint/
 ./scripts/feeds install -a
 
 echo "CONFIG_PACKAGE_luci-theme-mint=m" >> .config
-echo "CONFIG_USE_APK=y" >> .config      # 生成 ipk 则改为 "# CONFIG_USE_APK is not set"
 make defconfig
 make package/feeds/luci/luci-theme-mint/compile -j$(nproc) V=s
 ```
@@ -221,9 +171,39 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 
 ## 兼容性
 
-- 目标：当前 OpenWrt main / LuCI master（ucode 模板引擎，`.ut`）
-- 浏览器：Chrome/Chromium、Firefox、Safari、Android WebView（`backdrop-filter` 仅为渐进增强）
-- 禁用 JavaScript 时登录与后台仍可使用（壁纸、菜单渲染与动态效果需要 JS）
+### 兼容的 OpenWrt / ImmortalWrt 版本
+
+| 发行版 | 最低版本 | 模板引擎 | 包格式 | 说明 |
+| --- | --- | --- | --- | --- |
+| OpenWrt | 23.05+ / main | ucode（`.ut`） | `.ipk` | 主线 OpenWrt 23.05+ 已切换至 ucode 模板引擎；主线 main / snapshot 持续跟进 |
+| ImmortalWrt | 21.02+ | ucode | `.apk` | ImmortalWrt 早于主线迁移至 ucode，并默认使用 apk 包管理 |
+| LEDE / OpenWrt ≤ 19.07 | — | — | — | **不支持**：ucode 模板与 rpcd ACL 路径在旧分支不可用 |
+
+云编译产物在每次 Release 同时提供 `.ipk`（OpenWrt SDK）与 `.apk`（ImmortalWrt SDK）双格式，直接选择与你设备包管理器对应的产物安装。
+
+### 运行时依赖
+
+由 `theme/Makefile` 中的 `LUCI_DEPENDS` 自动声明，安装时 opkg / apk 会一并拉取：
+
+| 包名 | 作用 | 是否必需 |
+| --- | --- | --- |
+| `luci-base` | 模板引擎、ACL、ubus 桥接、cbi.js / i18n 端点 | 必需 |
+| `curl` | 壁纸随机源抓取 cron 脚本 `mz-wallpaper-fetch.sh` 的唯一可用下载器；OpenWrt 默认仅装 `uclient-fetch`，缺它时 cron 必然失败 | 必需 |
+| rpcd：`mint` 对象 | `dashboard`（Overview 实时仪表盘）、`refresh`（壁纸强制刷新） | 必需；ACL 由 `/usr/share/rpcd/acl.d/luci-theme-mint.json` 注册 |
+| LuCI i18n 基础包 | 主题自带 `luci-theme-mint.zh-cn.lmo`；同时需安装 `luci-i18n-base-zh-cn` 才能完整显示所有内置界面字符串 | 强烈建议 |
+
+### 浏览器
+
+- 桌面：Chrome / Chromium、Firefox、Safari、Edge（近 2 年版本）
+- 移动：Android WebView / Chrome for Android、iOS Safari
+- `backdrop-filter` 仅为渐进增强（毛玻璃卡片）；不支持时自动降级为半透明白色，不影响功能
+- 禁用 JavaScript 时登录页与后台仍可访问（仅壁纸随机、菜单折叠、动态效果不可用）
+
+### 已知限制
+
+- 主题是纯数据（`htdocs` / `root` / `ucode` 模板 / `po`），不依赖具体目标架构；`PKGARCH:=all`
+- 编译需启用 `luci-base/host`（提供 `po2lmo` 与 `jsmin`）；CSS 压缩 `csstidy` 故意关闭以免引入额外的 packages feed
+- 升级时 `postinst` 仅重载 rpcd（不重启），保留已登录管理员的 ubus 会话
 
 ## 故障排查
 

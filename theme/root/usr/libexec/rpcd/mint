@@ -15,6 +15,49 @@
 # NOTE (TZ-17, 2026-09-07): random wallpapers are fetched directly by the
 # browser and custom images are local files - no server-side cache exists,
 # so the old Bing prefetch was removed.
+#
+# Methods (cont.):
+#   save  - persist CBI form values to UCI and commit. Some LuCI builds ship
+#           a stripped cbi.js whose JS save() only issues `uci set` over ubus
+#           and omits `uci commit`; the session-level `uci commit` ubus call
+#           is also denied by rpcd ACL on those builds, so browser-side saves
+#           never reach disk. This method runs inside the rpcd daemon (root),
+#           so `uci commit` always succeeds. The browser (menu-mint.js
+#           mintSave) collects the cbid.* fields, groups them by
+#           config/section and calls `ubus call mint save` per section.
+#           Params: { config, section, values:[ [option, value], ... ] }.
+#           Inputs are sanitised to [A-Za-z0-9_] so no uci path traversal or
+#           shell injection is possible.
+
+mint_save() {
+	read -r req
+	config=$(printf '%s' "$req" | jsonfilter -e '@.config' 2>/dev/null)
+	section=$(printf '%s' "$req" | jsonfilter -e '@.section' 2>/dev/null)
+	# sanitise config / section to safe charset only
+	case "$config$section" in
+		*[!A-Za-z0-9_]*) echo '{"error":"invalid config or section"}'; return ;;
+	esac
+	[ -z "$config" ] && { echo '{"error":"missing config"}'; return; }
+	[ -z "$section" ] && { echo '{"error":"missing section"}'; return; }
+	i=0
+	written=0
+	while :; do
+		kv=$(printf '%s' "$req" | jsonfilter -e "@.values[$i]" 2>/dev/null)
+		[ -z "$kv" ] && break
+		k=$(printf '%s' "$kv" | jsonfilter -e '@[0]' 2>/dev/null)
+		v=$(printf '%s' "$kv" | jsonfilter -e '@[1]' 2>/dev/null)
+		case "$k" in
+			*[!A-Za-z0-9_]*) i=$((i+1)); continue ;;
+		esac
+		[ -z "$k" ] && { i=$((i+1)); continue; }
+		uci set "$config.$section.$k=$v" 2>/dev/null && written=$((written+1))
+		i=$((i+1))
+	done
+	if [ "$written" -gt 0 ]; then
+		uci commit "$config" 2>/dev/null
+	fi
+	printf '{"ok":true,"written":%s,"config":"%s","section":"%s"}\n' "$written" "$config" "$section"
+}
 
 # Public (exit) IPv4, fetched from ipv4.im.
 #   - Cached 5 min so the per-second poll never hammers the service.
@@ -221,7 +264,7 @@ JSON
 
 case "$1" in
 	list)
-		echo '{"refresh":{},"dashboard":{}}'
+		echo '{"refresh":{},"dashboard":{},"save":{}}'
 		;;
 	call)
 		case "$2" in
@@ -230,6 +273,9 @@ case "$1" in
 				;;
 			dashboard)
 				mint_dashboard
+				;;
+			save)
+				mint_save
 				;;
 			*)
 				echo '{"error":"invalid method"}'

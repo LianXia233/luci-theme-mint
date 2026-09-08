@@ -1095,8 +1095,9 @@ body.mz-login-active #maincontent {
 		padding-left: 64px;
 	}
 
-	.mz-view {
+	#mz-view {
 		padding: var(--mz-spacing-md) var(--mz-spacing-sm);
+		padding-left: 64px;   /* clear the fixed sidebar toggle (40px btn + 12px margin * 2) */
 	}
 
 	.table, .table .tr, table.table, table.cbi-section-table {
@@ -1123,8 +1124,9 @@ body.mz-login-active #maincontent {
 }
 
 @media (max-width: 480px) {
-	.mz-view {
+	#mz-view {
 		padding: var(--mz-spacing-sm);
+		padding-left: 56px;   /* keep clear of the fixed toggle on very narrow screens */
 	}
 
 	.btn {
@@ -2254,6 +2256,13 @@ table.cbi-section-table tbody tr:hover td {
 	margin: 0 auto;
 	padding: 24px 28px;
 }
+
+/* Keep main view clear of the fixed sidebar toggle on narrow screens */
+@media (max-width: 854px) {
+	#mz-view {
+		padding-left: 64px;
+	}
+}
 /* (Removed 2026-09-07: .mz-topbar-inner has no matching element in header.ut.) */
 
 /* Overview panels: wider grids on desktop */
@@ -3084,8 +3093,9 @@ html[data-theme="dark"] {
 		margin-bottom: var(--mz-spacing-sm);
 	}
 
-	.mz-view {
+	#mz-view {
 		padding: var(--mz-spacing-sm) var(--mz-spacing-sm) 24px;
+		padding-left: 60px;   /* clear the fixed sidebar toggle (left:12px + 40px btn = 52px edge) */
 	}
 
 	.cbi-section {

@@ -1,0 +1,182 @@
+name: Build Package
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0, nightly)'
+        required: false
+        default: 'nightly'
+
+permissions:
+  contents: write
+
+# Cancel superseded runs (e.g. a second push while the first is still building)
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || (github.event.inputs.release_tag || 'nightly') }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # OpenWrt SDK -> .ipk for stock OpenWrt
+          - target: x86/64
+            sdk_dir: x86/64
+            sdk_source: openwrt
+            suffix: x86_64-openwrt
+          - target: mediatek/filogic
+            sdk_dir: mediatek/filogic
+            sdk_source: openwrt
+            suffix: mediatek_filogic-openwrt
+          # ImmortalWrt SDK -> .apk for ImmortalWrt (apk package manager)
+          - target: x86/64
+            sdk_dir: x86/64
+            sdk_source: immortalwrt
+            suffix: x86_64-immortalwrt
+          - target: mediatek/filogic
+            sdk_dir: mediatek/filogic
+            sdk_source: immortalwrt
+            suffix: mediatek_filogic-immortalwrt
+
+    steps:
+      - name: Checkout this repo (theme sources)
+        uses: actions/checkout@v4
+
+      # This package is pure data (htdocs / root / ucode templates / po, no
+      # src/), so luci.mk's Build/Compile is a no-op. Compiling the whole
+      # OpenWrt tools + toolchain from source (~40-60 min) was pure waste:
+      # the official prebuilt SDK ships the cross-toolchain + host tools, so
+      # we only build luci-base/host (po2lmo + jsmin) and assemble the
+      # package. The SDK source controls the package format: OpenWrt SDK
+      # produces .ipk, ImmortalWrt SDK produces .apk.
+      # Old flow: git clone openwrt.git + feeds update/install -a +
+      # make tools/install + make toolchain/install  ->  new flow: SDK.
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+
+      - name: Download prebuilt SDK
+        run: |
+          set -e
+          if [[ "${{ matrix.sdk_source }}" == "openwrt" ]]; then
+            base="https://downloads.openwrt.org/snapshots/targets/${{ matrix.sdk_dir }}"
+            pattern='openwrt-sdk-[^"<]+\.tar\.zst'
+          else
+            base="https://downloads.immortalwrt.org/snapshots/targets/${{ matrix.sdk_dir }}"
+            pattern='immortalwrt-sdk-[^"<]+\.tar\.zst'
+          fi
+          sdk=$(curl -fsSL "$base/" | grep -oE "$pattern" | head -n1)
+          [ -n "$sdk" ] || { echo "::error::SDK tarball not found under $base"; exit 1; }
+          echo "Downloading SDK (${{ matrix.sdk_source }}): $sdk"
+          curl -fsSLO "$base/$sdk" || { echo "::error::Failed to download $sdk"; exit 1; }
+          echo "Extracting SDK ($(ls -lh "$sdk" | awk '{print $5}'))..."
+          if tar --zstd -xf "$sdk" 2>&1; then
+            echo "Successfully extracted with tar --zstd"
+          else
+            echo "tar --zstd failed, trying zstd + tar separately"
+            zstd -d "$sdk" -o "${sdk%.zst}"
+            tar -xf "${sdk%.zst}"
+          fi
+          echo "Renaming extracted directory..."
+          ls -la | grep -E '(openwrt|immortalwrt)-sdk' || { echo "::error::No SDK directory found after extraction"; exit 1; }
+          sdk_dir=$(ls -d {openwrt,immortalwrt}-sdk-*/ 2>/dev/null | head -n1)
+          [ -n "$sdk_dir" ] || { echo "::error::No SDK directory found"; exit 1; }
+          mv "$sdk_dir" sdk
+
+      - name: Set up LuCI feed (luci only, no -a over all feeds)
+        run: |
+          cd sdk
+          # Replace the SDK's multi-feed default with the single feed we need.
+          echo "src-git luci https://github.com/openwrt/luci.git;master" > feeds.conf.default
+          ./scripts/feeds update luci
+          mkdir -p feeds/luci/themes/luci-theme-mint
+          cp -a "$GITHUB_WORKSPACE"/theme/* feeds/luci/themes/luci-theme-mint/
+          ./scripts/feeds install -a
+          # Manually symlink our theme package (feeds install can't find manually added dirs)
+          mkdir -p package/feeds/luci
+          ln -sf ../../../feeds/luci/themes/luci-theme-mint package/feeds/luci/luci-theme-mint
+          ls -la package/feeds/luci/luci-theme-mint/Makefile || { echo "::error::Theme Makefile not found after symlink"; exit 1; }
+
+      - name: Configure
+        run: |
+          cd sdk
+          # JS minification stays on: jsmin ships with luci-base/host.
+          # CSS minification (csstidy) lives in the large packages feed and is
+          # deliberately disabled - pulling that feed would defeat this fast path.
+          echo "CONFIG_PACKAGE_luci-theme-mint=m" >> .config
+          echo "CONFIG_LUCI_JSMIN=y" >> .config
+          echo "CONFIG_LUCI_CSSTIDY=n" >> .config
+          make defconfig
+          grep -q "CONFIG_PACKAGE_luci-theme-mint=m" .config || {
+            echo "::error::theme package not selectable"; exit 1;
+          }
+
+      - name: Build host tools (po2lmo/jsmin)
+        run: |
+          cd sdk
+          make package/feeds/luci/luci-base/host/compile V=s -j$(nproc) || echo "::warning::host tools compile failed, continuing"
+
+      - name: Build theme package
+        run: |
+          cd sdk
+          make package/feeds/luci/luci-theme-mint/compile V=s -j$(nproc) IGNORE_ERRORS=1
+
+      - name: Collect artifacts
+        run: |
+          cd sdk
+          mkdir -p "$GITHUB_WORKSPACE"/artifacts
+          find bin/packages -name 'luci-theme-mint*' -exec cp {} "$GITHUB_WORKSPACE"/artifacts/ \;
+
+          # Rename artifacts with version + SDK source suffix so the
+          # release page makes the OpenWrt vs ImmortalWrt provenance
+          # obvious (and so both .ipk and .apk can coexist without
+          # filename collisions when uploaded to the same release).
+          cd "$GITHUB_WORKSPACE"/artifacts
+          for file in *; do
+            if [[ "${{ env.VERSION }}" != "nightly" ]]; then
+              ext="${file##*.}"
+              base="${file%.*}"
+              new_name="${base}-${{ env.VERSION }}-${{ matrix.sdk_source }}.${ext}"
+              mv "$file" "$new_name"
+            fi
+          done
+          ls -la "$GITHUB_WORKSPACE"/artifacts
+
+      - name: Upload to workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-theme-mint-${{ matrix.suffix }}
+          path: artifacts/*
+
+      - name: Determine release info
+        id: release_info
+        run: |
+          if [[ "${{ env.VERSION }}" == "nightly" ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "release_name=nightly" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "release_name=${{ env.VERSION }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: ${{ steps.release_info.outputs.release_name }}
+          prerelease: ${{ steps.release_info.outputs.is_prerelease }}
+          files: artifacts/*
+          allowUpdates: ${{ env.VERSION == 'nightly' }}
+          tag_overwrite: ${{ env.VERSION == 'nightly' }}

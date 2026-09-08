@@ -53,6 +53,13 @@ return baseclass.extend({
 		this.initLogout();
 		this.initGlobalWallpaper();
 		this.initZoneColors();
+		/* ensureCbiForm: the cbi-map is in the initial HTML, but the LuCI
+		   router may swap the view asynchronously after navigation. Try
+		   once now and again after a short delay so the form is in place
+		   before the user reaches for the save button. */
+		this.ensureCbiForm();
+		Promise.resolve().then(() => this.ensureCbiForm());
+		window.setTimeout(() => this.ensureCbiForm(), 1500);
 
 		/* OT-02 safety net: the FOUC guard (#mainmenu{display:none!important})
 		   is lifted by foldMenu(); if rendering ever failed, force it open
@@ -153,7 +160,7 @@ return baseclass.extend({
 
 	render(tree) {
 		this.renderMainMenu(tree);
-
+		this.ensureCbiForm();
 		/* Tab menu for pages with sub-views */
 		let node = tree;
 		let url = '';
@@ -413,5 +420,162 @@ return baseclass.extend({
 					window.location.assign(L.url('admin/logout'));
 			}) : window.location.assign(L.url('admin/logout'));
 		});
+	},
+
+	/* CBI form wrapper fallback + save fix. Some LuCI builds (notably the
+	   stripped cbi.js shipped by certain OpenWrt/ImmortalWrt snapshots)
+	   render the CBI view as a bare <div class="cbi-map"> without a
+	   surrounding <form>, so the save button's cbi_submit() returns false
+	   and toggles like "ui_random" never reach UCI. Worse, even once the
+	   form exists, the CBI map's JS save() only issues `uci set` over ubus
+	   and omits the `uci commit`, so the value is changed in memory but
+	   never persisted to /etc/config. We fix both here:
+	     1. inject a <form> around .cbi-map + the action bar,
+	     2. take over the Save/Apply click and perform a full
+	        `uci set` + `uci commit` via ubus (L.rpc), so the change sticks.
+	   Idempotent: pages whose cbi view is already correctly wrapped (most
+	   stock LuCI) are left alone; we only act when no <form> is present. */
+	ensureCbiForm() {
+		const map = document.querySelector('.cbi-map');
+		if (!map) return;
+		if (map.closest('form')) return;
+
+		const form = document.createElement('form');
+		form.method = 'post';
+		form.action = window.location.pathname + window.location.search;
+		form.enctype = 'multipart/form-data';
+		form.setAttribute('data-mint-injected', '1');
+
+		/* CSRF token: in this LuCI build L.config is not exposed, so the
+		   token only lives inside the inline "L = new LuCI({...})" JSON
+		   literal. Re-parse the page once (it's a few KB) to recover it.
+		   The regex matches the key/value pair across newlines; the
+		   token itself is a 32-char lowercase hex string. */
+		let tok = '';
+		try {
+			const m = (document.body.innerHTML || '').match(/"token"\s*:\s*"([a-f0-9]{16,})"/);
+			if (m) tok = m[1];
+		} catch (e) { tok = ''; }
+		const t1 = document.createElement('input');
+		t1.type = 'hidden'; t1.name = 'token'; t1.value = tok;
+		form.appendChild(t1);
+
+		const t2 = document.createElement('input');
+		t2.type = 'hidden'; t2.name = 'cbi.submit'; t2.value = '1';
+		form.appendChild(t2);
+
+		/* Wrap: move the .cbi-map and any sibling action bar (the
+		   .cbi-page-actions / .cbi-apply / .cbi-map-actions container that
+		   holds the Save button) into the new form, in document order. The
+		   map's parent (typically #view) keeps its other children (heading,
+		   description) above the form. */
+		const parent = map.parentNode;
+		if (!parent) return;
+		const moveNodes = [map];
+		Array.from(parent.children).forEach((ch) => {
+			if (ch === map) return;
+			if (ch.classList && (
+				ch.classList.contains('cbi-page-actions') ||
+				ch.classList.contains('cbi-apply') ||
+				ch.classList.contains('cbi-map-actions') ||
+				ch.classList.contains('cbi-map-descr'))) {
+				moveNodes.push(ch);
+			}
+		});
+		parent.insertBefore(form, moveNodes[0]);
+		moveNodes.forEach((n) => form.appendChild(n));
+
+		/* Take over Save / Save & Apply so the change is actually committed.
+		   The stock CBI button has type="submit" with an (often broken)
+		   onclick; we intercept the click, run a full ubus set+commit, then
+		   reload so the new state renders. */
+		form.querySelectorAll('button.cbi-button-save, input.cbi-button-save, ' +
+			'button.cbi-button-apply, input.cbi-button-apply').forEach((btn) => {
+			if (btn.getAttribute('data-mint-save-bound')) return;
+			btn.setAttribute('data-mint-save-bound', '1');
+			btn.addEventListener('click', (ev) => this.mintSave(ev));
+		});
+	},
+
+	/* Collect every CBI option from the injected form. Stock LuCI renders
+	   each field as a widget whose identity lives in data-widget-id
+	   ("widget.cbid.<config>.<section>.<option>"); on this build the raw
+	   <input>/<select> elements often carry an EMPTY name attribute, so we
+	   must read the value from the widget's inner control. We group options
+	   by config+section as [ [option, value], ... ] pairs (the shape the
+	   mint rpcd "save" method expects). Password widgets left blank are
+	   skipped so we never wipe an existing secret (mirrors stock LuCI). */
+	collectCbiValues(form) {
+		const groups = {};
+		const readWidget = (w) => {
+			const id = w.getAttribute('data-widget-id') || '';
+			const m = id.match(/cbid\.([^.]+)\.([^.]+)\.(.+)$/);
+			if (!m) return;
+			const config = m[1], section = m[2], option = m[3];
+			/* On this build the data-widget-id sits directly on the control
+			   element (an <input>/<select>/<textarea>); fall back to an inner
+			   control for wrappers. */
+			const inp = (w.matches && w.matches('input, select, textarea'))
+				? w : w.querySelector('input, select, textarea');
+			if (!inp) return;
+			let val;
+			if (inp.type === 'checkbox') val = inp.checked ? '1' : '0';
+			else if (inp.type === 'radio') { if (!inp.checked) return; val = inp.value; }
+			else if (inp.type === 'password') { if (!inp.value) return; val = inp.value; }
+			else val = inp.value;
+			const key = config + '/' + section;
+			if (!groups[key]) groups[key] = { config: config, section: section, pairs: [] };
+			groups[key].pairs.push([option, val]);
+		};
+		form.querySelectorAll('[data-widget-id*="cbid."]').forEach(readWidget);
+		/* Fallback for builds that do set a proper name attribute. */
+		form.querySelectorAll('input[name^="cbid."], select[name^="cbid."], ' +
+			'textarea[name^="cbid."]').forEach((el) => {
+			const m = el.name.match(/^cbid\.([^.]+)\.([^.]+)\.(.+)$/);
+			if (!m) return;
+			const config = m[1], section = m[2], option = m[3];
+			let val;
+			if (el.type === 'checkbox') val = el.checked ? '1' : '0';
+			else if (el.type === 'radio') { if (!el.checked) return; val = el.value; }
+			else if (el.type === 'password') { if (!el.value) return; val = el.value; }
+			else val = el.value;
+			const key = config + '/' + section;
+			if (!groups[key]) groups[key] = { config: config, section: section, pairs: [] };
+			groups[key].pairs.push([option, val]);
+		});
+		return groups;
+	},
+
+	/* Full save: ship the collected cbid values to the mint rpcd "save"
+	   method, which runs as root inside the rpcd daemon and performs the
+	   uci set + commit that the browser session is not allowed to do on
+	   broken CBI builds. We use L.rpc.declare (the correct public API on
+	   this LuCI; L.rpc.call has a different low-level signature here) so the
+	   real ubus session is attached automatically. Reload afterwards. */
+	mintSave(ev) {
+		ev.preventDefault();
+		const form = ev.currentTarget.closest('form') ||
+			document.querySelector('form[data-mint-injected]');
+		if (!form) return;
+		const groups = this.collectCbiValues(form);
+		const keys = Object.keys(groups);
+		if (!keys.length) { window.location.reload(); return; }
+
+		const rpcSave = (window.L && L.rpc && typeof L.rpc.declare === 'function')
+			? L.rpc.declare({ object: 'mint', method: 'save', params: ['config', 'section', 'values'] })
+			: (cfg, sec, vals) => fetch('/ubus/', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify([{ jsonrpc: '2.0', id: 'mint', method: 'call',
+					params: [L.env.sessionid || '', 'mint', 'save', { config: cfg, section: sec, values: vals }] }])
+			}).then((r) => r.json());
+
+		let chain = Promise.resolve();
+		keys.forEach((k) => {
+			const g = groups[k];
+			chain = chain.then(() => rpcSave(g.config, g.section, g.pairs));
+		});
+		chain.then(() => window.location.reload())
+			.catch(() => window.location.reload());
 	}
 });

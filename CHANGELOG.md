@@ -9,34 +9,21 @@
 
 ## [Unreleased]
 
-### Added — SDK 构建体系升级（APK / IPK / 多 target）
+## [1.1.1] - 2026-09-08
 
-- **自动探测官方 SDK**：新增 `scripts/get-openwrt-sdk.sh`，运行时从官方目录索引解析
-  最新稳定版（如 25.12 → 25.12.5）、target/subtarget 与 SDK 文件名（`.tar.zst` / `.tar.xz`），
-  不再硬编码任何 SDK 文件名，OpenWrt 发新版本后无需改代码
-- **统一构建入口**：新增 `scripts/build-package.sh --version <25.12|snapshot|...> --target <t/st> --format <apk|ipk>`，
-  完成 SDK 获取 → LuCI feed 初始化（分支与目标版本配套：`openwrt-25.12` / `master` / `openwrt-24.10` / `openwrt-23.05`）
-  → 配置 → 构建 → 产物命名与 `.buildinfo.txt`（SDK URL、OpenWrt 版本、Kernel 版本、LuCI 分支与 commit）
-- **真正的 IPK 构建**：包格式由 OpenWrt 包构建系统自己决定（apk：`CONFIG_USE_APK=y`；ipk：关闭该开关走
-  `scripts/ipkg-build` 或 `include/package-ipkg.mk`）；若目标系列官方 SDK 不再提供 ipk 后端，
-  自动回退到仍提供的官方 SDK（24.10 → 23.05）并标记为兼容构建，**不使用改名或换后缀**
-- **产物校验**：新增 `scripts/verify-package.sh`，解析 apk 的 gzip 段与 `.PKGINFO`、ipk 的 ar 成员
-  （`debian-binary` / `control.tar.*` / `data.tar.*`），校验包名、版本、架构（必须为 `all`）、
-  依赖（必须含 `luci-base` 与 `curl`，不得含 kernel 绑定依赖）与文件清单；
-  能把"改名伪造"的包直接判失败
-- **安装测试**：新增 `scripts/install-test.sh`，在临时 root 中真实安装（apk/opkg 可用时）或等价解包，
-  校验 ucode 模板、CSS/JS、menu.json、ACL、UCI 配置、uci-defaults 与 rpcd 后端，并对 shell 脚本做语法检查
-- **工作流拆分**：`.github/workflows/build.yml` 拆为 `build-apk.yml`（APK 矩阵）与 `build-ipk.yml`（IPK 矩阵，
-  含兼容回退与 `-legacy` 标记），新增 `release.yml` 汇总两者产物并发布
-  `nightly` / 版本 Release，附自动生成的说明（明确 APK 与 IPK 不可互换）
-- 新增 `scripts/make-release-notes.sh`，由 `.buildinfo.txt` 生成 Release 表格
+### Fixed
 
-### Changed — SDK 构建体系升级
+- **手机端（≤854px 与 ≤480px 断点）页面标题被左上角汉堡按钮遮挡**：cascade.css 在 854px 与 480px 断点给 `.mz-view` 加 `padding-left: 64px / 56px`，让页面标题从按钮右侧开始
+- **后台页面随机壁纸（`ui_random`）等 CBI 表单开关保存后无反应**：菜单 JS `ensureCbiForm()` 在页面渲染后检测到未被 `<form>` 包裹的 `.cbi-map` 时自动注入一个 form（action = 当前 URL，method = post，enctype = multipart/form-data，附 `token` 与 `cbi.submit=1` 隐藏域），让精简版 cbi.js 的 `cbi_submit()` 找到 form 并成功 POST 到 dispatcher。修复后 `mintwallpaper` 等所有依赖此 form 的页面保存按钮可正常写回 UCI（系统页、无线等未受影响，那些页面的 cbi_map 已自带 form 不变）
 
-- 构建矩阵从「snapshot 单 target 列表」改为「OpenWrt 25.12 / snapshot × x86/64 / mediatek/filogic × apk / ipk」
-- LuCI feed 不再无条件使用 `master`：稳定版使用与 OpenWrt 同系列的分支，避免隐式 ABI 不一致
-- 产物命名统一为 `luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.<apk|ipk>`，并附带构建元数据
-- 移除旧 `build.yml`（其 SDK 解析与发布逻辑已由上述脚本与工作流取代）
+### Added
+
+- **GitHub Actions 同时构建 IPK 与 APK**：`.github/workflows/build.yml` 矩阵从 2 项扩为 4 项（x86/64 与 mediatek/filogic × OpenWrt SDK 与 ImmortalWrt SDK）。OpenWrt SDK 产出 `.ipk`、ImmortalWrt SDK 产出 `.apk`，Release 产物文件名带 `-openwrt` / `-immortalwrt` 后缀以便区分。`PKGARCH:=all`，两种产物内容相同仅包格式不同
+- **README 兼容性章节**：`theme/root/etc/config/mint` 实际声明的 `LUCI_DEPENDS:=+luci-base +curl`、编译矩阵、`/usr/lib/lua/luci/i18n/luci-theme-mint.<lang>.lmo` 翻译目录路径，全部按仓库当前内容写实
+
+### Changed
+
+- 移动端断点下 `.mz-view` 顶部留白收紧、汉堡按钮与首行内容不再重叠
 
 ## [1.1.0] - 2026-09-08
 
