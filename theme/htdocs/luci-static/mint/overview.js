@@ -9,10 +9,82 @@
 (function () {
 	'use strict';
 
-	/* OT-05: `_` comes from the LuCI translations bundle, which header.ut
-	   loads synchronously in <head> (always before this deferred script).
-	   Fall back to echo so a missing bundle can never break rendering. */
-	var __ = (typeof _ === 'function') ? _ : function (s) { return s; };
+	/* OT-05 (fixed 2026-09-09): plain scripts never get LuCI's scoped `_`,
+	   so the echo fallback left every panel title in English ("UPnP port
+	   mappings", "Port status", ...). LuCI's client catalog is exposed as
+	   window.TR = { "<sfh-hex>": "translation" }.
+	   Second catch (same day): LuCI's global `_` hashes with the luci.js
+	   JS SuperFastHash whose rem==2 case ("hash += hash >>> 17") does NOT
+	   match the sfh used by the firmware's lmo builder / server-side
+	   core.so ("xor C-string NUL" == xor 0) - so every len%4==2 msgid
+	   ("UPnP port mappings", "Log in", ...) silently misses in the client
+	   catalog. Strategy: try LuCI's `_` first (authoritative when both
+	   sides agree), then fall back to our own server-compatible sfh
+	   lookup before giving up and echoing. */
+	var __ = function (s) {
+		if (!s || typeof s !== 'string')
+			return s;
+		try {
+			if (typeof _ === 'function') {
+				var t = _(s);
+				if (t && t !== s)
+					return t;
+			}
+			if (window.TR) {
+				var v = window.TR[mzSfh(s).toString(16).padStart(8, '0')];
+				if (v)
+					return v;
+			}
+		} catch (e) { /* fall through to echo */ }
+		return s;
+	};
+
+	function mzSfh(data) {
+		/* NOTE: JS bitwise ops are 32-bit signed, and "& 0xffffffff" does
+		   NOT yield an unsigned value (0xffffffff == -1). All right shifts
+		   must therefore be the UNSIGNED ">>>" or negative hashes diverge
+		   from the C/Python reference after the first mix step. */
+		function get16(d, i) { return d.charCodeAt(i) | (d.charCodeAt(i + 1) << 8); }
+		function get8(d, i) { return d.charCodeAt(i) & 0xff; }
+		var len = data.length;
+		if (len <= 0)
+			return 0;
+		var hash = len, tmp = 0, rem = len & 3, size = len >> 2, pos = 0;
+		while (size > 0) {
+			hash = (hash + get16(data, pos)) & 0xffffffff;
+			tmp = ((get16(data, pos + 2) << 11) ^ hash) & 0xffffffff;
+			hash = ((hash << 16) ^ tmp) & 0xffffffff;
+			pos += 4;
+			hash = (hash + (hash >>> 11)) & 0xffffffff;
+			size--;
+		}
+		switch (rem) {
+			case 3:
+				hash = (hash + get16(data, pos)) & 0xffffffff;
+				hash = (hash ^ ((hash << 16) & 0xffffffff)) & 0xffffffff;
+				hash = (hash ^ (get8(data, pos + 2) << 18)) & 0xffffffff;
+				hash = (hash + (hash >>> 11)) & 0xffffffff;
+				break;
+			case 2:
+				hash = (hash + get16(data, pos)) & 0xffffffff;
+				hash = (hash ^ ((hash << 11) & 0xffffffff)) & 0xffffffff;
+				/* C reads data[len] which is the string NUL terminator */
+				hash = (hash ^ 0) & 0xffffffff;
+				break;
+			case 1:
+				hash = (hash + ((data.charCodeAt(pos) << 24) >> 24)) & 0xffffffff;
+				hash = (hash ^ ((hash << 10) & 0xffffffff)) & 0xffffffff;
+				hash = (hash + (hash >>> 1)) & 0xffffffff;
+				break;
+		}
+		hash = (hash ^ ((hash << 3) & 0xffffffff)) & 0xffffffff;
+		hash = (hash + (hash >>> 5)) & 0xffffffff;
+		hash = (hash ^ ((hash << 4) & 0xffffffff)) & 0xffffffff;
+		hash = (hash + (hash >>> 17)) & 0xffffffff;
+		hash = (hash ^ ((hash << 25) & 0xffffffff)) & 0xffffffff;
+		hash = (hash + (hash >>> 6)) & 0xffffffff;
+		return hash >>> 0;
+	}
 
 	var CIRC = 2 * Math.PI * 52;
 	var REFRESH_MS = 5000;
