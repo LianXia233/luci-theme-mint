@@ -23,6 +23,23 @@
 CACHE_DIR="/www/luci-static/mint"
 LOCK="/tmp/mz-wallpaper-fetch.lock"
 UA="Mozilla/5.0 (X11; Linux) AppleWebKit/537.36 mint-wallpaper/1.0"
+# Hard cap on a single download. Without it a hostile or broken endpoint
+# streams until /www (flash on most devices) is full; the size check below
+# only runs AFTER curl has already written everything.
+MAX_BYTES=8388608
+
+# Only http(s). This script runs as root from cron and writes straight into
+# the uhttpd document root, which is readable WITHOUT authentication (the
+# login page needs it). curl natively speaks file://, ftp:// and friends, so
+# an unrestricted UCI value turns "set a wallpaper source" into "publish any
+# local file to anonymous readers" - see the rpcd ACL group "wallpaper",
+# which grants write access to uci:mint.
+valid_src() {
+	case "$1" in
+		http://*|https://*) return 0 ;;
+		*) return 1 ;;
+	esac
+}
 
 # One configured source (or the built-in default) per call.
 # $1 = kind ("pc" | "mobile"), $2 = source URL
@@ -34,24 +51,42 @@ fetch_one() {
 
 	[ -n "$src" ] || return 1
 
+	# Reject anything that is not http(s) before it ever reaches curl.
+	if ! valid_src "$src"; then
+		logger -t mz-wallpaper "refusing non-http source for $kind"
+		return 1
+	fi
+
 	# Never write partial/garbage over a good image: download to a temp
 	# file first, verify it is an image, then atomically move it in.
 	rm -f "$tmp"
-	curl -sL --max-time 25 -A "$UA" -o "$tmp" "$src" || {
+	# --proto/--proto-redir: also block a 302 to file:// on the redirect
+	# hop. --max-filesize: enforced by curl while streaming.
+	# --: end of options, so a value starting with '-' is treated as a URL
+	# and never as an unexpected curl option.
+	curl -sL --max-time 25 --max-filesize "$MAX_BYTES" \
+		--proto '=http,https' --proto-redir '=http,https' \
+		-A "$UA" -o "$tmp" -- "$src" || {
 		rm -f "$tmp"
 		return 1
 	}
 
 	# Validate: at least 3 KB and a real image signature
-	# (JPEG ffd8 / PNG 8950 / WEBP RIFF....WEBP / GIF).
+	# (JPEG ffd8 / PNG 89504e47 / WEBP RIFF....WEBP / GIF).
 	size=$(wc -c < "$tmp" 2>/dev/null)
 	[ "${size:-0}" -ge 3072 ] || { rm -f "$tmp"; return 1; }
 
-	sig=$(dd if="$tmp" bs=1 count=12 2>/dev/null)
+	# Hex dump, not command substitution: $(dd ...) cannot carry NUL bytes
+	# (PNG's magic is followed by 00 00 00 0d), so the previous
+	# $'\xff\xd8'*|$(printf '\211PN') match silently never matched PNG at
+	# all - the pattern had no trailing wildcard AND the value was
+	# truncated at the first NUL.
+	sig=$(head -c 12 "$tmp" 2>/dev/null | od -An -tx1 | tr -d ' \n')
 	case "$sig" in
-		$'\xff\xd8'*|$(printf '\211PN')) ;;       # JPEG / PNG
-		RIFF*) ;;                                  # WEBP (RIFF....WEBP)
-		GIF8*) ;;                                  # GIF
+		ffd8ff*) ;;                                # JPEG
+		89504e470d0a1a0a*) ;;                      # PNG
+		474946383*) ;;                             # GIF87a / GIF89a
+		52494646*) ;;                              # WEBP (RIFF....WEBP)
 		*) rm -f "$tmp"; return 1 ;;
 	esac
 
@@ -95,13 +130,21 @@ for kind in pc mobile; do
 	[ "$mode" = "custom" ] && continue
 
 	src=$(pick_source "$kind")
+	valid_src "$src" || {
+		logger -t mz-wallpaper "refusing non-http source for $kind"
+		continue
+	}
+
 	# seaya.link's /wap endpoint returns an HTML page instead of a
 	# redirect; translate it to the direct image link it advertises.
 	case "$src" in
 		*api.seaya.link/wap*)
-			html=$(curl -s --max-time 15 -A "$UA" "$src")
+			html=$(curl -s --max-time 15 --proto '=http,https' \
+				--proto-redir '=http,https' -A "$UA" -- "$src")
 			src=$(printf '%s' "$html" | grep -oE 'https://img\.seaya\.link/[^" ]+\.(jpg|jpeg|png|webp)' | head -n1)
-			[ -n "$src" ] || continue
+			# Re-validate: this value is scraped out of remote HTML, so it
+			# is attacker-controlled even when the configured source is not.
+			valid_src "$src" || continue
 			;;
 	esac
 

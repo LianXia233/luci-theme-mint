@@ -11,9 +11,14 @@
 	const boardinfo = ubus.call('system', 'board') ?? {};
 
 	/* Theme variant handling: derive the basename of the configured
-	   mediaurlbase (mint | mint-light | mint-dark). The raw
-	   `theme` variable is deliberately not used - its presence in the
-	   template scope is not guaranteed (review OT-08). */
+	   mediaurlbase (mint | mint-light | mint-dark).
+	   NOTE: the `theme` variable IS guaranteed in this scope - luci-base's
+	   own header.ut locates this very template via
+	   include(`themes/${theme}/header`) - and it is the basename of
+	   mediaurlbase, so `theme` could be used directly. Deriving from
+	   `media` is kept because it also works when the template is included
+	   standalone; both are equivalent, do not "fix" this by switching
+	   back and forth. */
 	const mediasegs = split(media ?? '', '/');
 	const mediabase = mediasegs[length(mediasegs) - 1] ?? 'mint';
 	const themepref = (mediabase == 'mint-dark' ? 'dark' : (mediabase == 'mint-light' ? 'light' : 'system'));
@@ -72,7 +77,7 @@
 		{% else %}
 		<meta name="theme-color" content="#0f172a">
 		{% endif %}
-		<link rel="stylesheet" href="{{ media }}/cascade.css?v=mz20260908m">
+		<link rel="stylesheet" href="{{ media }}/cascade.css">
 		<link rel="icon" href="{{ media }}/favicon/favicon.svg" sizes="any" type="image/svg+xml">
 		<link rel="icon" href="{{ media }}/favicon/favicon-48.png" sizes="48x48">
 		<link rel="apple-touch-icon" href="{{ media }}/favicon/favicon-180.png">

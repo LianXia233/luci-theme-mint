@@ -252,8 +252,13 @@ a:hover {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	/* 30px visual size + 7px padding = 44px hit area (WCAG 2.5.5 /
+	   iOS 44pt). The negative margin keeps the layout unchanged. */
 	width: 30px;
 	height: 30px;
+	box-sizing: content-box;
+	padding: 7px;
+	margin: -7px;
 	border: none;
 	border-radius: var(--mz-radius-sm);
 	background: transparent;
@@ -3154,9 +3159,15 @@ html[data-theme="dark"] {
 }
 
 /* cbi-dropdown closed state: hide non-selected options (otherwise the
-   apply split button renders every option stacked and grows huge) */
-.cbi-dropdown:not(.open) > ul > li:not([selected]):not(.hidden) {
-	display: none !important;
+   apply split button renders every option stacked and grows huge).
+   LuCI toggles the [open] ATTRIBUTE - the `.open` CLASS is never set, so
+   this must be an attribute selector. (Previously written as `:not(.open)`
+   + `!important`, which was permanently true and hid the options of every
+   OPEN dropdown too; that was then papered over by a second !important rule
+   with never-matching :not() padding at the end of this file. Both are gone
+   now - keep it that way.) */
+.cbi-dropdown:not([open]) > ul > li:not([selected]) {
+	display: none;
 }
 
 /* Mobile: flex-basis 300px becomes HEIGHT in column direction, which
@@ -4349,14 +4360,19 @@ body.mz-has-wallpaper .cbi-section-descr {
 	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-/* LuCI core ships `.cbi-dropdown:not(.open) > ul > li:not([selected]):not(.hidden)`
-   { display: none !important } with specificity (0,4,2): the widget toggles
-   the [open] ATTRIBUTE (the class is never set), so that rule permanently
-   wins and open lists render empty. Outrank it with never-matching :not()
-   padding (0,5,2). Filtered-out (.hidden / [hidden]) items stay suppressed
-   because the show rule excludes them up front. */
-.cbi-dropdown[open] > ul > li:not(.hidden):not([hidden]):not([data-mz-x]):not(.mz-x) {
-	display: block !important;
+/* Open dropdown: show every option.
+   No :not() padding and no !important needed any more - the closed-state
+   rule above now uses [open] (attribute) instead of .open (class), so the
+   two rules no longer overlap. Search-filtered items keep their own rule
+   below instead of being excluded by an ever-growing :not() chain. */
+.cbi-dropdown[open] > ul > li {
+	display: block;
+}
+
+/* Entries filtered out by the dropdown's search field stay hidden. */
+.cbi-dropdown[open] > ul > li.hidden,
+.cbi-dropdown[open] > ul > li[hidden] {
+	display: none;
 }
 
 /* ================================================================

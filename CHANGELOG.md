@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-08 第三轮 — 安全/打包/兼容性)
+
+- **壁纸脚本本地文件包含（C-2）**：`mz-wallpaper-fetch.sh` 仅放行 `http(s)` 源，curl 加 `--proto '=http,https' --proto-redir '=http,https' --max-filesize 8M --` 防护；图片签名校验由 `$(dd ...)` 命令替换改为 `od -An -tx1` hex 比对，修复 PNG 魔数紧跟 NUL 被 `$(...)` 截断导致校验失效的问题
+- **全仓库 CRLF 导致脚本在设备上无法运行**：新增 `.gitattributes`（`eol=lf`）并将所有文本文件归一化为 LF，避免 Windows 检出时 BusyBox ash 解析 Shell 脚本报错（壁纸抓取 cron、uci-defaults、rpcd 后端）
+- **升级覆盖管理员壁纸配置**：`Makefile` 新增 `/etc/config/mint` 为 conffile；新增 `/lib/upgrade/keep.d/luci-theme-mint` 保留上传的自定义壁纸图片
+- **安装/卸载导致 LuCI 会话登出**：`postinst`/`postrm` 由 `restart` 改为 `reload`（SIGHUP 重读 ACL，不丢弃 ubus 会话）
+- **uci-defaults 每次安装重写 /etc/config/luci**：改为仅写入缺失的主题键，避免噪声提交并保留管理员的主题选择
+- **遗留 ACL 路径**：删除已废弃的 `/usr/share/luci/acl.d/luci-theme-mint.json`（主线早已不读取此目录）
+- **强制刷新破坏缓存**：移除 `header.ut`/`footer.ut` 中 `?v=` 版本号 query string，使浏览器缓存机制正常工作
+
 ### Fixed (2026-09-08 第二轮)
 
 **cbi-dropdown 全站不可用（严重，主题自发布以来的隐藏 bug）**

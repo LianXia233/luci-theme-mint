@@ -14,9 +14,21 @@
 # "mint-light") make uci set fail with uci: Parse error, so the
 # registered keys use CamelCase while the mediaurlbase values keep the
 # hyphenated symlink paths.
-uci set luci.themes.mint=/luci-static/mint
-uci set luci.themes.MintLight=/luci-static/mint-light
-uci set luci.themes.MintDark=/luci-static/mint-dark
+# Only write a key that is missing (upstream bootstrap/material convention).
+# Unconditional `uci set` + `uci commit` rewrites /etc/config/luci on every
+# install/upgrade for no reason and makes "did the admin change this?"
+# impossible to answer afterwards.
+changed=0
+set_opt() {
+	if ! uci -q get "luci.$1" >/dev/null 2>&1; then
+		uci set "luci.$1=$2"
+		changed=1
+	fi
+}
+
+set_opt themes.mint /luci-static/mint
+set_opt themes.MintLight /luci-static/mint-light
+set_opt themes.MintDark /luci-static/mint-dark
 
 # Remove stale ACL files left in the legacy luci acl.d directory by older
 # builds. The theme now ships ACLs in /usr/share/rpcd/acl.d/; a leftover
@@ -76,7 +88,7 @@ else
 	/etc/init.d/cron restart >/dev/null 2>&1 || true
 fi
 
-if [ "$PKG_UPGRADE" != 1 ]; then
+if [ "$PKG_UPGRADE" != 1 ] && [ "$changed" = 1 ]; then
 	uci -q set luci.main.mediaurlbase=/luci-static/mint
 fi
 
