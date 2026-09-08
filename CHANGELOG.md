@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+### 改进
+
+- 移动端标题去重（用户反馈：顶栏与页内标题重复显示）：≤854px 隐藏所有页面级标题
+  （`#mz-view > h2` 与概览 `.mint-ovd-header`），仅保留 `.mz-mobilebar` 中的标题；
+  概览刷新按钮（`.mint-ovd-refresh`）由 menu-mint.js 按断点搬入顶栏右侧（保留事件与
+  loading 动画），跨回桌面宽度时自动搬回原 header，桌面端页内标题与刷新按钮完全不受影响。
+
 ### 修复
 
 - 壁纸开关缺省语义加固：header.ut 现在把 uci 中缺失的 `ui_random` 视为默认值

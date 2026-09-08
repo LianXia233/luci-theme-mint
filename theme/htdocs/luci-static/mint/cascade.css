@@ -1113,6 +1113,23 @@ body.mz-login-active #maincontent {
 		flex: 0 0 auto;
 		margin: 0;
 	}
+
+	/* The dashboard refresh control lives in the bar on phones; push it
+	   to the right edge, opposite the hamburger. */
+	.mz-mobilebar .mint-ovd-refresh {
+		margin-left: auto;
+		flex: 0 0 auto;
+	}
+
+	/* Page-level titles are rendered in the bar instead (user request:
+	   no duplicate title under the bar on any page). Covers the plain
+	   LuCI page heading and the overview dashboard header (its refresh
+	   button is re-parented into the bar by menu-mint.js). Desktop
+	   (>854px) keeps the original in-page titles. */
+	#mz-view > h2,
+	.mint-ovd-header {
+		display: none !important;
+	}
 }
 
 body.mz-has-wallpaper .mz-mobilebar {

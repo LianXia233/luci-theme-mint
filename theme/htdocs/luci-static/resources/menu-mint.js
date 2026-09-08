@@ -342,7 +342,12 @@ return baseclass.extend({
 	   column under the button. The toggle now lives inside a slim sticky
 	   bar above the content that also shows the page title, so the view
 	   keeps normal symmetric padding on every phone width. Desktop is
-	   unaffected - the bar is display:none outside the 854px breakpoint. */
+	   unaffected - the bar is display:none outside the 854px breakpoint.
+	   (Later the same day: the in-page title rows are hidden on phones,
+	   so the bar title mirrors the current page heading on every SPA
+	   navigation and the dashboard refresh button is re-parented into
+	   the bar; it moves back to its header when the viewport leaves the
+	   phone range, keeping the desktop header untouched.) */
 	initMobileBar() {
 		const main = document.querySelector('.mz-main');
 		const btn = document.querySelector('#mz-sidebar-toggle');
@@ -357,17 +362,48 @@ return baseclass.extend({
 		bar.appendChild(title);
 		main.insertBefore(bar, main.firstChild);
 
-		/* Resolve the page heading: prefer the view h2, fall back to the
-		   document title; retry once because LuCI swaps the view async. */
-		const setTitle = () => {
-			if (title.textContent)
-				return;
+		const mq = window.matchMedia('(max-width: 854px)');
+
+		const sync = () => {
+			/* Title: mirror the current page heading (prefers the view h2,
+			   falls back to the document title segment). Re-evaluated on
+			   every navigation so it never goes stale. */
 			const h2 = document.querySelector('#mz-view h2, .mz-view h2');
-			title.textContent = (h2 && h2.textContent.trim()) ||
+			const t = (h2 && h2.textContent.trim()) ||
 				(String(document.title || '').split(' - ')[0] || '');
+			if (t && t !== title.textContent)
+				title.textContent = t;
+
+			/* Refresh: relocate the dashboard refresh control between the
+			   bar (phones) and its overview header (desktop). Drop stale
+			   clones left behind by dashboard re-renders. */
+			const orig = document.querySelector('.mint-ovd-refresh');
+			bar.querySelectorAll('.mint-ovd-refresh').forEach((el) => {
+				if (el !== orig)
+					el.remove();
+			});
+			if (mq.matches) {
+				if (orig && orig.parentElement !== bar)
+					bar.appendChild(orig);
+			} else {
+				const header = document.querySelector('.mint-ovd-header');
+				if (orig && header && orig.parentElement !== header)
+					header.appendChild(orig);
+			}
 		};
-		setTitle();
-		setTimeout(setTitle, 800);
+
+		sync();
+		if (mq.addEventListener)
+			mq.addEventListener('change', sync);
+		else
+			mq.addListener(sync);
+
+		/* LuCI swaps #mz-view content on every navigation (SPA); observe
+		   it so title + refresh placement follow without a reload. */
+		if (window.MutationObserver) {
+			const target = document.getElementById('mz-view') || main;
+			new MutationObserver(sync).observe(target, { childList: true, subtree: true });
+		}
 	},
 
 	initSidebarToggle() {
