@@ -1,0 +1,264 @@
+/* ==================================================================
+ * mint - Overview Dashboard
+ * Self-contained dashboard styles. Namespaced under .mint-overview-dashboard
+ * to avoid collisions with LuCI / other theme modules. Reuses mint CSS
+ * design tokens (--mz-color-*, --mz-radius-*, --mz-spacing-*, --mz-shadow-*).
+ * ================================================================== */
+
+.mint-overview-dashboard {
+	--ovd-gap: var(--mz-spacing-md);
+	--ovd-card-bg: var(--mz-color-surface);
+	--ovd-border: var(--mz-color-border);
+	--ovd-muted: var(--mz-color-text-muted);
+	--ovd-text: var(--mz-color-text);
+	--ovd-ring-track: var(--mz-color-surface-2);
+	margin: 0 0 var(--mz-spacing-lg);
+	display: block;
+}
+
+.mint-overview-dashboard * { box-sizing: border-box; }
+
+/* ---- header ---- */
+.mint-ovd-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 0 var(--mz-spacing-sm);
+}
+.mint-ovd-title {
+	font-size: 1.15rem;
+	font-weight: 650;
+	margin: 0;
+	letter-spacing: .01em;
+}
+.mint-ovd-refresh {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	min-width: 38px;
+	border: 1px solid var(--ovd-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--ovd-card-bg);
+	color: var(--ovd-text);
+	cursor: pointer;
+	transition: background var(--mz-transition), transform var(--mz-transition), border-color var(--mz-transition);
+}
+.mint-ovd-refresh:hover { border-color: var(--mz-color-primary); }
+.mint-ovd-refresh:active { transform: scale(.94); }
+.mint-ovd-refresh:focus-visible { outline: 2px solid var(--mz-color-primary); outline-offset: 2px; }
+.mint-ovd-refresh.is-loading svg { animation: ovd-spin .8s linear infinite; }
+@keyframes ovd-spin { to { transform: rotate(360deg); } }
+
+/* ---- gauges ---- */
+.mint-ovd-gauges {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: var(--ovd-gap);
+	margin-bottom: var(--ovd-gap);
+}
+.mint-ovd-gauge {
+	display: flex;
+	align-items: center;
+	gap: var(--mz-spacing-sm);
+	padding: var(--mz-spacing-md);
+	background: var(--ovd-card-bg);
+	border: 1px solid var(--ovd-border);
+	border-radius: var(--mz-radius-lg);
+	box-shadow: var(--mz-shadow-sm);
+	min-width: 0;
+}
+.mint-ovd-ring-wrap {
+	position: relative;
+	width: 84px;
+	height: 84px;
+	flex: 0 0 84px;
+}
+.mint-ovd-ring { width: 84px; height: 84px; display: block; }
+.mint-ovd-ring-bg { fill: none; stroke: var(--ovd-ring-track); stroke-width: 9; }
+.mint-ovd-ring-fg {
+	fill: none;
+	stroke: var(--mz-color-primary);
+	stroke-width: 9;
+	stroke-linecap: round;
+	transform: rotate(-90deg);
+	transform-origin: 60px 60px;
+	transition: stroke-dashoffset .6s ease;
+}
+.mint-ovd-gauge[data-gauges="cpu"] .mint-ovd-ring-fg { stroke: var(--mz-color-primary); }
+.mint-ovd-gauge[data-gauges="memory"] .mint-ovd-ring-fg { stroke: var(--mz-color-success); }
+.mint-ovd-gauge[data-gauges="temperature"] .mint-ovd-ring-fg { stroke: var(--mz-color-warning); }
+.mint-ovd-gauge[data-gauges="storage"] .mint-ovd-ring-fg { stroke: var(--mz-color-info, #0ea5e9); }
+.mint-ovd-ring-center {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+.mint-ovd-ring-num {
+	font-size: 1.25rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--ovd-text);
+}
+.mint-ovd-ring-unit { font-size: .72rem; color: var(--ovd-muted); margin-top: 1px; }
+.mint-ovd-gauge-meta { min-width: 0; flex: 1; }
+.mint-ovd-gauge-label { font-size: .82rem; font-weight: 600; color: var(--ovd-text); }
+.mint-ovd-gauge-sub {
+	font-size: .74rem;
+	color: var(--ovd-muted);
+	margin-top: 3px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ---- info / stat cards ---- */
+.mint-ovd-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--ovd-gap);
+	margin-bottom: var(--ovd-gap);
+}
+.mint-ovd-stat {
+	padding: var(--mz-spacing-md);
+	background: var(--ovd-card-bg);
+	border: 1px solid var(--ovd-border);
+	border-radius: var(--mz-radius-lg);
+	box-shadow: var(--mz-shadow-sm);
+	min-width: 0;
+}
+.mint-ovd-stat-label { font-size: .76rem; color: var(--ovd-muted); }
+.mint-ovd-stat-value {
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--ovd-text);
+	margin-top: 4px;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+.mint-ovd-stat-sub {
+	font-size: .74rem;
+	color: var(--ovd-muted);
+	margin-top: 3px;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+/* ---- charts ---- */
+.mint-ovd-charts {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--ovd-gap);
+	margin-bottom: var(--ovd-gap);
+}
+.mint-ovd-chart {
+	padding: var(--mz-spacing-md);
+	background: var(--ovd-card-bg);
+	border: 1px solid var(--ovd-border);
+	border-radius: var(--mz-radius-lg);
+	box-shadow: var(--mz-shadow-sm);
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+.mint-ovd-chart-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+.mint-ovd-chart-title { font-size: .82rem; font-weight: 600; color: var(--ovd-text); }
+.mint-ovd-chart-now { font-size: .72rem; color: var(--ovd-muted); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mint-ovd-canvas {
+	width: 100%;
+	height: 150px;
+	display: block;
+}
+.mint-ovd-chart-sr {
+	position: absolute;
+	width: 1px; height: 1px;
+	margin: -1px; padding: 0; border: 0;
+	clip: rect(0 0 0 0);
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* ---- system info ---- */
+.mint-ovd-sys {
+	padding: var(--mz-spacing-md);
+	background: var(--ovd-card-bg);
+	border: 1px solid var(--ovd-border);
+	border-radius: var(--mz-radius-lg);
+	box-shadow: var(--mz-shadow-sm);
+}
+.mint-ovd-sys-title { font-size: .9rem; font-weight: 650; margin: 0 0 var(--mz-spacing-sm); }
+.mint-ovd-sys-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 10px var(--mz-spacing-md);
+}
+.mint-ovd-sys-item {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.mint-ovd-sys-label { font-size: .72rem; color: var(--ovd-muted); }
+.mint-ovd-sys-value {
+	font-size: .84rem;
+	color: var(--ovd-text);
+	margin-top: 2px;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- error hint (RPC failing) ---- */
+.mint-overview-dashboard.mint-ovd-error .mint-ovd-title::after {
+	content: " · RPC " attr(data-x);
+}
+
+/* ================================================================
+ * Responsive: PC >=1200 / Tablet 768-1199 / Mobile <768 / <=420
+ * ================================================================ */
+@media (max-width: 1199px) {
+	.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
+	.mint-ovd-charts { grid-template-columns: repeat(2, 1fr); }
+	.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: 1 / -1; }
+	.mint-ovd-sys-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 767px) {
+	.mint-ovd-stats { grid-template-columns: repeat(2, 1fr); }
+	.mint-ovd-charts { grid-template-columns: 1fr; }
+	.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: auto; }
+	.mint-ovd-sys-grid { grid-template-columns: repeat(2, 1fr); }
+	.mint-ovd-gauge { padding: var(--mz-spacing-sm); }
+	.mint-ovd-ring-wrap { width: 72px; height: 72px; flex-basis: 72px; }
+	.mint-ovd-ring { width: 72px; height: 72px; }
+	.mint-ovd-ring-num { font-size: 1.05rem; }
+	.mint-overview-dashboard { --ovd-gap: var(--mz-spacing-sm); }
+}
+
+@media (max-width: 420px) {
+	.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
+	.mint-ovd-stats { grid-template-columns: 1fr; }
+	.mint-ovd-sys-grid { grid-template-columns: 1fr; }
+	.mint-ovd-ring-wrap { width: 64px; height: 64px; flex-basis: 64px; }
+	.mint-ovd-ring { width: 64px; height: 64px; }
+	.mint-ovd-ring-num { font-size: .95rem; }
+	.mint-ovd-canvas { height: 120px; }
+}
+
+/* ---- reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+	.mint-ovd-ring-fg { transition: none; }
+	.mint-ovd-refresh.is-loading svg { animation: none; }
+	.mint-ovd-refresh { transition: none; }
+}

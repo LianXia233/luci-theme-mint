@@ -329,6 +329,8 @@ a:hover {
 }
 
 .mz-breadcrumb {
+	/* OT-USER: breadcrumb bar removed from all pages */
+	display: none !important;
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -4395,4 +4397,52 @@ body.mz-has-wallpaper .cbi-section-descr {
 	font-size: 1.02rem !important;
 	font-weight: 700 !important;
 	letter-spacing: .02em;
+}
+
+/* ---------------------------------------------------------------- */
+/* Firewall - nftables status page (admin/status/nftables)           */
+/* The view renders bare <table class="nft-rules"> with no card      */
+/* wrapper, so the chains read as loose text lines. Give every rule  */
+/* table the theme's card look and keep the two columns readable:    */
+/* the match column is wide and wraps cleanly, the action column     */
+/* stays compact.                                                    */
+/* ---------------------------------------------------------------- */
+table.nft-rules {
+	width: 100%;
+	background: var(--mz-color-surface);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	box-shadow: var(--mz-shadow-sm);
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+	margin: 0 0 var(--mz-spacing-lg) 0;
+}
+
+table.nft-rules th,
+table.nft-rules td {
+	padding: var(--mz-spacing-sm) var(--mz-spacing-md);
+	vertical-align: top;
+	text-align: left;
+}
+
+table.nft-rules thead th {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-text);
+	font-weight: 600;
+	border-bottom: 1px solid var(--mz-color-border);
+}
+
+table.nft-rules tbody tr + tr td {
+	border-top: 1px solid var(--mz-color-border);
+}
+
+table.nft-rules td:first-child {
+	width: 68%;
+	overflow-wrap: anywhere;
+}
+
+table.nft-rules td:last-child {
+	width: 32%;
+	overflow-wrap: anywhere;
 }

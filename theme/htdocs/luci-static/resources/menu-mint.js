@@ -153,7 +153,6 @@ return baseclass.extend({
 
 	render(tree) {
 		this.renderMainMenu(tree);
-		this.renderBreadcrumb(tree);
 
 		/* Tab menu for pages with sub-views */
 		let node = tree;
@@ -178,45 +177,6 @@ return baseclass.extend({
 		this.renderMenuLevel(ul, tree, '', 0);
 		ul.style.display = '';
 		this.foldMenu();
-	},
-
-	/* Breadcrumb in the topbar, built from the live dispatch path */
-	renderBreadcrumb(tree) {
-		const crumb = document.getElementById('modemenu-breadcrumb');
-		if (!crumb || !tree)
-			return;
-
-		const segs = L.env.dispatchpath || [];
-		const titles = [];
-		let node = tree;
-
-		/* OT-06: tolerate both tree shapes - a virtual root whose child is
-		   'admin', or a root that already IS 'admin'. */
-		let start = 0;
-		if (segs[0] === 'admin' && node && node.children && node.children['admin']) {
-			node = node.children['admin'];
-			start = 1;
-		} else if (segs[0] === 'admin') {
-			start = 1;
-		}
-		for (let i = start; i < segs.length; i++) {
-			if (!node || !node.children)
-				break;
-			node = node.children[segs[i]];
-			if (!node)
-				break;
-			titles.push(node.title);
-		}
-
-		if (titles.length === 0)
-			return;
-
-		/* The topbar shows ONLY the current page (second-level) title:
-		   the parent menu name is already visible in the sidebar and
-		   just noise here. */
-		crumb.innerHTML = '';
-		crumb.appendChild(E('li', {}, [ _(titles[titles.length - 1]) ]));
-		crumb.style.display = '';
 	},
 
 	renderMenuLevel(ul, tree, url, level) {

@@ -1,21 +1,235 @@
 #!/bin/sh
-# mint ubus service (compatibility stub)
+# mint ubus service
 # Copyright (C) 2026 LianXia233
 # Licensed to the public under the Apache License 2.0.
 #
+# Methods:
+#   refresh   - wallpaper compatibility stub (kept so existing ACL grants
+#               and API clients keep working; no server-side cache exists).
+#   dashboard - real-time system telemetry collector for the Mint Overview
+#               Dashboard. Reads /proc, /sys, ubus and emits a single JSON
+#               snapshot. The browser (overview-dashboard.js) computes
+#               percentages / rates / deltas from the raw counters, so this
+#               script stays a pure, stateless collector.
+#
 # NOTE (TZ-17, 2026-09-07): random wallpapers are fetched directly by the
 # browser and custom images are local files - no server-side cache exists,
-# so the old Bing prefetch was removed. The `refresh` method is kept as a
-# stub so existing ACL grants and API clients keep working.
+# so the old Bing prefetch was removed.
+
+# Public (exit) IPv4, fetched from ipv4.im.
+#   - Cached 5 min so the per-second poll never hammers the service.
+#   - On failure we retry a couple of times; if still down we report
+#     "未联网" (offline) and stop probing immediately.
+#   - After too many failures we back off: we only re-fetch once a ping
+#     probe to a public host succeeds, so we don't keep hitting the
+#     network while it is clearly down.
+mint_public_ip() {
+	cache=/tmp/mint_public_ip
+	failf=/tmp/mint_public_ip_fail
+	maxfail=3
+	now=$(date +%s 2>/dev/null)
+
+	# Reuse a fresh good cache (<5 min) without probing the network.
+	if [ -n "$now" ] && [ -f "$cache" ]; then
+		cts=$(awk 'NR==1{print $2}' "$cache" 2>/dev/null)
+		if [ -n "$cts" ] && [ $((now - cts)) -lt 300 ]; then
+			awk 'NR==1{print $1}' "$cache" 2>/dev/null
+			return
+		fi
+	fi
+
+	# Backoff: too many recent failures -> only retry after a connectivity
+	# probe (ping) to a public host succeeds, so we stop probing while down.
+	if [ -f "$failf" ]; then
+		fc=$(cat "$failf" 2>/dev/null)
+		if [ -n "$fc" ] && [ "$fc" -ge "$maxfail" ]; then
+			if ! ping -c1 -W2 223.5.5.5 >/dev/null 2>&1 && ! ping -c1 -W2 119.29.29.29 >/dev/null 2>&1; then
+				echo "未联网"
+				return
+			fi
+			rm -f "$failf"
+		fi
+	fi
+
+	# Fetch with a few retries (1s apart) before giving up.
+	ip=""
+	for _i in 1 2 3; do
+		ip=$(curl -s --max-time 3 ipv4.im 2>/dev/null | tr -d '\r\n ')
+		if [ -n "$ip" ] && printf '%s' "$ip" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+			break
+		fi
+		ip=""
+		sleep 1
+	done
+
+	if [ -n "$ip" ]; then
+		rm -f "$failf"
+		printf '%s %s\n' "$ip" "$now" > "$cache" 2>/dev/null
+		printf '%s' "$ip"
+	else
+		if [ -f "$failf" ]; then
+			fc=$(cat "$failf" 2>/dev/null); fc=$((fc + 1))
+		else
+			fc=1
+		fi
+		printf '%s' "$fc" > "$failf" 2>/dev/null
+		echo "未联网"
+	fi
+}
+
+mint_dashboard() {
+	# ---- CPU (raw counters; frontend computes usage delta) ----
+	cpu_stat=$(head -1 /proc/stat 2>/dev/null)
+	cores=$(grep -c '^processor' /proc/cpuinfo 2>/dev/null)
+	[ -z "$cores" ] && cores=0
+	freq=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq 2>/dev/null)
+	[ -z "$freq" ] && freq=$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq 2>/dev/null)
+
+	# ---- Memory ----
+	mem_total=$(awk '/^MemTotal:/{print $2}' /proc/meminfo 2>/dev/null)
+	mem_avail=$(awk '/^MemAvailable:/{print $2}' /proc/meminfo 2>/dev/null)
+	mem_free=$(awk '/^MemFree:/{print $2}' /proc/meminfo 2>/dev/null)
+	mem_buffers=$(awk '/^Buffers:/{print $2}' /proc/meminfo 2>/dev/null)
+	mem_cached=$(awk '/^Cached:/{print $2}' /proc/meminfo 2>/dev/null)
+
+	# ---- Temperature (scan thermal zones + hwmon; millidegrees) ----
+	temps=""
+	add_temp() {
+		[ -z "$2" ] && return
+		if [ -z "$temps" ]; then
+			temps="{\"name\":\"$1\",\"temp_mc\":$2}"
+		else
+			temps="$temps,{\"name\":\"$1\",\"temp_mc\":$2}"
+		fi
+	}
+	for z in /sys/class/thermal/thermal_zone*/type; do
+		[ -f "$z" ] || continue
+		name=$(cat "$z" 2>/dev/null)
+		idx=${z#/sys/class/thermal/thermal_zone}
+		idx=${idx%/type}
+		tf="/sys/class/thermal/thermal_zone$idx/temp"
+		[ -f "$tf" ] || continue
+		add_temp "$name" "$(cat "$tf" 2>/dev/null)"
+	done
+	for h in /sys/class/hwmon/hwmon*/; do
+		[ -d "$h" ] || continue
+		hn=$(cat "${h}name" 2>/dev/null)
+		for f in "$h"*_input; do
+			[ -f "$f" ] || continue
+			b=${f#"$h"}
+			lbl=${b%_input}
+			case "$lbl" in
+				temp*) add_temp "${hn}_${lbl}" "$(cat "$f" 2>/dev/null)" ;;
+			esac
+		done
+	done
+	if [ -z "$temps" ]; then
+		temps_json="[]"
+	else
+		temps_json="[$temps]"
+	fi
+
+	# ---- Storage (real writable layer at /) ----
+	storage_line=$(df -k / 2>/dev/null | awk 'NR==2')
+	fs=$(echo "$storage_line" | awk '{print $1}')
+	stotal=$(echo "$storage_line" | awk '{print $2}')
+	sused=$(echo "$storage_line" | awk '{print $3}')
+	savail=$(echo "$storage_line" | awk '{print $4}')
+	spct=$(echo "$storage_line" | awk '{gsub(/%/,"",$5); print $5}')
+	if [ -n "$stotal" ]; then
+		storage_json=$(printf '{"filesystem":"%s","total_kb":%s,"used_kb":%s,"avail_kb":%s,"use_pct":%s,"mount":"/"}' \
+			"$fs" "$stotal" "$sused" "$savail" "${spct:-0}")
+	else
+		storage_json="null"
+	fi
+
+	# ---- Load / Uptime / Conntrack ----
+	read l1 l5 l15 _rest < /proc/loadavg 2>/dev/null
+	read up _idle < /proc/uptime 2>/dev/null
+	cc=$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null)
+	cm=$(cat /proc/sys/net/netfilter/nf_conntrack_max 2>/dev/null)
+
+	# ---- Network uplink (dynamic, never hard-coded) ----
+	dump=$(ubus call network.interface dump 2>/dev/null)
+	uplink_json="null"
+	if [ -n "$dump" ]; then
+		ifname=$(printf '%s' "$dump" | jsonfilter -e '@.interface[@.route[@.target="0.0.0.0"]].interface' 2>/dev/null | head -1)
+		[ -z "$ifname" ] && ifname=$(printf '%s' "$dump" | jsonfilter -e '@.interface[@.route[@.target="::"]].interface' 2>/dev/null | head -1)
+		if [ -n "$ifname" ]; then
+			proto=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"].proto" 2>/dev/null)
+			dev=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"].l3_device" 2>/dev/null)
+			[ -z "$dev" ] && dev=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"].device" 2>/dev/null)
+			ipv4=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"][\"ipv4-address\"][0].address" 2>/dev/null)
+			ipv4m=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"][\"ipv4-address\"][0].mask" 2>/dev/null)
+			# IPv6 may live on a sibling interface that shares the same l3_device
+			# (e.g. "wan" + "wan6"); fall back to any interface on the same device.
+			ipv6=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"][\"ipv6-address\"][0].address" 2>/dev/null)
+			[ -z "$ipv6" ] && [ -n "$dev" ] && ipv6=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.l3_device=\"$dev\"][\"ipv6-address\"][0].address" 2>/dev/null | head -1)
+			gw=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"].route[@.target=\"0.0.0.0\"].nexthop" 2>/dev/null)
+			[ -z "$gw" ] && gw=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"].route[@.target=\"::\"].nexthop" 2>/dev/null)
+			metric=$(printf '%s' "$dump" | jsonfilter -e "@.interface[@.interface=\"$ifname\"].metric" 2>/dev/null)
+			rxb=""; txb=""
+			if [ -n "$dev" ]; then
+				rxb=$(cat /sys/class/net/$dev/statistics/rx_bytes 2>/dev/null)
+				txb=$(cat /sys/class/net/$dev/statistics/tx_bytes 2>/dev/null)
+			fi
+			uplink_json=$(printf '{"name":"%s","device":"%s","proto":"%s","ipv4":"%s","ipv4_mask":%s,"ipv6":"%s","gateway":"%s","metric":%s,"rx_bytes":%s,"tx_bytes":%s}' \
+				"$ifname" "$dev" "$proto" "$ipv4" "${ipv4m:-null}" "$ipv6" "$gw" "${metric:-null}" "${rxb:-null}" "${txb:-null}")
+		fi
+	fi
+
+	# ---- Public (exit) IPv4 ----
+	public_ip=$(mint_public_ip)
+
+	# ---- System info ----
+	board=$(ubus call system board 2>/dev/null)
+	hostname=$(printf '%s' "$board" | jsonfilter -e '@.hostname' 2>/dev/null)
+	model=$(printf '%s' "$board" | jsonfilter -e '@.model' 2>/dev/null)
+	board_name=$(printf '%s' "$board" | jsonfilter -e '@.board_name' 2>/dev/null)
+	system_arch=$(printf '%s' "$board" | jsonfilter -e '@.system' 2>/dev/null)
+	target=$(printf '%s' "$board" | jsonfilter -e '@.release.target' 2>/dev/null)
+	dist=$(printf '%s' "$board" | jsonfilter -e '@.release.distribution' 2>/dev/null)
+	ver=$(printf '%s' "$board" | jsonfilter -e '@.release.version' 2>/dev/null)
+	rev=$(printf '%s' "$board" | jsonfilter -e '@.release.revision' 2>/dev/null)
+	kernel=$(printf '%s' "$board" | jsonfilter -e '@.kernel' 2>/dev/null)
+	openwrt=$(. /etc/openwrt_release 2>/dev/null; printf '%s' "$DISTRIB_DESCRIPTION")
+	luci_ver=$(grep '^luciversion' /usr/lib/lua/luci/version.lua 2>/dev/null | sed "s/.*= *//; s/[\"']//g")
+	system_json=$(printf '{"hostname":"%s","model":"%s","board_name":"%s","arch":"%s","target":"%s","distribution":"%s","version":"%s","revision":"%s","kernel":"%s","openwrt":"%s","luci":"%s"}' \
+		"$hostname" "$model" "$board_name" "$system_arch" "$target" "$dist" "$ver" "$rev" "$kernel" "$openwrt" "$luci_ver")
+
+	# ---- Assemble ----
+	if [ -n "$cpu_stat" ]; then
+		stat_json="\"$cpu_stat\""
+	else
+		stat_json="null"
+	fi
+
+	cat <<JSON
+{
+  "cpu": { "cores": $cores, "freq_khz": ${freq:-null}, "stat": $stat_json },
+  "memory": { "total_kb": ${mem_total:-0}, "available_kb": ${mem_avail:-0}, "free_kb": ${mem_free:-0}, "buffers_kb": ${mem_buffers:-0}, "cached_kb": ${mem_cached:-0} },
+  "temperature": $temps_json,
+  "storage": $storage_json,
+  "load": { "m1": ${l1:-0}, "m5": ${l5:-0}, "m15": ${l15:-0} },
+  "uptime": ${up:-0},
+  "conntrack": { "count": ${cc:-null}, "max": ${cm:-null} },
+  "network": { "uplink": $uplink_json, "public_ipv4": $([ -n "$public_ip" ] && printf '"%s"' "$public_ip" || echo "null") },
+  "system": $system_json
+}
+JSON
+}
 
 case "$1" in
 	list)
-		echo '{"refresh":{}}'
+		echo '{"refresh":{},"dashboard":{}}'
 		;;
 	call)
 		case "$2" in
 			refresh)
 				echo '{"spawned":false,"mode":"random"}'
+				;;
+			dashboard)
+				mint_dashboard
 				;;
 			*)
 				echo '{"error":"invalid method"}'

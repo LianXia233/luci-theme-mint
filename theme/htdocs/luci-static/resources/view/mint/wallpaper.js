@@ -63,7 +63,7 @@ return view.extend({
 
 		const uiRandom = s.option(form.Flag, 'ui_random', _('Random wallpaper on admin pages'),
 			_('When enabled, every login page load and every admin page refresh automatically picks a fresh random image for the current device type.'));
-		uiRandom.default = '1'; /* OT-09: match the header.ut default (on when unset) */
+		uiRandom.default = '0'; /* OT-09: random wallpaper on admin pages is OFF by default */
 
 		/* ---- PC source ---- */
 		const pcMode = s.option(form.ListValue, 'pc_mode', _('Desktop source'));

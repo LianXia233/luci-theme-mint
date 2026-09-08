@@ -60,7 +60,7 @@ if ! uci -q get mint.wallpaper 2>/dev/null; then
 		uci set mint.wallpaper=mint
 	}
 	uci -q set mint.wallpaper.enabled=1
-	uci -q set mint.wallpaper.ui_random=1
+	uci -q set mint.wallpaper.ui_random=0
 	uci -q set mint.wallpaper.pc_mode=random
 	uci -q set mint.wallpaper.mobile_mode=random
 	uci -q set mint.wallpaper.overlay=0.45

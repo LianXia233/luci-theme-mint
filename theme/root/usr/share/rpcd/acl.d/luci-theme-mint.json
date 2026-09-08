@@ -9,7 +9,8 @@
 			],
 			"ubus": {
 				"mint": [
-					"refresh"
+					"refresh",
+					"dashboard"
 				]
 			},
 			"file": {
@@ -26,7 +27,8 @@
 			],
 			"ubus": {
 				"mint": [
-					"refresh"
+					"refresh",
+					"dashboard"
 				]
 			},
 			"file": {

@@ -96,7 +96,7 @@
 				enabled: {{ (wp.enabled == '0' || wallpaper.enabled == false) ? 'false' : 'true' }},
 				overlay: {{ sprintf('%J', wallpaper.overlay ?? '0.45') }},
 				blur: {{ sprintf('%J', wallpaper.blur ?? '0') }},
-				ui_random: {{ (wp.ui_random == '0') ? 'false' : 'true' }},
+				ui_random: {{ (wp.ui_random == '1') ? 'true' : 'false' }},
 				pc: {
 					mode: {{ sprintf('%J', wallpaper.pc?.mode ?? 'random') }},
 					url: {{ sprintf('%J', wallpaper.pc?.url ?? '') }},
@@ -172,11 +172,6 @@
 		</aside>
 
 		<div class="mz-main" id="maincontent">
-			<header class="mz-topbar">
-				<ul class="mz-breadcrumb" id="modemenu-breadcrumb" style="display:none"></ul>
-				<div id="indicators" class="mz-indicators pull-right"></div>
-			</header>
-
 			{% if (getuid() == 0 && getspnam('root')?.pwdp === ''): %}
 				<div class="alert-message warning" role="alert">
 					<h4>{{ _('No password set!') }}</h4>

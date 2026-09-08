@@ -19,6 +19,16 @@
 	var started = false;
 	var hideObserver = null;
 
+	/* OT-DASH: when the new Overview Dashboard is active it renders the
+	   core (CPU/Mem/Storage rings), System info and Network/WAN widgets
+	   itself, so this legacy enhancer suppresses its own copies of those
+	   three panels and keeps Port / DHCP / Wireless / UPnP intact.
+	   We key off the dashboard DOM element (not a boolean flag) so the
+	   decision can never desync on SPA navigation / reload. */
+	function mintOvdActive() {
+		return !!(document.getElementById('mint-overview-dashboard'));
+	}
+
 	/* OT-11: prefixes grouped by panel category - a native section is only
 	   hidden when its replacement panel actually rendered. (The orphan
 	   'DSL' entry was dropped: no DSL panel exists, so hiding it only
@@ -685,14 +695,19 @@
 
 		var picked = findCoreTables(tables);
 		var core = mergeCore(collectCore([picked.sys, picked.mem, picked.storage]));
-		var panel = view.querySelector('.mz-overview-panel');
-		if (!panel) {
-			panel = document.createElement('div');
-			panel.className = 'mz-overview-panel';
-			panel.innerHTML = buildCoreHtml(core);
-			view.insertBefore(panel, view.firstChild);
+		var panel = null;
+		if (!mintOvdActive()) {
+			panel = view.querySelector('.mz-overview-panel');
+			if (!panel) {
+				panel = document.createElement('div');
+				panel.className = 'mz-overview-panel';
+				panel.innerHTML = buildCoreHtml(core);
+				view.insertBefore(panel, view.firstChild);
+			} else {
+				patchCore(panel, core);
+			}
 		} else {
-			patchCore(panel, core);
+			removePanel(view, 'mz-overview-panel');
 		}
 
 		var cursor = panel;
@@ -707,7 +722,7 @@
 			removePanel(view, 'mz-port-panel');
 		}
 
-		var nets = collectNet(findSection(['网络', 'Network']));
+		var nets = mintOvdActive() ? [] : collectNet(findSection(['网络', 'Network']));
 		if (nets.length) {
 			cats.net = true;
 			var netPanel = ensurePanel(view, 'mz-net-panel', cursor);
@@ -715,6 +730,7 @@
 			cursor = netPanel;
 		} else {
 			removePanel(view, 'mz-net-panel');
+			if (mintOvdActive()) cats.net = true; /* keep original Network section hidden */
 		}
 
 		var sysSec = null;
@@ -725,7 +741,7 @@
 				st.indexOf('端口') < 0 && st.indexOf('Ports') < 0)
 				sysSec = sec;
 		});
-		var sysItems = collectSys(sysSec);
+		var sysItems = mintOvdActive() ? [] : collectSys(sysSec);
 		if (sysItems.length) {
 			cats.sys = true;
 			var sysPanel = ensurePanel(view, 'mz-sys-panel', cursor);
@@ -733,6 +749,7 @@
 			cursor = sysPanel;
 		} else {
 			removePanel(view, 'mz-sys-panel');
+			if (mintOvdActive()) cats.sys = true; /* keep original System section hidden */
 		}
 
 		var dhcp = collectDhcp(findSection(['DHCP']));
