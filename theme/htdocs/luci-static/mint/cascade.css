@@ -3570,10 +3570,12 @@ body.mz-has-wallpaper::before {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
-	/* Light theme: a soft WHITE wash (user's overlay alpha scaled by 0.55,
-	   so the default 0.45 lands on ~0.25) - the wallpaper stays vivid
-	   like the reference page instead of being dimmed. */
-	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 0.55));
+	/* Light theme: a white wash matched to the CARD alpha (2026-09-09
+	   readability round: user report - content areas were more transparent
+	   than the cards, hurting contrast). The user's overlay alpha is
+	   scaled x1.2 so the default 0.45 lands on ~0.54, the same level as
+	   the 0.55 card fill; wallpaper stays visible outside the cards. */
+	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 1.2));
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 }
@@ -3664,7 +3666,7 @@ body.mz-has-wallpaper {
 	--mz-panel-bg-soft: rgba(255, 255, 255, 0.4);
 	--mz-panel-halo: 0 1px 2px rgba(255, 255, 255, 0.6);
 	--mz-color-text: #1c2736;
-	--mz-color-text-muted: rgba(40, 54, 74, 0.68);
+	--mz-color-text-muted: rgba(40, 54, 74, 0.8);
 	--mz-color-surface: rgba(255, 255, 255, 0.55);
 	--mz-color-surface-2: rgba(255, 255, 255, 0.7);
 	--mz-color-border: rgba(255, 255, 255, 0.55);
@@ -3801,7 +3803,9 @@ body.mz-has-wallpaper .cbi-tab-descr {
 body.mz-has-wallpaper table.table thead th,
 body.mz-has-wallpaper table.cbi-section-table thead th,
 body.mz-has-wallpaper .table .table-titles .td {
-	background: rgba(148, 163, 184, 0.18);
+	/* Readability round 2026-09-09: 0.18 was fainter than the 0.55 cards
+	   the headers sit on; raised so headers read as a distinct tier. */
+	background: rgba(148, 163, 184, 0.38);
 }
 body.mz-has-wallpaper .table .tr:hover .td,
 body.mz-has-wallpaper table.table tr:hover td,
@@ -3809,7 +3813,7 @@ body.mz-has-wallpaper table.cbi-section-table tr:hover td,
 body.mz-has-wallpaper table.table tbody tr:hover td,
 body.mz-has-wallpaper table.cbi-section-table tbody tr:hover td,
 body.mz-has-wallpaper .mz-data-table tbody tr:hover td {
-	background: rgba(148, 163, 184, 0.16);
+	background: rgba(148, 163, 184, 0.3);
 }
 
 /* Inputs over wallpaper (glass pass 2026-09-08): the 7% card wash was too
@@ -3891,7 +3895,10 @@ body.mz-has-wallpaper .mz-sys-grid {
    keeps the 0.4 tint with light text (rules below). */
 body.mz-has-wallpaper .mz-net-header,
 body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.16);
+	/* Readability round 2026-09-09: 0.16 sat below the card alpha and
+	   washed out on bright wallpapers; 0.32 keeps a primary tint that is
+	   clearly a tier above the 0.55 white card beneath it. */
+	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.32);
 }
 body.mz-has-wallpaper .mz-net-header {
 	color: var(--mz-color-text);
