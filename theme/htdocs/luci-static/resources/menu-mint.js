@@ -49,6 +49,7 @@ return baseclass.extend({
 		ui.menu.load().then((tree) => this.render(tree));
 
 		this.initSidebarToggle();
+		this.initMobileBar();
 		this.initThemeToggle();
 		this.initLogout();
 		this.initGlobalWallpaper();
@@ -335,6 +336,39 @@ return baseclass.extend({
 	},
 
 	/* ----- Sidebar drawer (mobile) ------------------------------- */
+
+	/* Mobile top bar (2026-09-09): the old fixed corner hamburger forced a
+	   full-height left padding gutter on #mz-view, leaving a large blank
+	   column under the button. The toggle now lives inside a slim sticky
+	   bar above the content that also shows the page title, so the view
+	   keeps normal symmetric padding on every phone width. Desktop is
+	   unaffected - the bar is display:none outside the 854px breakpoint. */
+	initMobileBar() {
+		const main = document.querySelector('.mz-main');
+		const btn = document.querySelector('#mz-sidebar-toggle');
+		if (!main || !btn || document.querySelector('.mz-mobilebar'))
+			return;
+
+		const bar = document.createElement('div');
+		bar.className = 'mz-mobilebar';
+		const title = document.createElement('span');
+		title.className = 'mz-mobilebar-title';
+		bar.appendChild(btn);
+		bar.appendChild(title);
+		main.insertBefore(bar, main.firstChild);
+
+		/* Resolve the page heading: prefer the view h2, fall back to the
+		   document title; retry once because LuCI swaps the view async. */
+		const setTitle = () => {
+			if (title.textContent)
+				return;
+			const h2 = document.querySelector('#mz-view h2, .mz-view h2');
+			title.textContent = (h2 && h2.textContent.trim()) ||
+				(String(document.title || '').split(' - ')[0] || '');
+		};
+		setTitle();
+		setTimeout(setTitle, 800);
+	},
 
 	initSidebarToggle() {
 		const btn = document.querySelector('#mz-sidebar-toggle');
