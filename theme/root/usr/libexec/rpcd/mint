@@ -55,6 +55,19 @@ mint_save() {
 	done
 	if [ "$written" -gt 0 ]; then
 		uci commit "$config" 2>/dev/null
+		# Audit trail: every committed write is logged with the option
+		# names (values may contain secrets, so only keys are logged).
+		keys=""
+		i2=0
+		while :; do
+			kv=$(printf '%s' "$req" | jsonfilter -e "@.values[$i2]" 2>/dev/null)
+			[ -z "$kv" ] && break
+			k=$(printf '%s' "$kv" | jsonfilter -e '@[0]' 2>/dev/null)
+			case "$k" in *[!A-Za-z0-9_]*) i2=$((i2+1)); continue ;; esac
+			[ -n "$k" ] && keys="$keys $k"
+			i2=$((i2+1))
+		done
+		logger -t mint-save "commit $config.$section:$keys"
 	fi
 	printf '{"ok":true,"written":%s,"config":"%s","section":"%s"}\n' "$written" "$config" "$section"
 }

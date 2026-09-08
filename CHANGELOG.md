@@ -9,6 +9,17 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-09-09
+
+### Changed
+
+- **卡片间隙与卡片观感统一**：全页壁纸遮罩层（`body.mz-has-wallpaper::before`）从无模糊改为与卡片相同的玻璃模糊（`blur(max(--mz-glass-blur, --mz-wallpaper-blur)) saturate()`，亮色 14px/暗色 12px，用户配置的壁纸模糊取较大值保留），卡片间隙区域与卡片内部视觉一致；不支持 CSS 数值函数的引擎回落到原 `blur(--mz-wallpaper-blur)`
+
+### Fixed
+
+- **`ui_random` 等开关被"幽灵保存"写回旧值**：根因是保存动作会把页面渲染时的全部控件状态原样提交——一个在开关为 0 时渲染的旧标签页，之后任何一次未改动任何控件的「保存」都会把 0 写回。现改为渲染时快照（`data-mint-init`）、保存时只提交用户实际改动的字段：未编辑任何控件时点保存零写入（空 section 不再触发 RPC 与 commit）。radio 组在切换选择时会补发被取消旧项的 `0`，保证完整回写
+- **rpcd `mint save` 审计日志**：每次 commit 以 `mint-save` 标签写 syslog（仅记 option 名不含值），`logread | grep mint-save` 可追溯所有写入
+
 ## [1.3.1] - 2026-09-09
 
 ### Changed - 透明度统一（可读性修正）

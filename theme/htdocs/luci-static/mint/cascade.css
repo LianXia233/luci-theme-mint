@@ -3576,8 +3576,15 @@ body.mz-has-wallpaper::before {
 	   scaled x1.2 so the default 0.45 lands on ~0.54, the same level as
 	   the 0.55 card fill; wallpaper stays visible outside the cards. */
 	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 1.2));
+	/* 2026-09-09: the page BETWEEN cards must look like the cards. Cards
+	   are 0.55 white + blur; the wash already matches the alpha, so give
+	   the full-page overlay the same glass blur. max() keeps a stronger
+	   user-configured wallpaper blur (--mz-wallpaper-blur). A plain
+	   blur() fallback stays for engines without math functions. */
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+	backdrop-filter: blur(max(var(--mz-glass-blur, 14px), var(--mz-wallpaper-blur, 0px))) saturate(var(--mz-glass-saturate, 1.25));
+	-webkit-backdrop-filter: blur(max(var(--mz-glass-blur, 14px), var(--mz-wallpaper-blur, 0px))) saturate(var(--mz-glass-saturate, 1.25));
 }
 
 /* Dark theme keeps the dimming wash so light text stays readable. */

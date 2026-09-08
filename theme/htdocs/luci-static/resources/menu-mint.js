@@ -485,6 +485,13 @@ return baseclass.extend({
 		parent.insertBefore(form, moveNodes[0]);
 		moveNodes.forEach((n) => form.appendChild(n));
 
+		/* Snapshot every widget's rendered value. mintSave() later ships
+		   ONLY options the user actually changed, so a stale tab (rendered
+		   while uci held different values) can no longer silently rewrite
+		   old state when someone clicks Save without touching anything -
+		   the root cause of the mystery ui_random=0 flips (2026-09-09). */
+		this.snapshotCbiValues(form);
+
 		/* Take over Save / Save & Apply so the change is actually committed.
 		   The stock CBI button has type="submit" with an (often broken)
 		   onclick; we intercept the click, run a full ubus set+commit, then
@@ -497,6 +504,24 @@ return baseclass.extend({
 		});
 	},
 
+	/* Record each CBI control's rendered value as data-mint-init so
+	   collectCbiValues() can tell "user changed it" from "page happened
+	   to render this way". */
+	snapshotCbiValues(root) {
+		const snap = (inp) => {
+			if (!inp) return;
+			const v = (inp.type === 'checkbox' || inp.type === 'radio')
+				? (inp.checked ? '1' : '0') : inp.value;
+			try { inp.setAttribute('data-mint-init', v); } catch (e) {}
+		};
+		root.querySelectorAll('[data-widget-id*="cbid."]').forEach((w) => {
+			snap((w.matches && w.matches('input, select, textarea'))
+				? w : w.querySelector('input, select, textarea'));
+		});
+		root.querySelectorAll('input[name^="cbid."], select[name^="cbid."], ' +
+			'textarea[name^="cbid."]').forEach(snap);
+	},
+
 	/* Collect every CBI option from the injected form. Stock LuCI renders
 	   each field as a widget whose identity lives in data-widget-id
 	   ("widget.cbid.<config>.<section>.<option>"); on this build the raw
@@ -504,7 +529,11 @@ return baseclass.extend({
 	   must read the value from the widget's inner control. We group options
 	   by config+section as [ [option, value], ... ] pairs (the shape the
 	   mint rpcd "save" method expects). Password widgets left blank are
-	   skipped so we never wipe an existing secret (mirrors stock LuCI). */
+	   skipped so we never wipe an existing secret (mirrors stock LuCI).
+	   Options whose value equals the render-time snapshot are skipped as
+	   well: pressing Save without editing anything must not write ANY
+	   option back (a stale tab would otherwise re-write its rendered
+	   values over newer uci state). */
 	collectCbiValues(form) {
 		const groups = {};
 		const readWidget = (w) => {
@@ -518,11 +547,19 @@ return baseclass.extend({
 			const inp = (w.matches && w.matches('input, select, textarea'))
 				? w : w.querySelector('input, select, textarea');
 			if (!inp) return;
+			const init = inp.getAttribute('data-mint-init');
 			let val;
 			if (inp.type === 'checkbox') val = inp.checked ? '1' : '0';
-			else if (inp.type === 'radio') { if (!inp.checked) return; val = inp.value; }
+			else if (inp.type === 'radio') {
+				val = inp.checked ? '1' : '0';
+				/* Unchecked radios are skipped - unless they were the
+				   rendered selection (init '1'), in which case they must
+				   ship '0' so a changed selection clears the old value. */
+				if (!inp.checked && init !== '1') return;
+			}
 			else if (inp.type === 'password') { if (!inp.value) return; val = inp.value; }
 			else val = inp.value;
+			if (init != null && init === val) return; /* untouched since render */
 			const key = config + '/' + section;
 			if (!groups[key]) groups[key] = { config: config, section: section, pairs: [] };
 			groups[key].pairs.push([option, val]);
@@ -534,11 +571,16 @@ return baseclass.extend({
 			const m = el.name.match(/^cbid\.([^.]+)\.([^.]+)\.(.+)$/);
 			if (!m) return;
 			const config = m[1], section = m[2], option = m[3];
+			const init = el.getAttribute('data-mint-init');
 			let val;
 			if (el.type === 'checkbox') val = el.checked ? '1' : '0';
-			else if (el.type === 'radio') { if (!el.checked) return; val = el.value; }
+			else if (el.type === 'radio') {
+				val = el.checked ? '1' : '0';
+				if (!el.checked && init !== '1') return;
+			}
 			else if (el.type === 'password') { if (!el.value) return; val = el.value; }
 			else val = el.value;
+			if (init != null && init === val) return; /* untouched since render */
 			const key = config + '/' + section;
 			if (!groups[key]) groups[key] = { config: config, section: section, pairs: [] };
 			groups[key].pairs.push([option, val]);
@@ -558,7 +600,7 @@ return baseclass.extend({
 			document.querySelector('form[data-mint-injected]');
 		if (!form) return;
 		const groups = this.collectCbiValues(form);
-		const keys = Object.keys(groups);
+		const keys = Object.keys(groups).filter((k) => groups[k].pairs.length);
 		if (!keys.length) { window.location.reload(); return; }
 
 		const rpcSave = (window.L && L.rpc && typeof L.rpc.declare === 'function')
