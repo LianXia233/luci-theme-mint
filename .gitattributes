@@ -1,0 +1,13 @@
+# OpenWrt/LuCI packages run on BusyBox ash; CRLF line endings break shell
+# scripts (rpcd backends, uci-defaults, cron jobs) at runtime on the device.
+# Force every text file to be stored and checked out with LF endings so the
+# package works regardless of the contributor's host git configuration.
+* text=auto eol=lf
+
+# Explicitly mark the interpreter-driven files so renormalization is unambiguous.
+*.sh    text eol=lf
+*.py    text eol=lf
+Makefile text eol=lf
+*.yml   text eol=lf
+*.ut    text eol=lf
+*.uc    text eol=lf
