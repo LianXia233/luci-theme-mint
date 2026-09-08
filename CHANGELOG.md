@@ -13,8 +13,9 @@
 
 ### Fixed
 
-- **手机端（≤854px 与 ≤480px 断点）页面标题被左上角汉堡按钮遮挡**：cascade.css 在 854px 与 480px 断点给 `.mz-view` 加 `padding-left: 64px / 56px`，让页面标题从按钮右侧开始
-- **后台页面随机壁纸（`ui_random`）等 CBI 表单开关保存后无反应**：菜单 JS `ensureCbiForm()` 在页面渲染后检测到未被 `<form>` 包裹的 `.cbi-map` 时自动注入一个 form（action = 当前 URL，method = post，enctype = multipart/form-data，附 `token` 与 `cbi.submit=1` 隐藏域），让精简版 cbi.js 的 `cbi_submit()` 找到 form 并成功 POST 到 dispatcher。修复后 `mintwallpaper` 等所有依赖此 form 的页面保存按钮可正常写回 UCI（系统页、无线等未受影响，那些页面的 cbi_map 已自带 form 不变）
+- **手机端（≤854px 与 ≤480px 断点）页面标题被左上角汉堡按钮遮挡**：根因是 `#mz-view`（ID 选择器）的 `padding: 24px 28px` 覆盖了 `.mz-view` 媒体查询。cascade.css 改为在 `#mz-view` 上按断点加 `padding-left: 64px / 60px`，让页面标题从按钮右侧开始
+- **后台页面随机壁纸（`ui_random`）等 CBI 表单开关保存后无反应**：菜单 JS `ensureCbiForm()` 在页面渲染后检测到未被 `<form>` 包裹的 `.cbi-map` 时自动注入一个 form（action = 当前 URL，method = post，enctype = multipart/form-data，附 `token` 与 `cbi.submit=1` 隐藏域），拦截 Save 按钮调用新增的 rpcd `mint save` 方法在 root 上下文执行 `uci set` + `uci commit`，解决设备端 cbi.js 不提交、ubus `uci commit` 被 ACL 拒绝的问题。修复后 `mintwallpaper` 等所有依赖此 form 的页面保存按钮可正常写回 UCI
+- **部分用户 Mint 壁纸设置页未汉化**：LuCI 编译出的 catalog 为 `luci-theme-mint.zh-cn.lmo`，但部分固件将 `luci.main.lang` 设为 `zh_cn` / `zh_CN`，导致 `/cgi-bin/luci/admin/translations/zh_cn` 返回空。`Makefile` 的 `postinst` 现在为 `zh_cn` / `zh_CN` 创建指向 `zh-cn.lmo` 的符号链接，`postrm` 同步清理
 
 ### Added
 

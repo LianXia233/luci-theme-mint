@@ -50,6 +50,16 @@ define Package/luci-theme-mint/postinst
 	# Drop the menu / module caches so LuCI sees the theme without a reboot.
 	rm -f /tmp/luci-indexcache*
 	rm -rf /tmp/luci-modulecache/
+	# The LuCI build compiles po/zh_Hans/ as luci-theme-mint.zh-cn.lmo, but
+	# some firmwares set luci.main.lang to zh_cn / zh_CN. Provide symlinks
+	# so those language codes still load the Simplified Chinese catalog.
+	cd /usr/lib/lua/luci/i18n 2>/dev/null && {
+		for f in luci-theme-mint.zh-cn.lmo luci-theme-mintzero.zh-cn.lmo; do
+			[ -f "$$f" ] || continue
+			ln -sf "$$f" "$${f%.zh-cn.lmo}.zh_cn.lmo" 2>/dev/null || true
+			ln -sf "$$f" "$${f%.zh-cn.lmo}.zh_CN.lmo" 2>/dev/null || true
+		done
+	}
 	# RELOAD, NOT RESTART: rpcd holds ubus sessions in memory, so `restart`
 	# logs out every LuCI user - including the admin who just installed the
 	# theme. SIGHUP re-reads /usr/share/rpcd/acl.d/*, and that ACL refresh
@@ -82,6 +92,11 @@ esac
 	rm -f /www/luci-static/mint/custom-mobile.jpg
 	rm -f /www/luci-static/mint/wallpaper-pc.img
 	rm -f /www/luci-static/mint/wallpaper-mobile.img
+	# Remove zh_cn / zh_CN aliases created by postinst.
+	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_cn.lmo
+	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_CN.lmo
+	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_cn.lmo
+	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_CN.lmo
 	# Remove the wallpaper cache refresher cron line (marked) and the helper.
 	if [ -f /etc/crontabs/root ]; then
 		grep -v 'mz-wallpaper-fetch' /etc/crontabs/root > /tmp/mz-crontab.$$
