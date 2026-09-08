@@ -262,3 +262,27 @@
 	.mint-ovd-refresh.is-loading svg { animation: none; }
 	.mint-ovd-refresh { transition: none; }
 }
+
+/* ==================================================================
+ * Wallpaper mode (glass pass, 2026-09-08)
+ * When the global wallpaper is active the surface token becomes a 7%
+   white wash, which alone is too faint for the dense dashboard cards.
+   Give every dashboard card the shared glass treatment - panel token,
+   blur, translucent border - so the wallpaper shows through and the
+   charts stay readable. Blur is limited to these card shells (about
+   ten elements), matching the theme's backdrop-filter budget.
+ * ================================================================== */
+body.mz-has-wallpaper .mint-overview-dashboard {
+	--ovd-border: var(--mz-glass-border);
+}
+
+body.mz-has-wallpaper .mint-ovd-gauge,
+body.mz-has-wallpaper .mint-ovd-stat,
+body.mz-has-wallpaper .mint-ovd-chart,
+body.mz-has-wallpaper .mint-ovd-sys {
+	background: var(--mz-panel-bg);
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-glass-border);
+	box-shadow: var(--mz-glass-shadow);
+}

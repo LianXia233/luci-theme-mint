@@ -9,6 +9,22 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-08
+
+### Added - 全局玻璃拟态（Glass-morphism）改造
+
+- **玻璃设计令牌集中化**：`body.mz-has-wallpaper` 作用域新增 `--mz-glass-blur`（卡片 12px）/ `--mz-glass-blur-strong`（侧栏/顶栏/页脚 14px）/ `--mz-glass-blur-input`（输入框 8px）/ `--mz-glass-saturate` / `--mz-glass-border(-strong)` / `--mz-glass-shadow(-lg)` / `--mz-input-bg(-hover)`（深色可读填充 rgba(15,23,42,.42/.52)）/ `--mz-modal-bg`（rgba(17,26,39,.86)）；原有散落的 `blur(12px)/blur(14px)` 硬编码全部改为引用令牌，调参一处生效
+- **输入框玻璃化**：壁纸模式下 `input/select/textarea` 使用深色可读填充 + 轻模糊，hover/focus 提升填充与主色描边；补齐 `-webkit-autofill` / `autofill` 覆盖，避免自动填充弹出亮黄色色块；disabled 态回落 soft 填充
+- **Modal 玻璃化分层**：`#modal_overlay .modal` 使用专用 `--mz-modal-bg`（0.86 不透明度，比卡片高一档）+ 14px 模糊，确认框内嵌 section/表格转纯透明防止叠加
+- **Overview 仪表盘卡片玻璃化**：`overview-dashboard.css` 末尾新增壁纸模式规则，gauge/stat/chart/sys 四类卡片统一 `--mz-panel-bg` + 12px 模糊 + 半透明边框
+- **backdrop-filter 兼容 fallback**：`@supports not (backdrop-filter)` 时全部填充令牌提升到 0.78-0.96 不透明深色，无模糊浏览器下文字依然可读
+- **移动端性能降级**：≤768px 时模糊半径降一档（12→8px、14→10px、8→6px）、浮层阴影减弱，降低低端 SoC 填充率压力
+
+### Changed - 全局玻璃拟态改造
+
+- 透明度阶梯明确为：页面背景透明 < 侧栏/顶栏 0.13 < 卡片 0.07 < Modal 0.86 < 输入框 0.42（深色填充），重叠容器继续保持去嵌套规则（内层透明）防止透明度相乘
+- `--mz-panel-bg` 家族单值驱动明暗双主题（壁纸遮罩已压暗底色），无 per-element 明暗覆盖
+
 ## [1.1.1] - 2026-09-08
 
 ### Fixed

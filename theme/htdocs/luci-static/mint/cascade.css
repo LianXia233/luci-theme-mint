@@ -3595,8 +3595,8 @@ body.mz-has-wallpaper .mz-footer,
 body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
 body.mz-has-wallpaper #maincontent .cbi-page-actions {
 	background: var(--mz-panel-bg-strong);
-	backdrop-filter: blur(14px) saturate(1.15);
-	-webkit-backdrop-filter: blur(14px) saturate(1.15);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
 }
 
 /* The hamburger must stay above the raised sidebar (review TZ-07). */
@@ -3611,6 +3611,25 @@ body.mz-has-wallpaper .mz-sidebar-toggle {
 /* The modal overlay stays above the wallpaper backdrop */
 body.mz-has-wallpaper #modal_overlay {
 	z-index: 2000;
+}
+
+/* Modal dialog over wallpaper (glass pass 2026-09-08): the modal used to
+   inherit the 7% card wash, which let a busy page bleed through the
+   dense confirmation text. It now gets the dedicated dark readable fill
+   plus a stronger blur - still glass, but one ladder step above cards. */
+body.mz-has-wallpaper #modal_overlay .modal {
+	background: var(--mz-modal-bg);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-glass-border);
+	box-shadow: var(--mz-glass-shadow-lg);
+}
+
+body.mz-has-wallpaper #modal_overlay .modal .cbi-section,
+body.mz-has-wallpaper #modal_overlay .modal table.table {
+	background: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 /* (Removed 2026-09-07 review TZ-05: old 0.9 table rules, superseded by the glass layer below.) */
@@ -3638,6 +3657,28 @@ body.mz-has-wallpaper {
 	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
 	--mz-color-border: rgba(255, 255, 255, 0.12);
 	--mz-color-background: #16202f;
+
+	/* Glass tokens (glass-morphism pass, 2026-09-08): single source of
+	   truth for blur radii, borders, shadows and the darker fills used
+	   by inputs / modals / open dropdowns. Tune here, not per-element.
+	   Light and dark share the values - the wallpaper overlay darkens
+	   the page enough that one palette keeps text readable in both. */
+	--mz-glass-blur: 12px;          /* cards, alerts, panels */
+	--mz-glass-blur-strong: 14px;   /* app chrome: sidebar/topbar/footer */
+	--mz-glass-blur-input: 8px;     /* inputs: cheaper, they are small */
+	--mz-glass-saturate: 1.15;
+	--mz-glass-border: rgba(148, 163, 184, 0.3);
+	--mz-glass-border-strong: rgba(148, 163, 184, 0.45);
+	--mz-glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+	--mz-glass-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+	/* Darker "readable glass" fills: inputs and modals carry dense text,
+	   so they need more ink than the 7% card wash (documented ladder:
+	   page transparent < chrome 0.13 < cards 0.07 < modal 0.86 < input
+	   0.42 dark slate). */
+	--mz-input-bg: rgba(15, 23, 42, 0.42);
+	--mz-input-bg-hover: rgba(15, 23, 42, 0.52);
+	--mz-input-border: rgba(148, 163, 184, 0.42);
+	--mz-modal-bg: rgba(17, 26, 39, 0.86);
 }
 
 body.mz-has-wallpaper .cbi-map,
@@ -3661,9 +3702,9 @@ body.mz-has-wallpaper .ifacebox-body,
 body.mz-has-wallpaper .ifacebadge,
 body.mz-has-wallpaper .cbi-dynlist > .item {
 	background: var(--mz-panel-bg);
-	backdrop-filter: blur(12px) saturate(1.15);
-	-webkit-backdrop-filter: blur(12px) saturate(1.15);
-	border-color: rgba(148, 163, 184, 0.3);
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-glass-border);
 }
 
 /* De-nested glass (review TZ-01/TZ-06, 2026-09-07): only the OUTERMOST
@@ -3712,8 +3753,8 @@ body.mz-has-wallpaper .cbi-section-error,
 body.mz-has-wallpaper .cbi-map > .cbi-map-descr,
 body.mz-has-wallpaper .cbi-tab-descr {
 	background: var(--mz-panel-bg-strong);
-	backdrop-filter: blur(12px) saturate(1.15);
-	-webkit-backdrop-filter: blur(12px) saturate(1.15);
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
 }
 
 /* Generic table headers and hover rows over wallpaper (review TZ-03):
@@ -3731,6 +3772,62 @@ body.mz-has-wallpaper table.table tbody tr:hover td,
 body.mz-has-wallpaper table.cbi-section-table tbody tr:hover td,
 body.mz-has-wallpaper .mz-data-table tbody tr:hover td {
 	background: rgba(148, 163, 184, 0.16);
+}
+
+/* Inputs over wallpaper (glass pass 2026-09-08): the 7% card wash was too
+   faint for dense form fields on bright wallpapers. Inputs get the dark
+   readable fill, a soft blur, and keep the stock focus ring. Log
+   viewports stay on the plain surface token (see #maincontent textarea
+   in the base layer) except they inherit the same glass colors. */
+body.mz-has-wallpaper input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]),
+body.mz-has-wallpaper select,
+body.mz-has-wallpaper textarea {
+	background: var(--mz-input-bg);
+	border-color: var(--mz-input-border);
+	backdrop-filter: blur(var(--mz-glass-blur-input));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-input));
+	color: var(--mz-color-text);
+}
+
+body.mz-has-wallpaper input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):hover,
+body.mz-has-wallpaper select:hover,
+body.mz-has-wallpaper textarea:hover {
+	background: var(--mz-input-bg-hover);
+	border-color: var(--mz-glass-border-strong);
+}
+
+body.mz-has-wallpaper input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):focus,
+body.mz-has-wallpaper select:focus,
+body.mz-has-wallpaper textarea:focus {
+	background: var(--mz-input-bg-hover);
+	box-shadow: 0 0 0 3px var(--mz-color-primary-soft);
+	border-color: var(--mz-color-primary);
+}
+
+/* Firefox paints autofill in an opaque system color; normalize it so a
+   saved password never pops a bright yellow chip on the glass. */
+body.mz-has-wallpaper input:-webkit-autofill,
+body.mz-has-wallpaper input:-webkit-autofill:hover,
+body.mz-has-wallpaper input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0 1000px #16202f inset;
+	-webkit-text-fill-color: var(--mz-color-text);
+	caret-color: var(--mz-color-text);
+	transition: background-color 99999s ease-in-out 0s;
+}
+
+body.mz-has-wallpaper input:autofill {
+	box-shadow: 0 0 0 1000px #16202f inset;
+	-webkit-text-fill-color: var(--mz-color-text);
+	caret-color: var(--mz-color-text);
+}
+
+/* Disabled controls under wallpaper keep the soft fill and muted text
+   (the generic *:disabled rule below sets bg only). */
+body.mz-has-wallpaper input:disabled,
+body.mz-has-wallpaper select:disabled,
+body.mz-has-wallpaper textarea:disabled {
+	background: var(--mz-panel-bg-soft);
+	border-color: var(--mz-color-border);
 }
 
 /* Sys-info grid uses !important in its base rule; force the glass vars with
@@ -4030,7 +4127,7 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
 .cbi-button-apply .dropdown,
 .cbi-button-apply + .dropdown-menu,
 .btn + .dropdown-menu {
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	box-shadow: var(--mz-glass-shadow-lg);
 }
 
 body.mz-has-wallpaper .cbi-dropdown[open] > ul,
@@ -4040,6 +4137,7 @@ body.mz-has-wallpaper .btn + .dropdown-menu {
 	background: #1c2736; /* solid enough to stay readable over any wallpaper */
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
+	border: 1px solid var(--mz-glass-border);
 }
 
 body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
@@ -4455,4 +4553,38 @@ table.nft-rules td:first-child {
 table.nft-rules td:last-child {
 	width: 32%;
 	overflow-wrap: anywhere;
+}
+
+/* ================================================================
+ * Glass fallback + mobile tuning (2026-09-08 glass pass)
+ * ================================================================ */
+/* Browsers without backdrop-filter (older Safari, some WebViews) would
+   show bare 7% washes - text drowned on bright wallpapers. Raise the
+   fills to opaque-ish values; NO blur is simulated, readability wins. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	body.mz-has-wallpaper {
+		--mz-panel-bg: rgba(22, 32, 47, 0.82);
+		--mz-panel-bg-strong: rgba(22, 32, 47, 0.88);
+		--mz-panel-bg-soft: rgba(22, 32, 47, 0.78);
+		--mz-color-surface: rgba(22, 32, 47, 0.82);
+		--mz-color-surface-2: rgba(22, 32, 47, 0.88);
+		--mz-input-bg: rgba(22, 32, 47, 0.92);
+		--mz-input-bg-hover: rgba(22, 32, 47, 0.95);
+		--mz-modal-bg: rgba(22, 32, 47, 0.96);
+	}
+	/* Every element that carried a blur() in the glass layer must also
+	   lose it here - backdrop-filter declarations are ignored by the
+	   browser anyway, so no explicit overrides are needed. */
+}
+
+/* Mobile: big blur radii are the single most expensive paint op on
+   low-end SoCs. Drop one notch (12->8, 14->10) below 768px and keep
+   every fill unchanged so the look only softens slightly. */
+@media (max-width: 768px) {
+	body.mz-has-wallpaper {
+		--mz-glass-blur: 8px;
+		--mz-glass-blur-strong: 10px;
+		--mz-glass-blur-input: 6px;
+		--mz-glass-shadow-lg: 0 4px 14px rgba(0, 0, 0, 0.3);
+	}
 }
