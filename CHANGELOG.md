@@ -9,6 +9,21 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-08
+
+### Added (2026-09-08 第四轮 — Overview 实时仪表盘)
+
+- **Overview 实时仪表盘**：rpcd `mint` 对象新增 `dashboard` 方法，一次聚合 CPU（/proc/stat 原始计数）、内存、温度（thermal + hwmon）、存储（df）、负载、运行时间、连接数（conntrack）、动态上行（ubus network dump，不硬编码接口名）与系统信息；前端新增 `overview-dashboard.js` + `overview-dashboard.css`：4 个 SVG 环形仪表、信息卡、3 个 Canvas 实时曲线（180 点 ≈ 3 分钟历史，1/3/10 秒三级刷新）、系统信息网格，DOM 构建一次后原地更新，完整生命周期（离开页面 destroy、返回重启，定时器/观察者全清理），数据缺失显示 `--`/N/A 不造假；`overview.js` 在仪表盘激活时抑制旧的 core/system/network 面板，保留端口/DHCP/无线/UPnP
+- **地址卡显示公网出口 IPv4**：后端 `curl ipv4.im` 获取，/tmp 缓存 5 分钟避免每秒轮询打外网；离线显示「未联网」，失败重试 3 次，连续 ≥3 次失败后进入退避，由 ping 223.5.5.5 / 119.29.29.29 探测恢复后再重新抓取
+- ACL `luci-theme-mint.json` 放行 `mint dashboard`
+
+### Changed (2026-09-08 第四轮)
+
+- 上行接口卡 sub 行改为内网 IPv4/掩码 + 网关（`·` 分隔单行），IPv6 不再在此显示（统一在地址卡）
+- 全站删除 `mz-topbar` 整个元素（含 `#indicators`；LuCI 核心 showIndicator 自带空值保护）；面包屑 `mz-breadcrumb` 连同 `renderBreadcrumb` 彻底移除，CSS 留 `display:none` 兜底
+- nftables 状态页（admin/status/nftables）规则表卡片化排版：surface 背景 + 圆角 + 表头底色 + 行分隔 + 68/32 列宽 + `overflow-wrap:anywhere`，修复原裸表格挤压换行的杂乱观感
+- 后台页面随机壁纸开关默认关闭：设置表单默认值、uci-defaults、header.ut 运行时判断三处对齐（仅显式 `ui_random=1` 才开启）
+
 ### Fixed (2026-09-08 第三轮 — 安全/打包/兼容性)
 
 - **壁纸脚本本地文件包含（C-2）**：`mz-wallpaper-fetch.sh` 仅放行 `http(s)` 源，curl 加 `--proto '=http,https' --proto-redir '=http,https' --max-filesize 8M --` 防护；图片签名校验由 `$(dd ...)` 命令替换改为 `od -An -tx1` hex 比对，修复 PNG 魔数紧跟 NUL 被 `$(...)` 截断导致校验失效的问题
