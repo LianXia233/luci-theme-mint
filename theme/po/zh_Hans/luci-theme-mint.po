@@ -76,7 +76,7 @@ msgstr "您必须在浏览器中启用 JavaScript，否则 LuCI 将无法正常�
 
 #: ucode/template/themes/mint/sysauth.ut:20
 msgid "Welcome back! Log in to manage your network."
-msgstr "欢迎回来！登录以管理您的网络。"
+msgstr "可可，嗨嗨嗨~！登录以管理您的网络。"
 
 #: ucode/template/themes/mint/sysauth.ut:28
 msgid "Invalid username and/or password! Please try again."

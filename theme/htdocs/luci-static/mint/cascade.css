@@ -3571,11 +3571,10 @@ body.mz-has-wallpaper::before {
 	z-index: 1;
 	pointer-events: none;
 	/* Light theme: a white wash matched to the CARD alpha (2026-09-09
-	   readability round: user report - content areas were more transparent
-	   than the cards, hurting contrast). The user's overlay alpha is
-	   scaled x1.2 so the default 0.45 lands on ~0.54, the same level as
-	   the 0.55 card fill; wallpaper stays visible outside the cards. */
-	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 1.2));
+	   readability round). The user's overlay alpha is scaled x0.95 so the
+	   default 0.45 lands on ~0.43, the same level as the 0.45 card fill;
+	   wallpaper stays visible outside the cards. */
+	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 0.95));
 	/* 2026-09-09: the page BETWEEN cards must look like the cards. Cards
 	   are 0.55 white + blur; the wash already matches the alpha, so give
 	   the full-page overlay the same glass blur. max() keeps a stronger
@@ -3587,9 +3586,18 @@ body.mz-has-wallpaper::before {
 	-webkit-backdrop-filter: blur(max(var(--mz-glass-blur, 14px), var(--mz-wallpaper-blur, 0px))) saturate(var(--mz-glass-saturate, 1.25));
 }
 
-/* Dark theme keeps the dimming wash so light text stays readable. */
+/* Dark theme (2026-09-09): NO wallpaper - the class only activates the
+   glass component layer. The image layer is blanked and the wash layer
+   becomes PURE BLACK, so every translucent white panel reads as frosted
+   glass over a black page. */
+html[data-theme="dark"] body.mz-has-wallpaper::after {
+	background-image: none;
+}
+
 html[data-theme="dark"] body.mz-has-wallpaper::before {
-	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
+	background: #000;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 /* NOTE: never touch .mz-sidebar positioning here - it is fixed/sticky
@@ -3662,21 +3670,23 @@ body.mz-has-wallpaper #modal_overlay .modal table.table {
  * ================================================================ */
 /* Tuned 2026-09-09 (reference style: light frosted glass, cf. the GitHub
    proxy landing page): the wallpaper stays vivid under a LIGHT wash, and
-   every panel is a white frosted sheet (55% white + blur) with dark slate
+   every panel is a white frosted sheet (45% white + blur) with dark slate
    typography on top - the same hierarchy as the reference: wallpaper <
    light page wash < white glass cards < dark text < solid color buttons.
    html[data-theme="dark"] restores the previous dark-glass palette below,
-   so both color schemes keep a readable, dedicated palette. */
+   so both color schemes keep a readable, dedicated palette.
+   (Second pass same day: user asked for "a bit more transparent, but not
+   much" - the whole ladder dropped ~0.1 alpha from the 0.55 first cut.) */
 body.mz-has-wallpaper {
-	--mz-panel-bg: rgba(255, 255, 255, 0.55);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.68);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.4);
+	--mz-panel-bg: rgba(255, 255, 255, 0.45);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.58);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.32);
 	--mz-panel-halo: 0 1px 2px rgba(255, 255, 255, 0.6);
 	--mz-color-text: #1c2736;
 	--mz-color-text-muted: rgba(40, 54, 74, 0.8);
-	--mz-color-surface: rgba(255, 255, 255, 0.55);
-	--mz-color-surface-2: rgba(255, 255, 255, 0.7);
-	--mz-color-border: rgba(255, 255, 255, 0.55);
+	--mz-color-surface: rgba(255, 255, 255, 0.45);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.6);
+	--mz-color-border: rgba(255, 255, 255, 0.5);
 	--mz-color-background: #e9eff7;
 
 	/* Glass tokens (glass-morphism pass, 2026-09-08): single source of
@@ -3686,18 +3696,18 @@ body.mz-has-wallpaper {
 	--mz-glass-blur-strong: 16px;   /* app chrome: sidebar/topbar/footer */
 	--mz-glass-blur-input: 8px;     /* inputs: cheaper, they are small */
 	--mz-glass-saturate: 1.25;
-	--mz-glass-border: rgba(255, 255, 255, 0.6);
-	--mz-glass-border-strong: rgba(255, 255, 255, 0.8);
+	--mz-glass-border: rgba(255, 255, 255, 0.55);
+	--mz-glass-border-strong: rgba(255, 255, 255, 0.75);
 	--mz-glass-shadow: 0 4px 16px rgba(31, 45, 61, 0.1);
 	--mz-glass-shadow-lg: 0 12px 32px rgba(31, 45, 61, 0.16);
 	/* Brighter "readable glass" fills: inputs and modals carry dense text,
-	   so they need more ink than the 55% card wash (documented ladder:
-	   page transparent < cards 0.55 < chrome 0.68 < input 0.66 < modal
-	   0.88 - all white glass over the light page wash). */
-	--mz-input-bg: rgba(255, 255, 255, 0.66);
-	--mz-input-bg-hover: rgba(255, 255, 255, 0.78);
+	   so they need more ink than the 45% card wash (documented ladder:
+	   page wash ~0.43 < cards 0.45 < chrome 0.58 < input 0.58 < modal
+	   0.84 - all white glass over the light page wash). */
+	--mz-input-bg: rgba(255, 255, 255, 0.58);
+	--mz-input-bg-hover: rgba(255, 255, 255, 0.7);
 	--mz-input-border: rgba(120, 134, 156, 0.45);
-	--mz-modal-bg: rgba(255, 255, 255, 0.88);
+	--mz-modal-bg: rgba(255, 255, 255, 0.84);
 }
 
 /* Dark theme keeps the original dark-glass palette (2026-09-08 look):
@@ -3714,7 +3724,7 @@ html[data-theme="dark"] body.mz-has-wallpaper {
 	--mz-color-surface: rgba(255, 255, 255, 0.07);
 	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
 	--mz-color-border: rgba(255, 255, 255, 0.12);
-	--mz-color-background: #16202f;
+	--mz-color-background: #000;
 	--mz-glass-blur: 12px;
 	--mz-glass-blur-strong: 14px;
 	--mz-glass-saturate: 1.15;
@@ -4648,14 +4658,14 @@ table.nft-rules td:last-child {
 	/* Light theme: raise the white washes to near-opaque so dark text
 	   survives on busy wallpapers without any blur. */
 	body.mz-has-wallpaper {
-		--mz-panel-bg: rgba(255, 255, 255, 0.88);
-		--mz-panel-bg-strong: rgba(255, 255, 255, 0.93);
-		--mz-panel-bg-soft: rgba(255, 255, 255, 0.84);
-		--mz-color-surface: rgba(255, 255, 255, 0.88);
-		--mz-color-surface-2: rgba(255, 255, 255, 0.93);
-		--mz-input-bg: rgba(255, 255, 255, 0.94);
-		--mz-input-bg-hover: rgba(255, 255, 255, 0.97);
-		--mz-modal-bg: rgba(255, 255, 255, 0.97);
+		--mz-panel-bg: rgba(255, 255, 255, 0.84);
+		--mz-panel-bg-strong: rgba(255, 255, 255, 0.9);
+		--mz-panel-bg-soft: rgba(255, 255, 255, 0.8);
+		--mz-color-surface: rgba(255, 255, 255, 0.84);
+		--mz-color-surface-2: rgba(255, 255, 255, 0.9);
+		--mz-input-bg: rgba(255, 255, 255, 0.92);
+		--mz-input-bg-hover: rgba(255, 255, 255, 0.95);
+		--mz-modal-bg: rgba(255, 255, 255, 0.96);
 	}
 	/* Dark theme: same idea with the dark slate fills. */
 	html[data-theme="dark"] body.mz-has-wallpaper {

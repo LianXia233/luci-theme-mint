@@ -20,27 +20,22 @@
 				]
 			}
 		},
-		"write": {
-			"uci": [
-				[
-					"mint"
-				]
+	"write": {
+		"ubus": {
+			"mint": [
+				"refresh",
+				"dashboard",
+				"save"
+			]
+		},
+		"file": {
+			"/www/luci-static/mint/custom-pc.jpg": [
+				"write"
 			],
-			"ubus": {
-				"mint": [
-					"refresh",
-					"dashboard",
-					"save"
-				]
-			},
-			"file": {
-				"/www/luci-static/mint/custom-pc.jpg": [
-					"write"
-				],
-				"/www/luci-static/mint/custom-mobile.jpg": [
-					"write"
-				]
-			}
+			"/www/luci-static/mint/custom-mobile.jpg": [
+				"write"
+			]
 		}
+	}
 	}
 }

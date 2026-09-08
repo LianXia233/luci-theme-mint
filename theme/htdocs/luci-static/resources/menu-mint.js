@@ -78,10 +78,24 @@ return baseclass.extend({
 	},
 
 	initGlobalWallpaper() {
+		if (document.getElementById('mz-login'))
+			return;
+
+		/* Dark theme (2026-09-09): global glass on PURE BLACK, never a
+		   wallpaper. The mz-has-wallpaper class still activates the whole
+		   glass token/component layer, but no image is fetched and CSS
+		   paints the wallpaper layers black (see the dark ::before/::after
+		   overrides in cascade.css). */
+		if (document.documentElement.getAttribute('data-theme') === 'dark') {
+			document.documentElement.style.removeProperty('--mz-wallpaper');
+			document.documentElement.style.removeProperty('--mz-wallpaper-overlay');
+			document.documentElement.style.removeProperty('--mz-wallpaper-blur');
+			document.body.classList.add('mz-has-wallpaper');
+			return;
+		}
+
 		const cfg = window.mintWallpaper;
 		if (!cfg || cfg.enabled === false || cfg.ui_random === false)
-			return;
-		if (document.getElementById('mz-login'))
 			return;
 
 		const mobile = this.isMobileUA();
@@ -367,6 +381,23 @@ return baseclass.extend({
 		});
 	},
 
+	/* Keep glass/wallpaper state in sync whenever the effective color
+	   scheme changes (toggle button or OS preference flip in system mode):
+	   dark = glass on pure black without a wallpaper, light = glass over
+	   the wallpaper (re-initialized from cache). */
+	syncWallpaperTheme() {
+		if (document.getElementById('mz-login'))
+			return;
+		if (document.documentElement.getAttribute('data-theme') === 'dark') {
+			document.documentElement.style.removeProperty('--mz-wallpaper');
+			document.documentElement.style.removeProperty('--mz-wallpaper-overlay');
+			document.documentElement.style.removeProperty('--mz-wallpaper-blur');
+			document.body.classList.add('mz-has-wallpaper');
+			return;
+		}
+		this.initGlobalWallpaper();
+	},
+
 	applyTheme(mode) {
 		/* OT-14: attach the OS-theme listener once; it only acts while the
 		   effective choice is 'system', so toggling back to system mode
@@ -376,8 +407,10 @@ return baseclass.extend({
 			this._mzThemeListener = (ev) => {
 				let saved = null;
 				try { saved = localStorage.getItem('mz-theme'); } catch (e) {}
-				if (saved === 'system' || (saved !== 'light' && saved !== 'dark'))
+				if (saved === 'system' || (saved !== 'light' && saved !== 'dark')) {
 					document.documentElement.setAttribute('data-theme', ev.matches ? 'dark' : 'light');
+					this.syncWallpaperTheme();
+				}
 			};
 			if (mq.addEventListener)
 				mq.addEventListener('change', this._mzThemeListener);
@@ -393,6 +426,8 @@ return baseclass.extend({
 		try {
 			localStorage.setItem('mz-theme', mode);
 		} catch (e) { /* private browsing */ }
+
+		this.syncWallpaperTheme();
 	},
 
 	/* ----- Logout ------------------------------------------------ */
