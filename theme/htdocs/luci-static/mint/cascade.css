@@ -1062,6 +1062,85 @@ body.mz-login-active #maincontent {
 }
 
 /* ---------------------------------------------------------------- */
+/* Mobile top bar (2026-09-09)                                       */
+/*                                                                   */
+/* The old fixed corner hamburger forced a full-height left padding  */
+/* gutter on #mz-view, leaving a blank column under the button. The  */
+/* toggle now lives inside a slim sticky bar above the content that  */
+/* also carries the page title, so the view keeps normal symmetric   */
+/* padding on every phone width. Desktop (>854px) keeps the bar      */
+/* display:none entirely.                                            */
+/* ---------------------------------------------------------------- */
+.mz-mobilebar {
+	display: none;
+}
+
+@media (max-width: 854px) {
+	.mz-mobilebar {
+		position: sticky;
+		top: 0;
+		/* below the drawer overlay (z 35) so it dims with the rest of
+		   the page while the sidebar drawer is open */
+		z-index: 30;
+		display: flex;
+		align-items: center;
+		gap: var(--mz-spacing-sm);
+		min-height: 52px;
+		padding: 6px 12px;
+		background: var(--mz-color-background);
+		border-bottom: 1px solid var(--mz-color-border);
+	}
+
+	.mz-mobilebar .mz-mobilebar-title {
+		font-weight: 600;
+		font-size: .95rem;
+		color: var(--mz-color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		/* take the slack between the hamburger and the trailing refresh
+		   button so the title never collides with or gets covered by the
+		   menu button / refresh control */
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	/* In-flow inside the bar: overrides the fixed top-left corner
+	   placement of the base .mz-sidebar-toggle rule. */
+	.mz-mobilebar #mz-sidebar-toggle {
+		position: static;
+		display: inline-flex;
+		width: 36px;
+		height: 36px;
+		flex: 0 0 auto;
+		margin: 0;
+	}
+
+	/* The dashboard refresh control lives in the bar on phones; push it
+	   to the right edge, opposite the hamburger. */
+	.mz-mobilebar .mint-ovd-refresh {
+		margin-left: auto;
+		flex: 0 0 auto;
+	}
+
+	/* Page-level titles are rendered in the bar instead (user request:
+	   no duplicate title under the bar on any page). Covers the plain
+	   LuCI page heading and the overview dashboard header (its refresh
+	   button is re-parented into the bar by menu-mint.js). Desktop
+	   (>854px) keeps the original in-page titles. */
+	#mz-view > h2,
+	.mint-ovd-header {
+		display: none !important;
+	}
+}
+
+body.mz-has-wallpaper .mz-mobilebar {
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+}
+
+/* ---------------------------------------------------------------- */
 /* Responsive                                                        */
 /* ---------------------------------------------------------------- */
 
@@ -1089,8 +1168,11 @@ body.mz-login-active #maincontent {
 		margin-left: 0;
 	}
 
+	/* No left padding anymore (2026-09-09): the hamburger now lives in
+	   the sticky .mz-mobilebar above the content, so the topbar keeps
+	   its natural padding with no blank left gutter. */
 	.mz-topbar {
-		padding-left: 64px;
+		padding-left: var(--mz-spacing-lg);
 	}
 
 	.mz-view {

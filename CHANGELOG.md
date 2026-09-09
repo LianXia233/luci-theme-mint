@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-09 第九轮 — 移动端顶栏样式回归丢失 全局透明度/标题位置异常)
+
+- **移动端顶栏样式整体丢失（回归失败）**：`8410db6` nftables 重构重排 `cascade.css` 时，把第六轮新增的 `.mz-mobilebar` 样式块整体丢掉了，只剩 `menu-mint.js` 仍会创建该顶栏。结果：手机端菜单按钮退化为 `position:fixed; top:12px; left:12px` 浮在标题上方遮挡文字（标题无样式、位置异常）；桌面端因缺少 `.mz-mobilebar { display:none }` 基础规则，顶栏在桌面视口也渲染出来（电脑上位置异常）；wallpaper 模式下顶栏失去 `--mz-panel-bg-strong` 玻璃底，变成全透明（全局透明度不正常）
+  - 修复：完整补回 `.mz-mobilebar` 样式块——窄屏 `display:flex; position:sticky` 玻璃顶栏、`.mz-mobilebar-title`（`flex:1 1 auto; min-width:0` 弹性占位保证不被按钮/刷新按钮遮挡）、`.mz-mobilebar #mz-sidebar-toggle`（取消 fixed、进栏铺排）、`.mz-mobilebar .mint-ovd-refresh`（`margin-left:auto` 靠右）、`#mz-view > h2, .mint-ovd-header` 窄屏隐藏（标题只在栏内呈现）、桌面 `display:none` 整体隐藏，以及 `body.mz-has-wallpaper .mz-mobilebar` 玻璃背景
+  - 联动清理：`.mz-topbar` 在 854px 断点残留的 `padding-left:64px`（为旧 fixed hamburger 让位）改为常规 `var(--mz-spacing-lg)`，消除手机上顶栏多余的左空隙
+  - 实测：手机视口（390x844）顶栏玻璃底正常、标题显示在按钮右侧无遮挡、无重复大标题；桌面视口（1440x900）顶栏 `display:none` 无残留
+
 ### Fixed (2026-09-09 第八轮 — nftables 链名高亮失效 / wallpaper 视图偶发卡死)
 
 - **nftables 状态页链名未按设计蓝色高亮**：`mz-nftables.js` 把链名包成 `h4 > span > code`，而 `cascade.css` 原选择器写的是直接子选择器 `#mz-view .nft-chain > h4 > code`（中间少了 `span`）导致匹配不到，链名显示为深灰，只有左侧竖线是蓝色
