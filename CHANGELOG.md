@@ -9,6 +9,61 @@
 
 ## [Unreleased]
 
+### Changed (2026-09-10 — 仓库文档按代码实况重写：README / theme/README / RELEASE + 新增架构与开发文档)
+
+以 `main` HEAD 的实际内容为准逐条核对并重写文档，修掉了大量「文档描述的是已经不存在的实现」的偏差：
+
+- **`README.md`（重写）**：
+  - 目录结构按 `git ls-files` 重建：补上此前完全没写到的 `mz-nftables.js`、
+    `overview-dashboard.css`、`root/usr/bin/mz-wallpaper-fetch.sh`、
+    `root/lib/upgrade/keep.d/luci-theme-mint`、`po2lmo.py` 等；删除仍列着的
+    `usr/share/luci/acl.d/luci-theme-mint.json`（ACL 早已迁到 `/usr/share/rpcd/acl.d/`，
+    旧路径只剩清理残留）
+  - **壁纸机制纠正**：旧文写「服务端无壁纸缓存、没有刷新缓存按钮」——实际 OT-35 已引入
+    cron（`*/5`）驱动的服务端缓存 `wallpaper-{pc,mobile}.img` + uhttpd 304 + 浏览器
+    `sessionStorage` 三层缓存，随机图在一个缓存窗口内**不会**每刷新变一次；同时补齐抓取脚本的
+    安全边界（仅 http(s)、8 MiB `--max-filesize`、魔数校验、临时文件原子替换、`flock`、
+    seaya HTML 提取后二次校验）与关闭方法
+  - **`ui_random` 默认值纠正**为 `0`（与 `/etc/config/mint`、uci-defaults、表单、
+    `wallpaper.uc` 四处一致），不再宣称「管理页默认随机壁纸」
+  - **ubus 接口纠正**：`mint` 对象不止 `refresh`（且它是恒返回 `spawned:false` 的兼容桩），
+    另有 `dashboard`（实时快照采集器）与 `save`（`uci set`+`uci commit` 落盘兜底）；补上
+    ACL 读/写作用域矩阵、菜单 `depends` 语义、`/etc/config/mint` 的 conffile 语义、
+    sysupgrade `keep.d` 行为、`postinst`/`postrm` 的不对称设计（reload 而非 restart、
+    `upgrade|deconfigure` 时什么都不动）
+  - 新增：总览仪表盘的实际参数（1s/3s/10s 三档轮询、180 点 ≈3 分钟历史、隐藏标签页降频、
+    离页全量拆除、`mint dashboard` 的 JSON 契约与公网 IP 的缓存/退避策略）、
+    `nftables` 页增强、`ensureCbiForm`/`mintSave` 保存兜底、`mz-ui.js` 的 apply/revert 提示与
+    dynlist 编辑删除、设计令牌实际取值、断点列表、脚本用途表、开发约定、
+    以及「已知差异与限制」（如实记录 `body[data-theme]` 深色玻璃选择器失效等）
+- **`theme/README.md`（英文，重写）**：与中文版同步纠正（缓存机制、`ui_random` 默认值、
+  `refresh` 桩语义、单变体），补安装成对性、`LUCI_MINIFY_UT=0` 与 `csstidy` 关闭的理由、
+  `po` 109 条全覆盖与 `sfh` 兜底说明；旧版残留的「`LUCI_MINIFY_CSS` / `LUCI_MINIFY_JS` 会压缩」
+  这类与实际配置不符的表述已删除
+- **`RELEASE.md`（重写）**：删掉「推 `v*` 标签自动构建并发布」这一**不成立**的描述
+  （两个构建工作流的 `on:` 只有 `push: branches:[main]` 与 `workflow_dispatch`），改为可执行的
+  正式发布步骤（两条流水线 `release_version` + `release.yml` 的 `release_tag`，并强调三者必须
+  落在同一 commit）；补齐 `release.yml` 的实际汇总逻辑（按 `head_sha` 找成对成功 run、
+  重跑 `verify-package.sh`、`allowUpdates`/`tag_overwrite`、PR 不发布）、产物命名与
+  `.buildinfo.txt` 字段、`--allow-legacy` 的「兼容构建」标注语义
+- **新增 `docs/ARCHITECTURE.md`**：设备侧目录映射（`htdocs`→`/www`、`ucode`→
+  `/usr/share/ucode/luci`、`root`→`/`）、请求生命周期、前后端契约（`window.mintWallpaper`
+  与 `ubus mint.*` 输入输出）、`mint dashboard` 快照结构、权限模型、四级缓存表、
+  脚本注入矩阵、样式覆盖策略，以及「已知结构性问题」清单
+- **新增 `docs/DEVELOPMENT.md`**：环境与目录约定、CI 会拦的硬性约束（LF、`REQUIRED_EXEC`、
+  禁 `innerHTML`、不硬编码设备事实）、常用改动配方（含「加一个 UCI 选项必须同步 5 处」）、
+  已实测通过的本地检查命令、真机验证与回归清单、`scripts/` 全量选项表、过程文档索引
+- **文档化三项此前未记录的行为偏差**（只写进「已知差异」，本轮不改代码，留给独立修复）：
+  ① `cascade.css` 有 4 处深色玻璃选择器写成 `body.mz-has-wallpaper[data-theme="dark"]`
+  （第 3634/3652/3710/3724 行附近），而 `data-theme` 实际在 `<html>` 上 → 深色管理页的
+  「纯黑玻璃 + 抑制渐变」从未生效；
+  ② 移动端存在**两套不等价**的判定（壁纸走 `header.ut` 的 UA 正则，总览走 `footer.ut` 的
+  更窄正则 + `max-width:854px`），桌面模式 UA 的平板会出现「桌面仪表盘 + 移动壁纸」组合；
+  ③ `po/templates/theme.pot` 比 `po/zh_Hans` 少 1 条 `msgid`（`Cached random wallpaper`）
+- **`scripts/make-release-notes.sh`（仅文案）**：Release 说明结尾仍写着「可选择
+  Mint / Mint Light / Mint Dark」，与只注册单一 `Mint` 变体的现状冲突；改为说明单变体 +
+  侧栏切换配色，并明确 `rpcd reload`（而非 restart）
+
 ### Fixed (2026-09-10 — 云编译修复与优化：ipk/apk 云构建全线转绿的前置缺陷 + 简中翻译入包 + 构建提速)
 
 依据 `docs/reviews/CODE_REVIEW_2026-09-10.md`（对照 openwrt/luci master 与 openwrt main 的 `luci.mk`、`package-pack.mk` 官方实现复审）：

@@ -91,9 +91,10 @@ emit_table() {
 	printf '# 仍使用 opkg 的系统（24.10 / 23.05）\n'
 	printf 'opkg install ./luci-theme-mint-*.ipk ./luci-i18n-mint-zh-cn-*.ipk\n'
 	printf '```\n\n'
-	printf '安装后执行 `/etc/init.d/rpcd reload` 或重新登录即可在'
-	printf '「系统 → 系统 → 语言和界面」中选择 Mint / Mint Light / Mint Dark，\n'
-	printf '并将语言设为简体中文（`luci-i18n-mint-zh-cn` 会自动注册 `zh-cn`）。\n'
+	printf '安装后执行 `/etc/init.d/rpcd reload`（不要 restart，否则会登出所有会话）或重新登录。\n'
+	printf '主题只注册单一 `Mint` 变体（`/luci-static/mint`）：在「系统 → 系统 → 语言和界面」里\n'
+	printf '选中它即可，浅色/深色由侧栏按钮在前端切换；语言设为简体中文即得完整中文界面\n'
+	printf '（`luci-i18n-mint-zh-cn` 会自动注册 `zh-cn`）。\n'
 } > "$OUT"
 
 printf 'release notes written to %s\n' "$OUT"
