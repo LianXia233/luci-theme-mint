@@ -3625,10 +3625,22 @@ body.mz-has-wallpaper::after {
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
-	background-image: var(--mz-wallpaper, none);
+	/* Layer 1: the configured/fetched wallpaper (none when disabled).
+	   Layer 2: a soft gradient fallback so the frosted-glass layer still
+	   has colour to show through on EVERY admin page - when --mz-wallpaper
+	   is "none" the gradient alone paints the backdrop; when a real image
+	   is set it covers the gradient entirely. Dark theme overrides this
+	   below to keep the pure-black glass look. */
+	background-image: var(--mz-wallpaper, none),
+		linear-gradient(135deg, #93a7ff 0%, #bcc6ff 42%, #f2cfe8 100%);
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
+}
+
+/* Dark theme keeps the pure-black glass (no gradient wallpaper layer). */
+body.mz-has-wallpaper[data-theme="dark"]::after {
+	background-image: none;
 }
 
 body.mz-has-wallpaper::before {
@@ -3755,6 +3767,9 @@ body.mz-has-wallpaper .cbi-dynlist > .item {
 	backdrop-filter: blur(12px) saturate(1.15);
 	-webkit-backdrop-filter: blur(12px) saturate(1.15);
 	border-color: rgba(148, 163, 184, 0.3);
+	/* Frosted cards get a soft edge shadow to lift them off the
+	   wallpaper (review 2026-09-09). */
+	box-shadow: var(--mz-shadow-md);
 }
 
 /* De-nested glass (review TZ-01/TZ-06, 2026-09-07): only the OUTERMOST
@@ -3777,14 +3792,7 @@ body.mz-has-wallpaper .mz-upnp-panel {
 	background: transparent;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-}
-body.mz-has-wallpaper .mz-overview-panel,
-body.mz-has-wallpaper .mz-port-panel,
-body.mz-has-wallpaper .mz-net-panel,
-body.mz-has-wallpaper .mz-sys-panel,
-body.mz-has-wallpaper .mz-dhcp-panel,
-body.mz-has-wallpaper .mz-wifi-panel,
-body.mz-has-wallpaper .mz-upnp-panel {
+	box-shadow: none;
 	border: none;
 }
 
@@ -3884,11 +3892,13 @@ body.mz-has-wallpaper .cbi-section-node:focus-within,
 body.mz-has-wallpaper .cbi-dynlist > .item:hover {
 	background: var(--mz-panel-bg-strong);
 	border-color: rgba(148, 163, 184, 0.45);
+	box-shadow: var(--mz-shadow-lg);
 }
 
 body.mz-has-wallpaper .mz-sys-grid:hover {
 	background: var(--mz-panel-bg-strong) !important;
 	border-color: rgba(148, 163, 184, 0.45) !important;
+	box-shadow: var(--mz-shadow-lg);
 }
 
 body.mz-has-wallpaper .cbi-section:focus-within {
@@ -4143,6 +4153,15 @@ body.mz-has-wallpaper select option,
 html[data-theme="dark"] select option {
 	background-color: #1c2736;
 	color: #eef2f8;
+}
+
+/* Text inputs / textareas / select fields keep a stronger frosted fill
+   over glass cards so the caret, value and placeholder stay readable on
+   every page (review 2026-09-09). */
+body.mz-has-wallpaper input,
+body.mz-has-wallpaper select,
+body.mz-has-wallpaper textarea {
+	background: var(--mz-panel-bg-strong);
 }
 
 /* --- Network interfaces page (admin/network/network) ------------- */
@@ -4971,5 +4990,95 @@ body.mz-has-wallpaper .cbi-section-descr {
 	#mz-view .mz-nft-tb-stats {
 		flex: 1 1 100%;
 	}
+}
+
+/* ================================================================
+ * Overview lower native sections + network interface table polish
+ * (2026-09-10). The overview page's "port status / network / DHCP /
+ * wireless / UPnP" blocks and the interfaces grid still used raw LuCI
+ * chrome (bare .cbi-title headers, dense tables, no breathing room).
+ * ================================================================ */
+
+/* --- 1. Section title bars become frosted card headers -----------
+   LuCI renders a bare .cbi-title (or h3.cbi-section-title) floating
+   over the glass card. Collapse it into the card top edge with a
+   frosted head so the header reads as an anchor, not a stray line. */
+.cbi-section > .cbi-title,
+.cbi-section > .cbi-section-title {
+	display: block;
+	margin: calc(-1 * var(--mz-spacing-lg)) calc(-1 * var(--mz-spacing-lg))
+		var(--mz-spacing-lg);
+	padding: 13px var(--mz-spacing-lg);
+	background: var(--mz-panel-bg-strong);
+	border: 1px solid var(--mz-color-border);
+	border-bottom: 1px solid var(--mz-color-border);
+	border-radius: calc(var(--mz-radius-lg) - 1px)
+		calc(var(--mz-radius-lg) - 1px) 0 0;
+	color: var(--mz-color-text);
+	font-weight: 600;
+	font-size: .95rem;
+	letter-spacing: .01em;
+	line-height: 1.4;
+	box-shadow: none;
+}
+
+.cbi-section > .cbi-title h3,
+.cbi-section > .cbi-section-title h3 {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: inherit;
+	font-weight: inherit;
+	letter-spacing: inherit;
+}
+
+/* Non-wallpaper fallback keeps the head on the surface tint. */
+.cbi-section > .cbi-title {
+	background: var(--mz-color-surface-2);
+}
+
+/* --- 2. Overview native tables: readable rows that never overflow --- */
+.cbi-section table.table {
+	margin: 0 0 var(--mz-spacing-xs);
+	width: 100%;
+}
+
+.cbi-section table.table td,
+.cbi-section table.table th {
+	padding: 10px 14px;
+	line-height: 1.6;
+}
+
+.cbi-section table.table td:first-child {
+	font-weight: 500;
+	color: var(--mz-color-text);
+}
+
+/* --- 3. Interfaces page: uniform action buttons and card column ----- */
+/* LuCI emits two button sizes (cbi-button 8/18 vs .btn 4/10) side by
+   side - normalise to one family so the row reads as a tidy toolbar. */
+#cbi-network-interface td.cbi-section-actions,
+#cbi-network-device td.cbi-section-actions {
+	white-space: normal;
+}
+
+#cbi-network-interface td.cbi-section-actions .cbi-button,
+#cbi-network-interface td.cbi-section-actions .btn,
+#cbi-network-device td.cbi-section-actions .cbi-button,
+#cbi-network-device td.cbi-section-actions .btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px 12px;
+	margin: 3px;
+	font-size: .82rem;
+	border-radius: var(--mz-radius-sm);
+	white-space: nowrap;
+}
+
+/* The interface card cell should not collapse: keep a comfortable
+   floor so the zone card and its icon row never get squeezed. */
+#cbi-network-interface table.cbi-section-table td.cbi-value-field:first-child,
+#cbi-network-device table.cbi-section-table td.cbi-value-field:first-child {
+	min-width: 300px;
 }
 
