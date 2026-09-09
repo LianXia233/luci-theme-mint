@@ -217,11 +217,16 @@ PY
 # per-package checks
 # ---------------------------------------------------------------------------
 
+# NOTE: luci.mk installs ucode/ into UCODE_LIBRARYDIR = /usr/share/ucode/luci
+# (NOT /usr/share/ucode), so the on-device paths carry the extra "luci"
+# segment - the LuCI template runtime (modules/luci-base/ucode/runtime.uc)
+# reads /usr/share/ucode/luci/template and resolves modules like
+# luci.mint.wallpaper against /usr/share/ucode/luci.
 REQUIRED_FILES=(
-	"usr/share/ucode/template/themes/mint/header.ut"
-	"usr/share/ucode/template/themes/mint/footer.ut"
-	"usr/share/ucode/template/themes/mint/sysauth.ut"
-	"usr/share/ucode/mint/wallpaper.uc"
+	"usr/share/ucode/luci/template/themes/mint/header.ut"
+	"usr/share/ucode/luci/template/themes/mint/footer.ut"
+	"usr/share/ucode/luci/template/themes/mint/sysauth.ut"
+	"usr/share/ucode/luci/mint/wallpaper.uc"
 	"www/luci-static/mint/cascade.css"
 	"usr/share/luci/menu.d/luci-theme-mint.json"
 	"usr/share/rpcd/acl.d/luci-theme-mint.json"
@@ -229,6 +234,13 @@ REQUIRED_FILES=(
 	"etc/uci-defaults/30_luci-theme-mint"
 	"usr/libexec/rpcd/mint"
 	"usr/bin/mz-wallpaper-fetch.sh"
+)
+
+# Payload of the translation package (luci.mk LuciTranslation): the compiled
+# catalog plus the uci-defaults that registers the language.
+I18N_REQUIRED_FILES=(
+	"usr/lib/lua/luci/i18n/luci-theme-mint.zh-cn.lmo"
+	"etc/uci-defaults/luci-i18n-mint-zh-cn"
 )
 
 # Payload entries that MUST carry the executable bit. luci.mk copies root/
@@ -245,6 +257,19 @@ for pkg in "${FILES[@]}"; do
 	log "────────────────────────────────────────────"
 	log "package: $pkg"
 	[ -s "$pkg" ] || { fail "$pkg does not exist or is empty"; continue; }
+
+	# Package mode: the theme proper, or the auto-generated translation
+	# package (the official LuCI API keeps translations separate from the
+	# theme; the release ships both, so both must verify).
+	I18N=0
+	case "$(basename "$pkg")" in
+	luci-i18n-mint-*) I18N=1 ;;
+	esac
+	if [ "$I18N" = 1 ]; then
+		EXPECT_NAME_PKG="luci-i18n-mint-zh-cn"
+	else
+		EXPECT_NAME_PKG="$EXPECT_NAME"
+	fi
 
 	info="$(read_pkg_py "$pkg")" || { fail "cannot parse $pkg"; continue; }
 	get()  { printf '%s\n' "$info" | sed -n "s/^$1=//p"; }
@@ -287,47 +312,75 @@ for pkg in "${FILES[@]}"; do
 	log "  arch      : ${arch:-<none>}"
 	log "  depends   : ${depends:-<none>}"
 
-	[ "$name" = "$EXPECT_NAME" ] || fail "package name is '${name}', expected '${EXPECT_NAME}'"
+	[ "$name" = "$EXPECT_NAME_PKG" ] \
+		|| fail "package name is '${name}', expected '${EXPECT_NAME_PKG}'"
 	[ -n "$version" ] || fail "package version is empty"
-	[ "$arch" = "$EXPECT_ARCH" ] \
-		|| fail "architecture is '${arch}', expected '${EXPECT_ARCH}' (pure data package must stay arch-independent)"
-
-	# Dependencies: the theme needs luci-base (ucode + rpcd come with it) and
-	# curl for the wallpaper fetcher - and nothing kernel/target specific.
-	case " $depends " in
-	*[[:space:]]luci-base[[:space:]]*|*[[:space:]]luci-base[[:space:]]*|*"luci-base"*) : ;;
-	*) fail "dependency luci-base missing (got: ${depends:-<none>})" ;;
-	esac
-	case " $depends " in
-	*curl*) : ;;
-	*) fail "dependency curl missing (wallpaper fetcher needs it)" ;;
-	esac
-	for bad in kmod- kernel; do
-		case " $depends " in
-		*" $bad"*) fail "unexpected kernel-bound dependency '${bad}' in a data-only theme" ;;
+	# Arch-independent in either backend: the ipk control says "all", while
+	# the apk backend stamps arch-independent packages as "noarch" (OpenWrt
+	# package-pack.mk maps PKGARCH=all to arch:noarch). Anything else means
+	# the package picked up target-specific content.
+	if [ "$EXPECT_ARCH" = all ]; then
+		case "$arch" in
+		all|noarch) : ;;
+		*) fail "architecture is '${arch}', expected all (ipk) / noarch (apk) - pure data package must stay arch-independent" ;;
 		esac
-	done
+	else
+		[ "$arch" = "$EXPECT_ARCH" ] \
+			|| fail "architecture is '${arch}', expected '${EXPECT_ARCH}'"
+	fi
 
-	# Payload sanity: every file the theme needs must be inside the package.
+	if [ "$I18N" = 1 ]; then
+		# translation: must depend on the theme it translates
+		case " $depends " in
+		*luci-theme-mint*) : ;;
+		*) fail "dependency luci-theme-mint missing (got: ${depends:-<none>})" ;;
+		esac
+	else
+		# Dependencies: the theme needs luci-base (ucode + rpcd come with it)
+		# and curl for the wallpaper fetcher - and nothing kernel/target
+		# specific.
+		case " $depends " in
+		*"luci-base"*) : ;;
+		*) fail "dependency luci-base missing (got: ${depends:-<none>})" ;;
+		esac
+		case " $depends " in
+		*curl*) : ;;
+		*) fail "dependency curl missing (wallpaper fetcher needs it)" ;;
+		esac
+		for bad in kmod- kernel; do
+			case " $depends " in
+			*" $bad"*) fail "unexpected kernel-bound dependency '${bad}' in a data-only theme" ;;
+			esac
+		done
+	fi
+
+	# Payload sanity: every file the package needs must be inside it.
 	mapfile -t payload < <(get file | sed 's|^\./||' | sort -u)
 	log "  payload   : ${#payload[@]} entries"
 	[ "${#payload[@]}" -gt 0 ] || fail "$pkg payload is empty"
 
-	for req in "${REQUIRED_FILES[@]}"; do
+	if [ "$I18N" = 1 ]; then
+		REQ_FILES=("${I18N_REQUIRED_FILES[@]}")
+	else
+		REQ_FILES=("${REQUIRED_FILES[@]}")
+	fi
+	for req in "${REQ_FILES[@]}"; do
 		printf '%s\n' "${payload[@]}" | grep -qx "$req" \
 			|| fail "$pkg is missing ${req}"
 	done
 
-	mapfile -t xpayload < <(get xfile | sed 's|^\./||' | sort -u)
-	for req in "${REQUIRED_EXEC[@]}"; do
-		printf '%s\n' "${xpayload[@]}" | grep -qx "$req" \
-			|| fail "$pkg ships ${req} WITHOUT the executable bit"
-	done
+	if [ "$I18N" = 0 ]; then
+		mapfile -t xpayload < <(get xfile | sed 's|^\./||' | sort -u)
+		for req in "${REQUIRED_EXEC[@]}"; do
+			printf '%s\n' "${xpayload[@]}" | grep -qx "$req" \
+				|| fail "$pkg ships ${req} WITHOUT the executable bit"
+		done
 
-	present_css="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/mint/.*\.css$' || true)"
-	present_js="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/.*\.js$' || true)"
-	[ "$present_css" -gt 0 ] || fail "$pkg ships no CSS"
-	[ "$present_js" -gt 0 ] || fail "$pkg ships no JavaScript"
+		present_css="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/mint/.*\.css$' || true)"
+		present_js="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/.*\.js$' || true)"
+		[ "$present_css" -gt 0 ] || fail "$pkg ships no CSS"
+		[ "$present_js" -gt 0 ] || fail "$pkg ships no JavaScript"
+	fi
 
 	log "  ok        : $(basename "$pkg")"
 done

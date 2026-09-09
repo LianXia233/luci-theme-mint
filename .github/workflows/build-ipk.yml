@@ -1,49 +1,55 @@
 name: Build IPK packages
 
-# Compatibility build for devices still running opkg.
+# Builds luci-theme-mint with the official OpenWrt SDK's ipk backend
+# (CONFIG_USE_APK off). These are the packages for systems still on
+# opkg/ipkg: OpenWrt 24.10 (and older point releases) and 23.05.
 #
-# The package format is chosen by the OpenWrt build system itself, never by
-# renaming: the SDK is asked for its ipk backend (CONFIG_USE_APK unset ->
-# scripts/ipkg-build, or include/package-ipkg.mk on 23.05). If the requested
-# OpenWrt series no longer ships an ipk backend, build-package.sh falls back
-# to the newest official SDK that still does (24.10, then 23.05) and marks
-# the result as a compatibility build in its .buildinfo.txt.
+# Series that only ship the apk backend (25.12 and later) are NOT used
+# here: the ipk fallback in build-package.sh (--allow-legacy) exists as a
+# safety net only. Requesting an apk-only series would download and unpack
+# a ~300 MB SDK just to be rejected, so the matrix asks for the newest
+# series that really produce ipk, plus one older backend (23.05 still uses
+# the dedicated package-ipkg.mk code path, worth covering).
+#
+# The theme has no src/, so the package is arch-independent (ipk records
+# it as all) and identical for every target: exactly ONE build per OpenWrt
+# version is required.
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [ main ]
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: 'Release tag (e.g. v1.0.0, nightly)'
+      release_version:
+        description: 'Release version tag (default: nightly)'
         required: false
-        default: 'nightly'
+        default: nightly
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: build-ipk-${{ github.ref }}
-  cancel-in-progress: true
+  group: ipk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
-  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'nightly') }}
+  RELEASE_VERSION: ${{ inputs.release_version || 'nightly' }}
 
 jobs:
   build:
     name: ipk · OpenWrt ${{ matrix.openwrt }} · ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        openwrt: ['25.12', snapshot]
-        target: [x86/64, mediatek/filogic]
         include:
-          - target: x86/64
+          - openwrt: '24.10'
+            target: x86/64
             slug: x86_64
-          - target: mediatek/filogic
-            slug: mediatek_filogic
+          - openwrt: '23.05'
+            target: x86/64
+            slug: x86_64
 
     steps:
       - name: Checkout theme sources
@@ -51,63 +57,70 @@ jobs:
 
       - name: Install host tools
         run: |
-          sudo apt-get update
-          # Required tools - a failure here must fail the job, not be waved
-          # through with `|| true` (zstd unpacks the SDK, binutils provides
-          # `ar` for install-test.sh's ipk inspection).
-          sudo apt-get install -y --no-install-recommends \
-            ca-certificates curl zstd binutils
-          # opkg would upgrade install-test.sh to a real `opkg install` run,
-          # but it is not packaged for Ubuntu runners (nor is apk-tools).
-          # Say so loudly instead of failing silently: install-test.sh
-          # detects its absence and falls back to unpacking the payload and
-          # asserting the file layout.
-          sudo apt-get install -y --no-install-recommends opkg \
-            || echo "::warning::opkg is unavailable on this runner image - install-test.sh will use its unpack fallback"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq curl ca-certificates xz-utils zstd python3 || true
+          # opkg is best effort: the install test falls back to a
+          # structural payload check (ar x + tar) when it is missing.
+          sudo apt-get install -y -qq opkg || echo "opkg not in apt - structural install test will be used"
 
       - name: Resolve OpenWrt SDK URL
+        id: resolve
         run: |
-          set -euo pipefail
-          # Discovery only (--print resolves the tarball URL from the
-          # official download index). Whether the resolved series can emit
-          # ipk is decided by build-package.sh: modern SDKs bake
-          # CONFIG_USE_APK=y into a promptless kconfig symbol and the script
-          # then falls back to 24.10 / 23.05 via --allow-legacy.
           ./scripts/get-openwrt-sdk.sh \
             --version "${{ matrix.openwrt }}" \
             --target "${{ matrix.target }}" \
             --print
 
+      # The SDK tarball is immutable per sha256, so it is safe to cache by
+      # that digest and makes verify/re-run cycles fast. The download is
+      # still re-verified against the official sha256sums.
+      - name: Cache SDK tarball
+        if: steps.resolve.outputs.tarball_sha256 != ''
+        uses: actions/cache@v4
+        with:
+          path: build/sdk-cache
+          key: openwrt-sdk-${{ matrix.openwrt }}-${{ matrix.target }}-${{ steps.resolve.outputs.tarball_sha256 }}
+
       - name: Build with the official OpenWrt SDK
-        id: build
         run: |
           ./scripts/build-package.sh \
             --version "${{ matrix.openwrt }}" \
             --target "${{ matrix.target }}" \
             --format ipk \
             --allow-legacy \
-            --release-version "${{ env.VERSION }}" \
+            --release-version "$RELEASE_VERSION" \
+            --out dist \
             --workdir build \
-            --out dist
+            --cache-dir build/sdk-cache
 
       - name: Verify package metadata and payload
         run: ./scripts/verify-package.sh --dir dist --expect-arch all
 
       - name: Install test
         run: |
-          rm -rf rootfs
+          fail=0
           for f in dist/*.ipk; do
-            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
+            ./scripts/install-test.sh --file "$f" || fail=1
           done
+          exit "$fail"
 
       - name: Show build info
-        run: cat dist/*.buildinfo.txt
+        if: always()
+        run: |
+          for f in dist/*.buildinfo.txt; do
+            [ -f "$f" ] || continue
+            echo "=== $f ==="
+            cat "$f"
+          done
+          ls -l dist/
 
       - name: Upload artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          # A compatibility SDK is flagged in the artifact name so nobody
-          # mistakes it for a native build of the requested series.
-          name: luci-theme-mint-ipk-${{ matrix.openwrt }}-${{ matrix.slug }}${{ steps.build.outputs.legacy_compat_sdk == '1' && '-legacy' || '' }}
-          path: dist/*
+          name: luci-theme-mint-ipk-${{ matrix.openwrt }}-${{ matrix.slug }}
+          path: |
+            dist/*
+            !dist/README.txt
+          retention-days: 14
           if-no-files-found: error

@@ -9,6 +9,22 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-10 — 云编译修复与优化：ipk/apk 云构建全线转绿的前置缺陷 + 简中翻译入包 + 构建提速)
+
+依据 `docs/reviews/CODE_REVIEW_2026-09-10.md`（对照 openwrt/luci master 与 openwrt main 的 `luci.mk`、`package-pack.mk` 官方实现复审）：
+
+- **CI 阻塞缺陷①（verify 误判全部真包）**：`verify-package.sh` / `install-test.sh` 按 `usr/share/ucode/...` 断言 ucode 载荷，而官方 luci.mk 实际安装到 **`usr/share/ucode/luci/...`**（`UCODE_LIBRARYDIR`，官方 template runtime 也从该路径加载模板与模块）——导致「Build APK / Build IPK packages」两个工作流的 Verify 步骤对**每一个**真包都失败，release 流水线长期拿不到产物。已改为官方安装路径
+- **CI 阻塞缺陷②（apk 架构字段）**：OpenWrt apk 后端把 `PKGARCH=all` 记成 `.PKGINFO` 的 `arch:noarch`（`package-pack.mk` 的 `--info "arch:noarch"` 映射），而 verify 死等 `arch=all`。现按后端分别接受：ipk `all` / apk `noarch`，其余架构值一律失败（防混入目标相关产物）
+- **简中翻译从未入 Release**：官方 LuCI 规范把 `po/` 编成独立包 `luci-i18n-mint-zh-cn`（`luci.mk LuciTranslation`，HIDDEN 且默认不选中）；旧流水线既不选中、不收集也不校验它，README 却宣称「lmo 随包安装」——实际 Release 里**只有英文主题**。现：`configure_sdk` 显式 `CONFIG_PACKAGE_luci-i18n-mint-zh-cn=m`；defconfig 后校验选中状态；收集两个包并各自产出 `.buildinfo.txt`；verify / install-test / release-notes 全部支持翻译包（依赖方向：翻译包依赖主题包）；Makefile 新增 `PKG_PO_VERSION ?=` 注入点，翻译包与主题同版本发布
+- **install-test apk 分支不可用**：空 root 里 `apk add` 会因缺 `luci-base` / `curl` 依赖直接失败（该分支从未真正跑通过）。现先生成最小 unsigned 依赖 stub 包（纯 `.PKGINFO` 流，走真实 apk 解析器装依赖再装主题）；顺带修复 JSON 断言的 `A && B || C` 优先级 bug（翻译包无 JSON 文件时误报失败）
+- **云编译提速**：
+  - 主题是纯数据包（无 `src/`，包与目标平台无关）：两条工作流矩阵由 `2 版本 × 2 目标` 收敛为 `2 版本 × 1 目标`（x86/64），CI 时间近似减半
+  - ipk 工作流改为直接请求**原生 ipk 系列**（24.10 + 23.05）：旧逻辑请求 25.12/snapshot 后下载 ~300MB SDK、解包、才发现 apk-only 而回退，每次白烧 4 个候选的下载+解包；`--allow-legacy` 保留作安全网
+  - SDK tarball 按官方 sha256 进 GitHub Actions cache（`get-openwrt-sdk.sh --print` 新增 `tarball_sha256` 输出）：重试/复核秒级复用；复用仍按官方 `sha256sums` 重新校验，污染条目会被丢弃并自动重下（自愈）
+- **删除遗留 `build.yml`**：其 softprops 直接发布 `nightly`/标签 Release，与 `release.yml` 竞争同一 Release 标签，是现有 nightly Release 混入 `luci-theme-mint-0-*`（版本号为 0 的坏包）与 ImmortalWrt 杂项产物的来源；其 OpenWrt 快照构建与 build-apk.yml 完全重复。OpenWrt 官方 SDK 双流水线成为唯一发布来源（IWW 兼容性由「遵循官方 LuCI 主题 API」这一设计前提保证，见审查报告）
+- **本地验证工具**（无需 OpenWrt 网络）：`scripts/ci-simulate.sh` 用真实主题载荷构造结构等价的 apk/ipk 四件套跑 verify + install-test（含「改名包 / 目标架构 / 丢执行位」负例）；`scripts/ci-mirror-test.sh` 起本地 mock 镜像验证 SDK 解析器（系列回退、sha256 发现与输出、下载校验、baked `USE_APK` 后端探测、缓存复用与自愈）
+- **文档**：README / RELEASE.md 同步双包发布、单目标矩阵、`noarch` 架构说明与成对安装命令
+
 ### Fixed (2026-09-10 — 全量代码审查修复 R-01…R-12：cron 脚本权限 / ui_random 默认值 / ACL 收敛 / SDK 校验等)
 
 依据 `docs/reviews/CODE_REVIEW_2026-09-09.md`（以 openwrt/luci master 的 luci.mk、luci-base dispatcher/runtime、官方主题为基准的全量审查），逐项修复：

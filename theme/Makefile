@@ -37,6 +37,13 @@ PKG_MAINTAINER:=LianXia233 <LianXia233@users.noreply.github.com>
 # revision in scripts/build-package.sh (setup_feeds), so released apk/ipk
 # packages carry this repository's provenance.
 PKG_VERSION ?=
+# Same provenance for the auto-generated translation package
+# (luci-i18n-mint-zh-cn): luci.mk versions it via PKG_PO_VERSION, which
+# defaults to findrev over po/ (the LuCI feed's HEAD, or a file-mtime
+# fallback when there is no git context). CI injects the theme revision
+# here too, so the translation package is versioned together with the
+# theme it belongs to.
+PKG_PO_VERSION ?=
 
 # /etc/config/mint is SHIPPED as defaults and WRITTEN AT RUNTIME by the
 # wallpaper settings page. Without this define the package manager owns it as
