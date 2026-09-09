@@ -83,6 +83,16 @@ jobs:
           [ -n "$sdk" ] || { echo "::error::SDK tarball not found under $base"; exit 1; }
           echo "Downloading SDK (${{ matrix.sdk_source }}): $sdk"
           curl -fsSLO "$base/$sdk" || { echo "::error::Failed to download $sdk"; exit 1; }
+          # Supply-chain integrity: pin the tarball to the directory's official
+          # sha256sums before anything is extracted from it. Hard-fail when the
+          # sums are published but the tarball does not match; only a mirror
+          # that publishes no sums at all falls back to a warning.
+          line="$(curl -fsSL "$base/sha256sums" | awk -v f="$sdk" '$NF == f' | head -n1 || true)"
+          if [ -n "$line" ]; then
+            echo "$line" | sha256sum -c - || { echo "::error::SHA256 mismatch for $sdk"; exit 1; }
+          else
+            echo "::warning::no sha256 sums for $sdk at $base - integrity check skipped"
+          fi
           echo "Extracting SDK ($(ls -lh "$sdk" | awk '{print $5}'))..."
           if tar --zstd -xf "$sdk" 2>&1; then
             echo "Successfully extracted with tar --zstd"
@@ -113,6 +123,14 @@ jobs:
           ./scripts/feeds update -a
           mkdir -p feeds/luci/themes/luci-theme-mint
           cp -a "$GITHUB_WORKSPACE"/theme/. feeds/luci/themes/luci-theme-mint/
+          # Version the package by the THEME repo's own revision (luci.mk's
+          # findrev would otherwise stamp the luci feed's HEAD). Mirrors the
+          # injection in scripts/build-package.sh.
+          ts="$(git -C "$GITHUB_WORKSPACE" log -1 --format='%ct' -- theme)"
+          th="$(git -C "$GITHUB_WORKSPACE" log -1 --format='%h' --abbrev=7 -- theme)"
+          ver="$(printf '%s.%05d~%s' "$(date --utc --date="@$ts" '+%y.%j')" "$((ts % 86400))" "$th")"
+          sed -i "s/^PKG_VERSION ?=.*/PKG_VERSION := $ver/" feeds/luci/themes/luci-theme-mint/Makefile
+          echo "theme version: $ver"
           ./scripts/feeds install -a
           # feeds install cannot see directories injected after "update", so
           # link it in by hand - the same thing the buildroot does for

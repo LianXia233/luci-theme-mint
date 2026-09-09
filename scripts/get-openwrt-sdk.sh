@@ -96,6 +96,32 @@ url_exists() {
 		--max-time 30 -o /dev/null "$1" 2>/dev/null
 }
 
+# Verify a downloaded SDK tarball against the target directory's official
+# sha256sums (supply-chain integrity: the tarball is cross-compiled code that
+# gets released to end users). Hard-fail on a mismatch; skip with a warning
+# only when the mirror genuinely does not publish sums (e.g. a local test
+# mirror serving plain files).
+verify_sdk_sha256() {
+	local dir_url="$1" sdk_file="$2" archive="$3"
+	local sums line
+
+	sums="$(fetch_url "${dir_url}sha256sums" 2>/dev/null || true)"
+	if [ -z "$sums" ]; then
+		warn "no sha256sums at ${dir_url} - SDK integrity check SKIPPED"
+		return 0
+	fi
+
+	line="$(printf '%s\n' "$sums" | awk -v f="$sdk_file" '$NF == f' | head -n1)"
+	if [ -z "$line" ]; then
+		warn "sha256sums at ${dir_url} has no entry for ${sdk_file} - check SKIPPED"
+		return 0
+	fi
+
+	log "verifying sha256 of ${sdk_file}"
+	( cd "$(dirname "$archive")" && printf '%s\n' "$line" | sha256sum -c - ) \
+		|| die "SHA256 MISMATCH for ${sdk_file} - refusing to use a corrupted SDK"
+}
+
 # Run grep without tripping set -e/pipefail when there are no matches.
 safe_grep() {
 	grep "$@" || true
@@ -486,13 +512,18 @@ sdk_main() {
 			|| die "download failed: ${sdk_url}"
 		# Reject tiny "downloads" that are clearly error pages.
 		local sz
-		sz="$(wc -c < "$archive.part" | tr -d ' ')"
+	sz="$(wc -c < "$archive.part" | tr -d ' ')"
 		if [ "${sz:-0}" -lt 1000000 ]; then
 			rm -f "$archive.part"
 			die "downloaded file too small (${sz} bytes) from ${sdk_url}"
 		fi
 		mv "$archive.part" "$archive"
 	fi
+
+	# Integrity: pin the tarball to the official sha256sums. Runs for the
+	# freshly downloaded AND the cached archive alike (a poisoned cache must
+	# not slip through on a re-run).
+	verify_sdk_sha256 "${base_url}/targets/${target}/" "$sdk_file" "$archive"
 
 	rm -rf "$sdk_dir"
 	mkdir -p "$(dirname "$sdk_dir")"

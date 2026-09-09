@@ -7,7 +7,7 @@
 		},
 		"depends": {
 			"acl": [
-				"wallpaper"
+				"luci-theme-mint"
 			],
 			"uci": {
 				"mint": true

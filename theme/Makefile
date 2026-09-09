@@ -28,6 +28,16 @@ LUCI_MINIFY_UT:=0
 PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=LianXia233 <LianXia233@users.noreply.github.com>
 
+# Version provenance (R-11): luci.mk's findrev derives the package version
+# from whichever git repository contains the build directory - for an
+# out-of-tree checkout copied into feeds/luci that is the LUCIFeed's HEAD,
+# not the theme's own commit, so two SDK builds of the same theme source
+# could even report different versions. Leave this empty for plain feed
+# builds (stock findrev behaviour); CI injects the theme repository's own
+# revision in scripts/build-package.sh (setup_feeds), so released apk/ipk
+# packages carry this repository's provenance.
+PKG_VERSION ?=
+
 # /etc/config/mint is SHIPPED as defaults and WRITTEN AT RUNTIME by the
 # wallpaper settings page. Without this define the package manager owns it as
 # an ordinary file and REPLACES it on upgrade, so an upgrade silently wipes

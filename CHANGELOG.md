@@ -9,6 +9,23 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-10 — 全量代码审查修复 R-01…R-12：cron 脚本权限 / ui_random 默认值 / ACL 收敛 / SDK 校验等)
+
+依据 `docs/reviews/CODE_REVIEW_2026-09-09.md`（以 openwrt/luci master 的 luci.mk、luci-base dispatcher/runtime、官方主题为基准的全量审查），逐项修复：
+
+- **R-01（高危）cron 壁纸刷新器无执行权限**：`root/usr/bin/mz-wallpaper-fetch.sh` 与 `root/etc/uci-defaults/30_luci-theme-mint` 此前以 0644 入库，luci.mk `cp -pR` 会原样带进包内——cron 每 5 分钟直接 `exec` 脚本必得 EACCES，OT-35 服务端壁纸缓存（`wallpaper-*.img`）永远不会生成，前端静默降级为远程 API 直取。已置为 0755；`verify-package.sh` / `install-test.sh` 新增可执行位断言与缺失文件条目（`usr/bin/mz-wallpaper-fetch.sh`），该类回归从此在 CI 硬失败
+- **R-02 `ui_random` 默认值四源矛盾**：对齐为 **默认关闭**（OT-09 原旨）——`/etc/config/mint` 改 `'0'`、`wallpaper.uc` 运行时回退 `?? '1'`→`?? '0'`、`header.ut` 同步并改写理由注释；uci-defaults 播种值与表单 `.default` 本已为 0。新装默认不再向第三方随机图 API 发后台请求（既有安装以 conffile 语义保留各自现状）
+- **R-03 rpcd ACL 收敛**：组名 `wallpaper` 重命名为 `luci-theme-mint`（与文件/包名一致，避免通用名撞车）；有副作用的 `save` 只保留在 write scope；write scope 补上 `uci: ["mint"]`（严格 ACL 固件上 stock `form.Map` 保存路径不再必然被拒）；`uci` 项采用官方扁平写法；`menu.d` 的 `depends.acl` 同步更新
+- **R-04 CI 供应链完整性**：`get-openwrt-sdk.sh` 新增 `verify_sdk_sha256()`——下载/复用缓存后一律对照目标目录官方 `sha256sums` 校验（不匹配即 `die`，无 sums 的本地测试镜像仅告警）；`build.yml` 直连下载路径同步加校验
+- **R-05 rpcd `dashboard` JSON 注入面**：新增 `json_escape()`（sed 转义 `\` `"` + tr 剥离 C0 控制字符），thermal/storage/uplink/system/public_ipv4 全部字符串字段改经其输出；`network` 块改在 heredoc 外组装（`$network_json`），消除 heredoc 转义歧义。含引号/反斜杠的 hostname 等不再破坏仪表盘 JSON
+- **R-06 模板注释注入面**：`header.ut` 的 `wallpaper_error` 调试注释改为 `entityencode(...)`，不再可能被 `-->` 提前闭合
+- **R-07 nftables innerHTML**：`mz-nftables.js` 链名 `<code>` 包裹改为纯 DOM 构造（textNode + `<code>`，零 innerHTML）
+- **R-08 i18n 一致性**：`mz-nftables.js` 的组标题/工具栏/摘要、`overview-mobile.js` 的 `buildCoreHtml` 标签全部改走 `_()`；仪表盘公网 IP 离线哨兵 `未联网` 保留线缆契约、显示侧改 `__('Offline')`（ZH 字典同步补齐 `Offline/Refresh/Status`）；po/pot 新增 28 条 msgid。stock LuCI 视图 DOM 的**解析键**（`pick()`、`CAT_PREFIXES`、`classifyChain` 的正则）刻意保持字面并加注释说明，避免把匹配逻辑译坏
+- **R-09 ubus 挂载点**：`menu-mint.js` 保存回退路径由硬编码 `/ubus/` 改读 `L.env.ubuspath`
+- **R-10 仪表盘失败路径耗时**：`mint_public_ip` 重试由 3×(3s) 收敛为 2×(2s)，WAN 不可达时单次 dashboard RPC 最坏耗时 ~11s→~5s
+- **R-11 版本溯源**：Makefile 新增 `PKG_VERSION ?=` 注入点；`build-package.sh` 与 `build.yml` 在拷贝进 feed 后按主题仓库自身 revision 写入 `PKG_VERSION`（luci.mk findrev 同款 `yy.ddd.sssss~hash` 格式），产物元数据不再随 LuCI feed HEAD 漂移；feed 内普通构建（无匹配行）行为不变
+- **R-12 仓库整洁**：根目录 3 份 LAYOUT_REVIEW 与本次 CODE_REVIEW 统一归档至 `docs/reviews/`
+
 ### Fixed (2026-09-10 — 保存并应用下拉 / 全局下拉菜单 / 首页与接口布局 / 单一 Mint 变体)
 
 - **保存并应用（ComboButton）下拉菜单失效**：`cbi-page-actions .cbi-dropdown.cbi-button` 被主题写成 `overflow:hidden`，LuCI 打开下拉时把绝对定位的 `ul.dropdown` 一起裁掉，桌面端根本无法展开；同时旧规则无差别给打开的 `ul` 加浮层面板样式，导致 `ul.preview`（LuCI 为保持按钮文字而克隆的 caption）也变成第二个浮层
