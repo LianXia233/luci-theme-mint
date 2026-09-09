@@ -9,26 +9,53 @@
 
 ## [Unreleased]
 
-### 修复
+### 修复（CI / 云编译）
+
+- **根因修复：luci-only feed 导致依赖链静默丢失。** `build.yml` 曾用
+  `src-git luci ...` 整体覆盖 SDK 自带的 `feeds.conf.default`，元数据扫描时
+  `luci-base` 对 `curl`、`libubox`、`libubus` 等的依赖被静默丢弃
+  （"has a dependency on 'curl', which does not exist"），编译深入到
+  lucihttp / ucode-mod-html 时才因缺少 `lua.h` / `ucode/module.h` 失败。现在
+  保留 SDK 自带 feed 集合（base feed 提供 rpcd/ucode/libubox，packages feed
+  提供 curl/cgi-io），并新增 `build-package.sh` 的 `setup_feeds()`：
+  feeds update/install 失败即中止，安装后校验依赖链源包全部就位。
+- **根因修复：`USE_APK` 在 24.10+/25.12 SDK 中是无提示（promptless）kconfig
+  符号**（SDK 的 `Config-build.in` 里 `default y`），`.config` 写
+  `CONFIG_USE_APK=n` 会被 `make defconfig` 静默改回 `=y`。新
+  `get-openwrt-sdk.sh` 会解析 SDK 烘焙的 `USE_APK` 值判定 apk/ipk 后端；
+  `build-package.sh` 在 defconfig 后复核实际生效值，ipk 构建遇到烘焙
+  `=y` 的 SDK 时自动回退到 24.10 / 23.05（`--allow-legacy`），产物元数据标记
+  `legacy_compat_sdk=1`。
+- 移除会掩盖真实失败的三处静默：apt 步骤 `|| true`（改为必需包严格安装、
+  `apk-tools`/`opkg` 不可用时输出 `::warning::`）、host tools 步骤
+  `|| echo "::warning::"`（po2lmo/jsmin 编译失败即中止）、主题编译
+  `IGNORE_ERRORS=1`（依赖链必须真实编过）。
+- nightly 产物同名互相覆盖（每个矩阵任务都产出 `luci-theme-mint-0.*`，上传后
+  只剩一个 asset）：产物名无条件追加 `-{版本}-{目标}-{SDK来源}` 后缀。
+- `.config` 布尔关闭项改用规范写法 `# CONFIG_LUCI_CSSTIDY is not set`
+  （`CONFIG_X=n` 对布尔符号不是合法语法）。
+- 新增 `scripts/build-package.sh`（统一 SDK 获取、feeds、配置、构建、
+  `.buildinfo.txt` 证据输出）与重写的 `scripts/get-openwrt-sdk.sh`
+  （版本/内核/发布号/包格式后端探测，支持镜像覆盖）；三个 workflow 全部
+  改为真实依赖链构建。
+
+### 修复（主题）
 
 - 概览页旧面板（端口状态/DHCP 租约/无线/UPnP）标题不翻译：overview.js 的 `__`
   回退到不存在的全局 `_` 时原样返回英文。现优先走 LuCI 的 `_`，未命中时用与
   固件 lmo 构建器一致的服务端 SuperFastHash（JS 实现）查询 LuCI 客户端目录
   （window.TR）——规避了 luci.js 客户端 sfh 在 len%4==2 字符串上与固件目录键
   系统性不一致的问题（"UPnP port mappings" 等永远无法命中的根源）。
+- 壁纸开关缺省语义加固：header.ut 现在把 uci 中缺失的 `ui_random` 视为默认值
+  （开启，与 wallpaper.uc 的 `?? '1'` 对齐）。此前选项一旦异常丢失（如 uci 提交
+  被内存异常打断），前端会误判为关闭并静默停用壁纸功能。
 
-### 改进
+### 改进（主题）
 
 - 移动端标题去重（用户反馈：顶栏与页内标题重复显示）：≤854px 隐藏所有页面级标题
   （`#mz-view > h2` 与概览 `.mint-ovd-header`），仅保留 `.mz-mobilebar` 中的标题；
   概览刷新按钮（`.mint-ovd-refresh`）由 menu-mint.js 按断点搬入顶栏右侧（保留事件与
   loading 动画），跨回桌面宽度时自动搬回原 header，桌面端页内标题与刷新按钮完全不受影响。
-
-### 修复
-
-- 壁纸开关缺省语义加固：header.ut 现在把 uci 中缺失的 `ui_random` 视为默认值
-  （开启，与 wallpaper.uc 的 `?? '1'` 对齐）。此前选项一旦异常丢失（如 uci 提交
-  被内存异常打断），前端会误判为关闭并静默停用壁纸功能。
 
 ## [1.3.4] - 2026-09-09
 

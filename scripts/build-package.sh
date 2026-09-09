@@ -27,6 +27,12 @@
 #                     an older official SDK that does (never a fake ipk)
 #   --luci-branch     override the LuCI branch (auto-detected by default)
 #   --jobs            parallelism (default: nproc)
+#
+# Environment:
+#   LUCI_FEED_URL     LuCI feed repository to pin (default:
+#                     https://github.com/openwrt/luci.git). Point it at a
+#                     mirror (or a local file:// clone) if GitHub is slow or
+#                     unreachable from your network.
 
 set -euo pipefail
 
@@ -65,11 +71,145 @@ luci_branch_for() {
 target_slug() { printf '%s' "${1//\//_}"; }
 
 # Put a value into the SDK .config, replacing any previous definition.
+# Note: for bool/tristate symbols the only valid "off" spelling is the
+# canonical "# CONFIG_X is not set" line - "CONFIG_X=n" is not valid .config
+# syntax for booleans.
 set_config() {
 	local sdk="$1" key="$2" value="$3"
 	[ -f "$sdk/.config" ] || : > "$sdk/.config"
 	sed -i "/^${key}=/d; /^# ${key} is not set$/d" "$sdk/.config"
 	printf '%s\n' "$value" >> "$sdk/.config"
+}
+
+# Set up the SDK's feeds for a real build:
+#  - keep the feed set the SDK itself ships.  The "base" feed is the pinned
+#    OpenWrt core checkout the SDK was generated from (rpcd, ucode, libubox,
+#    libubus, iwinfo, mbedtls, ...) and the packages feed provides curl, lua,
+#    cgi-io, ... - luci-base's whole dependency chain needs them.
+#    Overwriting feeds.conf.default with the luci feed alone starves that
+#    chain: the metadata scan silently drops every unknown dependency
+#    ("WARNING: ... has a dependency on 'curl', which does not exist") and
+#    the build dies inside lucihttp/ucode-mod-html on missing lua.h /
+#    ucode/module.h headers.
+#  - re-point only the luci feed at the GitHub mirror of the branch matching
+#    the SDK series (same content as the SDK's own luci line, faster clone),
+#  - update and install everything (errors are fatal, never silenced),
+#  - drop the theme into the luci feed and link it into the buildroot.
+setup_feeds() {
+	local sdk="$1" branch="$2"
+
+	log "setting up feeds (luci pinned to ${branch})"
+	# feeds.conf overrides feeds.conf.default - make sure only the SDK's own
+	# feed set plus our luci pin is in effect.
+	rm -f "$sdk/feeds.conf"
+	if [ -f "$sdk/feeds.conf.default" ]; then
+		sed -i -E '/^[[:space:]]*src-git([[:space:]]+--root=[^[:space:]]+)?[[:space:]]+luci[[:space:]]/d' \
+			"$sdk/feeds.conf.default"
+	else
+		: > "$sdk/feeds.conf.default"
+	fi
+	printf 'src-git luci %s;%s\n' "$LUCI_FEED_URL" "$branch" \
+		>> "$sdk/feeds.conf.default"
+
+	log "feeds.conf.default:"
+	sed 's/^/  /' "$sdk/feeds.conf.default" >&2
+
+	( cd "$sdk" && ./scripts/feeds update -a )
+	( cd "$sdk" && ./scripts/feeds install -a )
+
+	LUCI_FEED_DIR="$sdk/feeds/luci"
+	[ -d "$LUCI_FEED_DIR" ] || die "LuCI feed not found at $LUCI_FEED_DIR"
+
+	# Install the theme into the feed so luci.mk resolves (include ../../luci.mk
+	# expects <feed>/themes/<pkg>/Makefile -> <feed>/luci.mk).
+	THEME_FEED_DIR="$LUCI_FEED_DIR/themes/luci-theme-mint"
+	rm -rf "$THEME_FEED_DIR"
+	mkdir -p "$THEME_FEED_DIR"
+	cp -a "$THEME_SRC/." "$THEME_FEED_DIR/"
+	[ -f "$THEME_FEED_DIR/Makefile" ] || die "theme Makefile missing after copy"
+
+	# feeds install cannot see directories injected after "update", so link it
+	# in by hand - the same thing the buildroot does for regular feed packages.
+	mkdir -p "$sdk/package/feeds/luci"
+	ln -sfn "../../../feeds/luci/themes/luci-theme-mint" \
+		"$sdk/package/feeds/luci/luci-theme-mint"
+	[ -f "$sdk/package/feeds/luci/luci-theme-mint/Makefile" ] \
+		|| die "theme package not visible to the buildroot"
+
+	# The source packages that carry the theme's build-time dependency chain
+	# must now be linked into the buildroot (base feed: rpcd, ubus, ucode,
+	# lua, libubox; packages feed: curl, cgi-io; luci feed: lucihttp).
+	# Note: subpackages such as libubus or ucode-mod-html have no symlink of
+	# their own - their selection is verified against .config in
+	# configure_sdk() after defconfig has resolved the full chain.
+	local dep found missing=""
+	for dep in luci-base lucihttp rpcd ubus ucode lua curl libubox cgi-io; do
+		found="$(find "$sdk/package/feeds" -maxdepth 2 -name "$dep" -print -quit)"
+		[ -n "$found" ] || missing="$missing $dep"
+	done
+	[ -z "$missing" ] \
+		|| die "required source package(s) missing after feeds install:${missing} - the SDK feed set is incomplete"
+}
+
+# Write the build configuration and run defconfig.
+# Returns 1 (without dying) when the SDK refuses the requested package
+# format, so the caller can fall back to another SDK candidate; any other
+# failure is fatal.
+configure_sdk() {
+	local sdk="$1" format="$2"
+
+	log "configuring SDK"
+	set_config "$sdk" CONFIG_PACKAGE_luci-theme-mint "CONFIG_PACKAGE_luci-theme-mint=m"
+	set_config "$sdk" CONFIG_LUCI_JSMIN      "CONFIG_LUCI_JSMIN=y"
+	set_config "$sdk" CONFIG_LUCI_CSSTIDY    "# CONFIG_LUCI_CSSTIDY is not set"
+	set_config "$sdk" CONFIG_SIGNED_PACKAGES "CONFIG_SIGNED_PACKAGES=n"
+
+	if [ "$format" = apk ]; then
+		# apk is the native format of 25.12/master and supported since 24.10.
+		set_config "$sdk" CONFIG_USE_APK "CONFIG_USE_APK=y"
+	else
+		# Leave the apk switch off: the buildroot then uses its ipk backend
+		# (scripts/ipkg-build / include/package-ipkg.mk). This is the switch
+		# the build system itself defines - not a renaming step.
+		set_config "$sdk" CONFIG_USE_APK "# CONFIG_USE_APK is not set"
+	fi
+
+	( cd "$sdk" && make defconfig ) \
+		|| die "make defconfig failed"
+
+	grep -q '^CONFIG_PACKAGE_luci-theme-mint=m' "$sdk/.config" \
+		|| { sed -n '1,40p' "$sdk/.config" >&2; die "theme package is not selectable"; }
+
+	# The whole runtime dependency chain must have survived defconfig. If a
+	# feed is missing, the metadata scan silently drops unknown dependencies
+	# ("WARNING: ... has a dependency on 'curl', which does not exist") and
+	# the build dies half-way through on missing headers - so verify the
+	# resolved selection instead (subpackages like libubus or ucode-mod-html
+	# are only visible here, not as feed directories).
+	local dep ok=1
+	for dep in luci-base curl rpcd ucode ucode-mod-html ucode-mod-uci \
+		liblucihttp-ucode libubus libubox cgi-io; do
+		grep -qE "^CONFIG_PACKAGE_${dep}=[my]" "$sdk/.config" || {
+			warn "dependency package '${dep}' missing from .config - the SDK feed set is incomplete"
+			ok=0
+		}
+	done
+	[ "$ok" = 1 ] || die "the SDK's feed set cannot satisfy luci-base's dependency chain"
+
+	# Sanity: the format we asked for is the format the SDK will emit.
+	# Current SDKs bake USE_APK into a promptless kconfig symbol
+	# (Config-build.in "config USE_APK / bool / default y"), and a promptless
+	# symbol ignores the user request - "# CONFIG_USE_APK is not set" is
+	# silently rewritten to =y by make defconfig.  Detect that here and let
+	# the caller fall back to an SDK that really ships an ipk backend
+	# instead of shipping a renamed apk.
+	if [ "$format" = apk ]; then
+		grep -q '^CONFIG_USE_APK=y' "$sdk/.config" && return 0
+		die "SDK ignored CONFIG_USE_APK=y - it cannot emit apk packages"
+	else
+		grep -q '^CONFIG_USE_APK=y' "$sdk/.config" && return 1
+		return 0
+	fi
 }
 
 # ---------------------------------------------------------------------------
@@ -78,6 +218,7 @@ set_config() {
 
 VERSION="" TARGET="" FORMAT="" RELEASE_VERSION="nightly"
 OUT="dist" WORKDIR="build" ALLOW_LEGACY=0 LUCI_BRANCH="" JOBS=""
+LUCI_FEED_URL="${LUCI_FEED_URL:-https://github.com/openwrt/luci.git}"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -121,7 +262,7 @@ if [ "$FORMAT" = ipk ] && [ "$ALLOW_LEGACY" = 1 ]; then
 fi
 
 SDK_DIR="" SDK_URL="" OPENWRT_RELEASE="" KERNEL_VERSION="" USED_VERSION=""
-LEGACY=0
+LEGACY=0 LUCI_FEED_DIR="" THEME_FEED_DIR=""
 
 for cand in $CANDIDATES; do
 	sdk_dir="$WORKDIR/sdk-$FORMAT"
@@ -166,11 +307,22 @@ for cand in $CANDIDATES; do
 		continue
 	fi
 
+	# Feeds + configuration happen per candidate so that an SDK which turns
+	# out unable to emit the requested format (e.g. USE_APK baked to y) makes
+	# us fall back to the next candidate instead of dying.
+	cand_branch="${LUCI_BRANCH:-$(luci_branch_for "$cand")}"
+	setup_feeds "$sdk_dir" "$cand_branch"
+	if ! configure_sdk "$sdk_dir" "$FORMAT"; then
+		warn "${cand} SDK forces CONFIG_USE_APK=y - it cannot emit ipk, trying next candidate"
+		continue
+	fi
+
 	SDK_DIR="$sdk_dir"
 	SDK_URL="$sdk_url"
 	OPENWRT_RELEASE="${release:-unknown}"
 	KERNEL_VERSION="${kernel:-unknown}"
 	USED_VERSION="$cand"
+	LUCI_BRANCH="$cand_branch"
 	[ "$cand" = "$VERSION" ] || LEGACY=1
 	break
 done
@@ -178,91 +330,31 @@ done
 [ -n "$SDK_DIR" ] || die "no official SDK could provide a ${FORMAT} backend for ${VERSION}/${TARGET}"
 [ "$LEGACY" = 1 ] && warn "ipk built with compatibility SDK ${USED_VERSION} (requested ${VERSION})"
 
-[ -n "$LUCI_BRANCH" ] || LUCI_BRANCH="$(luci_branch_for "$USED_VERSION")"
 log "openwrt       : ${OPENWRT_RELEASE} (requested ${VERSION})"
 log "kernel        : ${KERNEL_VERSION}"
 log "luci branch   : ${LUCI_BRANCH}"
 log "package format: ${FORMAT}"
 
 # ---------------------------------------------------------------------------
-# 2. feeds: only the LuCI feed, pinned to the matching branch
+# 2. build
 # ---------------------------------------------------------------------------
 
-log "initialising LuCI feed (${LUCI_BRANCH})"
-printf 'src-git luci https://github.com/openwrt/luci.git;%s\n' "$LUCI_BRANCH" \
-	> "$SDK_DIR/feeds.conf.default"
-
-( cd "$SDK_DIR" && ./scripts/feeds update luci )
-( cd "$SDK_DIR" && ./scripts/feeds install -a >/dev/null 2>&1 || true )
-
-LUCI_FEED_DIR="$SDK_DIR/feeds/luci"
-[ -d "$LUCI_FEED_DIR" ] || die "LuCI feed not found at $LUCI_FEED_DIR"
-
-# Install the theme into the feed so luci.mk resolves (include ../../luci.mk
-# expects <feed>/themes/<pkg>/Makefile -> <feed>/luci.mk).
-THEME_FEED_DIR="$LUCI_FEED_DIR/themes/luci-theme-mint"
-rm -rf "$THEME_FEED_DIR"
-mkdir -p "$THEME_FEED_DIR"
-cp -a "$THEME_SRC/." "$THEME_FEED_DIR/"
-[ -f "$THEME_FEED_DIR/Makefile" ] || die "theme Makefile missing after copy"
-
-# feeds install cannot see directories injected after "update", so link it in
-# by hand - the same thing the buildroot does for regular feed packages.
-mkdir -p "$SDK_DIR/package/feeds/luci"
-ln -sfn "../../../feeds/luci/themes/luci-theme-mint" \
-	"$SDK_DIR/package/feeds/luci/luci-theme-mint"
-[ -f "$SDK_DIR/package/feeds/luci/luci-theme-mint/Makefile" ] \
-	|| die "theme package not visible to the buildroot"
-
-# ---------------------------------------------------------------------------
-# 3. configuration: format, package selection, no signing
-# ---------------------------------------------------------------------------
-
-log "configuring SDK"
-set_config "$SDK_DIR" CONFIG_PACKAGE_luci-theme-mint "CONFIG_PACKAGE_luci-theme-mint=m"
-set_config "$SDK_DIR" CONFIG_LUCI_JSMIN     "CONFIG_LUCI_JSMIN=y"
-set_config "$SDK_DIR" CONFIG_LUCI_CSSTIDY   "CONFIG_LUCI_CSSTIDY=n"
-set_config "$SDK_DIR" CONFIG_SIGNED_PACKAGES "CONFIG_SIGNED_PACKAGES=n"
-
-if [ "$FORMAT" = apk ]; then
-	# apk is the native format of 25.12/master and supported since 24.10.
-	set_config "$SDK_DIR" CONFIG_USE_APK "CONFIG_USE_APK=y"
-else
-	# Leave the apk switch off: the buildroot then uses its ipk backend
-	# (scripts/ipkg-build / include/package-ipkg.mk). This is the switch the
-	# build system itself defines - not a renaming step.
-	set_config "$SDK_DIR" CONFIG_USE_APK "# CONFIG_USE_APK is not set"
-fi
-
-( cd "$SDK_DIR" && make defconfig ) \
-	|| die "make defconfig failed"
-
-grep -q '^CONFIG_PACKAGE_luci-theme-mint=m' "$SDK_DIR/.config" \
-	|| { sed -n '1,40p' "$SDK_DIR/.config" >&2; die "theme package is not selectable"; }
-
-# Sanity: the format we asked for is the format the SDK will emit.
-if [ "$FORMAT" = apk ]; then
-	grep -q '^CONFIG_USE_APK=y' "$SDK_DIR/.config" \
-		|| die "CONFIG_USE_APK was not accepted by this SDK - refusing to fake apk output"
-else
-	! grep -q '^CONFIG_USE_APK=y' "$SDK_DIR/.config" \
-		|| die "SDK forces CONFIG_USE_APK=y - it cannot emit ipk, refusing to fake it"
-fi
-
-# ---------------------------------------------------------------------------
-# 4. build
-# ---------------------------------------------------------------------------
-
+# Host tools (po2lmo / jsmin) are a hard prerequisite for the luci feed's
+# po compilation and JS minification - a failure here must stop the build,
+# not be waved through.
 log "building host tools (po2lmo / jsmin)"
 ( cd "$SDK_DIR" && make package/feeds/luci/luci-base/host/compile V=s -j"$JOBS" ) \
-	|| warn "host tools build reported an error - continuing"
+	|| die "luci-base host tools (po2lmo/jsmin) failed to build"
 
+# This compiles the theme AND its full dependency chain (rpcd, ucode,
+# lucihttp, curl, ...) from source with the SDK's cross toolchain. Errors
+# are fatal - never IGNORE_ERRORS, never a renamed package.
 log "building luci-theme-mint (${FORMAT})"
 ( cd "$SDK_DIR" && make package/feeds/luci/luci-theme-mint/compile V=s -j"$JOBS" ) \
 	|| die "package build failed"
 
 # ---------------------------------------------------------------------------
-# 5. collect
+# 3. collect
 # ---------------------------------------------------------------------------
 
 mkdir -p "$OUT"
@@ -288,7 +380,7 @@ cp -f "${PKGS[0]}" "$OUT/$FINAL_NAME"
 log "package: $OUT/$FINAL_NAME"
 
 # ---------------------------------------------------------------------------
-# 6. build metadata (shipped next to the package as evidence)
+# 4. build metadata (shipped next to the package as evidence)
 # ---------------------------------------------------------------------------
 
 LUCI_COMMIT="$(git -C "$LUCI_FEED_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
