@@ -3555,16 +3555,21 @@ body.mz-has-wallpaper::before {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
-	/* Dark theme: dim the wallpaper so light typography on glass reads
-	   comfortably. Light theme: a soft white wash brightens the image
-	   instead, so white frosted glass with dark text looks natural. */
-	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
-	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
-	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
-}
+	/* Unified glass: the page-wide wallpaper overlay uses the SAME tint
+	   (--mz-glass) and the SAME blur/saturate as every card, so the whole
+	   UI reads as one continuous sheet of frosted glass instead of
+	   "background vs panel". Both themes share this rule; only the color
+	   tokens flip (see the theme blocks further down).
 
-body.mz-has-wallpaper:not([data-theme="dark"])::before {
-	background: rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.35));
+	   The user-configurable wallpaper blur (--mz-wallpaper-blur, set on
+	   the Wallpaper Settings page) is ADDED to the glass blur rather than
+	   replaced - an earlier revision overrode backdrop-filter wholesale
+	   here and silently dropped the user's "Blur (px)" setting. */
+	background: var(--mz-glass);
+	backdrop-filter: blur(calc(var(--mz-wallpaper-blur, 0px) + var(--mz-glass-blur-px, 16px)))
+					saturate(var(--mz-glass-sat, 1.2));
+	-webkit-backdrop-filter: blur(calc(var(--mz-wallpaper-blur, 0px) + var(--mz-glass-blur-px, 16px)))
+					saturate(var(--mz-glass-sat, 1.2));
 }
 
 /* NOTE: never touch .mz-sidebar positioning here - it is fixed/sticky
@@ -3621,30 +3626,52 @@ body.mz-has-wallpaper #modal_overlay {
    theme uses a barely-there white wash on a deep navy plate with light
    typography. Both share the same blur / saturate so the "frosted"
    affordance is identical; only the color tokens flip. */
-body.mz-has-wallpaper:not([data-theme="dark"]) {
-	--mz-panel-bg: rgba(255, 255, 255, 0.7);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.86);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.55);
-	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.6);
+html:not([data-theme="dark"]) body.mz-has-wallpaper {
+	/* Unified glass: the wallpaper overlay (::before) and every card use
+	   the exact same alpha + blur so the page reads as ONE sheet of
+	   frosted glass - depth comes from white borders + soft shadow,
+	   not from a heavier panel layer.
+	   NOTE the selector: data-theme lives on <html> (set by header.ut and
+	   menu-mint.js via document.documentElement), NOT on <body>. Writing
+	   this as body.mz-has-wallpaper[data-theme="dark"] made the dark
+	   branch dead code and the :not() branch always-true, i.e. dark mode
+	   appeared completely broken while the toggle itself worked fine. */
+	--mz-glass: rgba(255, 255, 255, 0.5);
+	--mz-glass-blur-px: 16px;
+	--mz-glass-sat: 1.2;
+	--mz-glass-blur: blur(16px) saturate(1.2);
+	--mz-panel-bg: var(--mz-glass);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.72);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.38);
+	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.5);
 	--mz-color-text: #1a2233;
 	--mz-color-text-muted: rgba(26, 34, 51, 0.62);
-	--mz-color-surface: rgba(255, 255, 255, 0.7);
-	--mz-color-surface-2: rgba(255, 255, 255, 0.86);
-	--mz-color-border: rgba(255, 255, 255, 0.5);
+	--mz-color-surface: var(--mz-glass);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.72);
+	--mz-color-border: rgba(255, 255, 255, 0.65);
 	--mz-color-background: #eef1f6;
 	--mz-color-primary-soft: rgba(79, 110, 247, 0.12);
 }
 
-body.mz-has-wallpaper[data-theme="dark"] {
-	--mz-panel-bg: rgba(255, 255, 255, 0.07);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.13);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.045);
+html[data-theme="dark"] body.mz-has-wallpaper {
+	/* Dark theme mirrors the light unified-glass model exactly: one shared
+	   --mz-glass tint for both the page overlay and every card, same
+	   blur/saturate, depth from a light hairline border + soft shadow.
+	   The tint is a deep navy at the user-configured overlay strength so
+	   the Wallpaper Settings "Overlay opacity" slider keeps working. */
+	--mz-glass: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
+	--mz-glass-blur-px: 16px;
+	--mz-glass-sat: 1.1;
+	--mz-glass-blur: blur(16px) saturate(1.1);
+	--mz-panel-bg: var(--mz-glass);
+	--mz-panel-bg-strong: rgba(15, 23, 42, 0.68);
+	--mz-panel-bg-soft: rgba(15, 23, 42, 0.3);
 	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.55);
 	--mz-color-text: #eef2f8;
 	--mz-color-text-muted: rgba(228, 235, 246, 0.72);
-	--mz-color-surface: rgba(255, 255, 255, 0.07);
-	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
-	--mz-color-border: rgba(255, 255, 255, 0.12);
+	--mz-color-surface: var(--mz-glass);
+	--mz-color-surface-2: rgba(15, 23, 42, 0.68);
+	--mz-color-border: rgba(255, 255, 255, 0.16);
 	--mz-color-background: #16202f;
 	--mz-color-primary-soft: rgba(79, 110, 247, 0.18);
 }
@@ -3673,6 +3700,70 @@ body.mz-has-wallpaper .cbi-dynlist > .item {
 	backdrop-filter: blur(12px) saturate(1.15);
 	-webkit-backdrop-filter: blur(12px) saturate(1.15);
 	border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Light theme: the overlay and the cards share the same --mz-glass
+   sheet, so without a visible boundary the panels would vanish into the
+   wallpaper overlay. Reuse the SAME --mz-glass-blur (16px) for cards,
+   and add a bright white border + soft drop shadow for depth. The dark
+   theme keeps the original slate-grey border above (it reads fine
+   against the deep navy base). */
+html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-map,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-section,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-section-node,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-section-table,
+html:not([data-theme="dark"]) body.mz-has-wallpaper table.table,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-tabmenu,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-info-card,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-ring-card,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-port-card,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-net-card,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-sys-grid,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-wifi-card,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-empty-state,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-table-card,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox-head,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox-head.active,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox-body,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebadge,
+html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-dynlist > .item {
+	backdrop-filter: var(--mz-glass-blur);
+	-webkit-backdrop-filter: var(--mz-glass-blur);
+	border-color: rgba(255, 255, 255, 0.7);
+	box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12),
+				inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Dark counterpart of the rule above - same unified glass model, only the
+   border / shadow colors flip so cards stay legible against the navy
+   overlay. Without this the dark theme fell back to the generic
+   blur(12px) + slate border and no longer matched the page overlay. */
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-map,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-section,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-section-node,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-section-table,
+html[data-theme="dark"] body.mz-has-wallpaper table.table,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-tabmenu,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-info-card,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-ring-card,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-port-card,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-net-card,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-sys-grid,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-wifi-card,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-empty-state,
+html[data-theme="dark"] body.mz-has-wallpaper .mz-table-card,
+html[data-theme="dark"] body.mz-has-wallpaper .ifacebox,
+html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-head,
+html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-head.active,
+html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-body,
+html[data-theme="dark"] body.mz-has-wallpaper .ifacebadge,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-dynlist > .item {
+	backdrop-filter: var(--mz-glass-blur);
+	-webkit-backdrop-filter: var(--mz-glass-blur);
+	border-color: rgba(255, 255, 255, 0.16);
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28),
+				inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* De-nested glass (review TZ-01/TZ-06, 2026-09-07): only the OUTERMOST

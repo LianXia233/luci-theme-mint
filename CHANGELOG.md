@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-09 第五轮 — 暗色模式 + 统一毛玻璃 + 轻微阴影)
+
+- **暗色模式切换无效**：菜单顶栏 `#mz-theme-toggle` 能正常切换并持久化 `data-theme`，但壁纸页/概览页视觉上几乎没变
+  - 根因：`data-theme` 属性由 `header.ut` 和 `menu-mint.js` 始终设置在 `<html>`（`document.documentElement`）上，而 `cascade.css` 的玻璃规则全部写成 `body.mz-has-wallpaper[data-theme="dark"]` / `:not([data-theme="dark"])`。`<body>` 上永远没有该属性，导致暗色分支全部失效、亮色分支恒真
+  - 修复：将所有壁纸玻璃规则改为 `html[data-theme="dark"] body.mz-has-wallpaper` 与 `html:not([data-theme="dark"]) body.mz-has-wallpaper`
+  - 统一毛玻璃：把 `body.mz-has-wallpaper::before` 壁纸蒙层也纳入同一模型——背景与卡片使用同一 `--mz-glass` + `--mz-glass-blur`，不再区分“蒙层玻璃 vs 卡片玻璃”。亮色使用 `rgba(255,255,255,0.5)`，暗色使用 `rgba(15,23,42, var(--mz-wallpaper-overlay,0.45))`
+  - 亮色卡片加轻微阴影：在统一玻璃基础上增加 `box-shadow: 0 4px 24px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.6)`，让卡片从壁纸中浮起
+  - 修复壁纸模糊设置被覆盖：`body::before` 不再直接写死 `backdrop-filter`，而是把用户设置的 `--mz-wallpaper-blur` 叠加到玻璃模糊上（`calc(blur + 16px)`），避免“模糊(px)”拉满也无效
+  - 实测：亮色壁纸页卡片 bg=`rgba(255,255,255,0.5)`、暗色切换后卡片/蒙层统一变 navy、文字自动切换为浅色；主题切换按钮点击后立即生效
+
 ### Added (2026-09-09 第四轮 — nftables 状态页改版)
 
 - **nftables 状态页改版**：`/admin/status/nftables` 在裸版视图下 39 条链 138 条规则 390+ 个 badge 一字排开（页面 11102px），现在通过主题级增强完成视觉重塑
