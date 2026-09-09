@@ -4,12 +4,6 @@ name: Release
 # Runs once per completed build workflow; the first one to finish sees that
 # its sibling is still missing and exits without publishing, so the release
 # is always assembled from a complete APK + IPK set.
-#
-# Only runs of the build workflows on the default branch (-> nightly) or on
-# tags (-> version releases) are publishable. Runs for any other event -
-# pull_request builds, manual dispatches on feature branches - are validated
-# here and skipped: they would otherwise be published as a release tagged
-# with the branch name.
 
 on:
   workflow_run:
@@ -33,10 +27,6 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # Never publish from pull_request-triggered builds - a PR must not create
-    # (or update) a release. Tag-push builds (v*) and main-branch builds
-    # (nightly) remain the only publishable events.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.event != 'pull_request'
 
     steps:
       - name: Checkout

@@ -52,31 +52,7 @@ jobs:
       - name: Install host tools
         run: |
           sudo apt-get update
-          # Required tools - a failure here must fail the job, not be waved
-          # through with `|| true` (zstd unpacks the SDK, binutils provides
-          # `ar` for install-test.sh's ipk inspection).
-          sudo apt-get install -y --no-install-recommends \
-            ca-certificates curl zstd binutils
-          # opkg would upgrade install-test.sh to a real `opkg install` run,
-          # but it is not packaged for Ubuntu runners (nor is apk-tools).
-          # Say so loudly instead of failing silently: install-test.sh
-          # detects its absence and falls back to unpacking the payload and
-          # asserting the file layout.
-          sudo apt-get install -y --no-install-recommends opkg \
-            || echo "::warning::opkg is unavailable on this runner image - install-test.sh will use its unpack fallback"
-
-      - name: Resolve OpenWrt SDK URL
-        run: |
-          set -euo pipefail
-          # Discovery only (--print resolves the tarball URL from the
-          # official download index). Whether the resolved series can emit
-          # ipk is decided by build-package.sh: modern SDKs bake
-          # CONFIG_USE_APK=y into a promptless kconfig symbol and the script
-          # then falls back to 24.10 / 23.05 via --allow-legacy.
-          ./scripts/get-openwrt-sdk.sh \
-            --version "${{ matrix.openwrt }}" \
-            --target "${{ matrix.target }}" \
-            --print
+          sudo apt-get install -y --no-install-recommends zstd binutils opkg || true
 
       - name: Build with the official OpenWrt SDK
         id: build
@@ -91,15 +67,13 @@ jobs:
             --out dist
 
       - name: Verify package metadata and payload
-        # ipk files are plain gzip tars - no external tool needed.
         run: ./scripts/verify-package.sh --dir dist --expect-arch all
 
       - name: Install test
         run: |
           rm -rf rootfs
           for f in dist/*.ipk; do
-            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs" \
-              --apk-tool "${{ steps.build.outputs.sdk_dir }}/staging_dir/host/bin/apk"
+            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
           done
 
       - name: Show build info

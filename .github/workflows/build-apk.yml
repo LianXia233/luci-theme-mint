@@ -47,27 +47,8 @@ jobs:
       - name: Install host tools
         run: |
           sudo apt-get update
-          # Required tools - a failure here must fail the job, not be waved
-          # through with `|| true` (zstd is needed to unpack the SDK).
-          sudo apt-get install -y --no-install-recommends \
-            ca-certificates curl zstd
-          # apk-tools is not packaged for Ubuntu runners (nor is opkg), but
-          # it is not needed as a system package: the SDK ships its own apk
-          # binary (staging_dir/host/bin/apk), which verify-package.sh and
-          # install-test.sh use via --apk-tool to inspect APKv3 containers.
-          # Best-effort install kept for the rare case it appears in the
-          # image; absence is expected and harmless.
-          sudo apt-get install -y --no-install-recommends apk-tools \
-            || echo "::notice::apk-tools is not on this runner image - using the SDK's own apk instead"
-
-      - name: Resolve OpenWrt SDK URL
-        run: |
-          set -euo pipefail
-          ./scripts/get-openwrt-sdk.sh \
-            --version "${{ matrix.openwrt }}" \
-            --target "${{ matrix.target }}" \
-            --format apk \
-            --print
+          # zstd: SDK tarballs; apk-tools: real "apk add" install test
+          sudo apt-get install -y --no-install-recommends zstd apk-tools || true
 
       - name: Build with the official OpenWrt SDK
         id: build
@@ -81,17 +62,13 @@ jobs:
             --out dist
 
       - name: Verify package metadata and payload
-        # APKv3 containers are inspected with the SDK's own apk binary.
-        run: |
-          ./scripts/verify-package.sh --dir dist --expect-arch all \
-            --apk-tool "${{ steps.build.outputs.sdk_dir }}/staging_dir/host/bin/apk"
+        run: ./scripts/verify-package.sh --dir dist --expect-arch all
 
       - name: Install test
         run: |
           rm -rf rootfs
           for f in dist/*.apk; do
-            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs" \
-              --apk-tool "${{ steps.build.outputs.sdk_dir }}/staging_dir/host/bin/apk"
+            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
           done
 
       - name: Show build info

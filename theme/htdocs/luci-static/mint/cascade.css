@@ -304,68 +304,6 @@ a:hover {
 	opacity: 1;
 }
 
-/* Mobile-only top bar (created by menu-mint.js initMobileBar).
-   The hamburger is moved into this bar on narrow viewports so it stops
-   floating fixed over the page content and instead participates in a
-   normal flex row. The bar is hidden on desktop. */
-.mz-mobilebar {
-	display: none;
-}
-
-@media (max-width: 854px) {
-	.mz-mobilebar {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		position: sticky;
-		top: 0;
-		z-index: 55;
-		height: 48px;
-		padding: 0 12px;
-		margin: -8px -12px 12px;
-		background: var(--mz-color-surface);
-		backdrop-filter: blur(12px) saturate(1.1);
-		-webkit-backdrop-filter: blur(12px) saturate(1.1);
-		border-bottom: 1px solid var(--mz-color-border);
-		box-shadow: var(--mz-shadow-sm);
-	}
-
-	body.mz-has-wallpaper .mz-mobilebar {
-		background: var(--mz-panel-bg-strong);
-	}
-
-	/* When the toggle lives inside the mobile bar it must NOT keep its
-	   fixed positioning - otherwise it floats over the title text. */
-	.mz-mobilebar .mz-sidebar-toggle {
-		position: relative;
-		top: auto;
-		left: auto;
-		flex: 0 0 auto;
-		width: 36px;
-		height: 36px;
-		margin: 0;
-	}
-
-	.mz-mobilebar-title {
-		flex: 1 1 auto;
-		min-width: 0;
-		font-size: 1rem;
-		font-weight: 600;
-		line-height: 36px;
-		text-align: center;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		color: var(--mz-color-text);
-	}
-
-	/* Dashboard refresh button when re-parented into the bar */
-	.mz-mobilebar .mint-ovd-refresh {
-		flex: 0 0 auto;
-		margin-left: auto;
-	}
-}
-
 /* ---------------------------------------------------------------- */
 /* Main area                                                         */
 /* ---------------------------------------------------------------- */
@@ -391,6 +329,8 @@ a:hover {
 }
 
 .mz-breadcrumb {
+	/* OT-USER: breadcrumb bar removed from all pages */
+	display: none !important;
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -1006,7 +946,10 @@ th {
 .mz-login-overlay {
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(180deg, rgba(8, 12, 22, var(--mz-wallpaper-overlay)) 0%, rgba(8, 12, 22, calc(var(--mz-wallpaper-overlay) + 0.15)) 100%);
+	/* Light wash (2026-09-09, reference: light frosted login) - the
+	   wallpaper stays vivid; the overlay only softens it. The user's
+	   overlay alpha is scaled 0.55 like the admin pages. */
+	background: linear-gradient(180deg, rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay) * 0.55)) 0%, rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay) * 0.55 + 0.12)) 100%);
 }
 
 .mz-login-card {
@@ -1016,15 +959,15 @@ th {
 	box-sizing: border-box;
 	padding: var(--mz-spacing-xl);
 	border-radius: var(--mz-radius-xl);
-	/* P2-2 (2026-09-07 review round 2): 0.72 -> 0.55 so the login card no
-	   longer masks the wallpaper (~18-25% show-through vs ~11-15%); the
-	   14px backdrop blur keeps text contrast. */
-	background: rgba(15, 21, 36, .55);
-	border: 1px solid rgba(255, 255, 255, .09);
+	/* Light frosted glass card (2026-09-09): 62% white + 14px blur keeps
+	   dark slate text at WCAG contrast while the wallpaper shows through
+	   just like the reference page. */
+	background: rgba(255, 255, 255, .62);
+	border: 1px solid rgba(255, 255, 255, .65);
 	backdrop-filter: blur(14px);
 	-webkit-backdrop-filter: blur(14px);
-	box-shadow: var(--mz-shadow-lg);
-	color: #f2f4fa;
+	box-shadow: 0 12px 32px rgba(31, 45, 61, 0.16);
+	color: #1c2736;
 	text-align: center;
 	animation: mz-fade-in 300ms ease;
 }
@@ -1041,7 +984,7 @@ th {
 .mz-login-welcome {
 	margin: var(--mz-spacing-xs) 0 var(--mz-spacing-lg);
 	font-size: .86rem;
-	color: rgba(242, 244, 250, .65);
+	color: rgba(40, 54, 74, .66);
 }
 
 .mz-login-form {
@@ -1054,23 +997,23 @@ th {
 .mz-field label {
 	display: block;
 	font-size: .8rem;
-	color: rgba(242, 244, 250, .75);
+	color: rgba(40, 54, 74, .75);
 	margin-bottom: 5px;
 }
 
 .mz-field input {
 	width: 100%;
 	box-sizing: border-box;
-	background: rgba(255, 255, 255, .07);
-	border-color: rgba(255, 255, 255, .14);
-	color: #ffffff;
+	background: rgba(255, 255, 255, .75);
+	border-color: rgba(120, 134, 156, .45);
+	color: #16202f;
 	border-radius: var(--mz-radius-md);
 	padding: 9px 12px;
 	font-size: .92rem;
 }
 
 .mz-field input::placeholder {
-	color: rgba(242, 244, 250, .4);
+	color: rgba(40, 54, 74, .42);
 }
 
 .mz-field input:focus {
@@ -1083,14 +1026,14 @@ th {
 	align-items: center;
 	gap: 7px;
 	font-size: .82rem;
-	color: rgba(242, 244, 250, .75);
+	color: rgba(40, 54, 74, .75);
 	user-select: none;
 }
 
 .mz-login-version {
 	margin: var(--mz-spacing-lg) 0 0;
 	font-size: .72rem;
-	color: rgba(242, 244, 250, .45);
+	color: rgba(40, 54, 74, .48);
 }
 
 .mz-login .alert-message {
@@ -1099,9 +1042,9 @@ th {
 }
 
 .mz-login .alert-message.error {
-	background: rgba(217, 72, 79, .2);
+	background: rgba(217, 72, 79, .14);
 	border-color: var(--mz-color-danger);
-	color: #ffd7d9;
+	color: #9f2429;
 }
 
 .mz-login-copyright {
@@ -1121,6 +1064,78 @@ th {
 .mz-login ~ #view,
 body.mz-login-active #maincontent {
 	display: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Mobile top bar (2026-09-09)                                       */
+/*                                                                   */
+/* Replaces the fixed corner hamburger: the toggle now sits inside a */
+/* slim sticky bar that also carries the page title, so #mz-view     */
+/* keeps symmetric padding on every phone width (no left gutter, no  */
+/* blank column under the button). Hidden on desktop entirely.       */
+/* ---------------------------------------------------------------- */
+.mz-mobilebar {
+	display: none;
+}
+
+@media (max-width: 854px) {
+	.mz-mobilebar {
+		position: sticky;
+		top: 0;
+		/* below the drawer overlay (z 35) so it dims with the rest of
+		   the page while the sidebar drawer is open */
+		z-index: 30;
+		display: flex;
+		align-items: center;
+		gap: var(--mz-spacing-sm);
+		min-height: 52px;
+		padding: 6px 12px;
+		background: var(--mz-color-background);
+		border-bottom: 1px solid var(--mz-color-border);
+	}
+
+	.mz-mobilebar .mz-mobilebar-title {
+		font-weight: 600;
+		font-size: .95rem;
+		color: var(--mz-color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* In-flow inside the bar: overrides the fixed top-left corner
+	   placement of the base .mz-sidebar-toggle rule. */
+	.mz-mobilebar #mz-sidebar-toggle {
+		position: static;
+		display: inline-flex;
+		width: 36px;
+		height: 36px;
+		flex: 0 0 auto;
+		margin: 0;
+	}
+
+	/* The dashboard refresh control lives in the bar on phones; push it
+	   to the right edge, opposite the hamburger. */
+	.mz-mobilebar .mint-ovd-refresh {
+		margin-left: auto;
+		flex: 0 0 auto;
+	}
+
+	/* Page-level titles are rendered in the bar instead (user request:
+	   no duplicate title under the bar on any page). Covers the plain
+	   LuCI page heading and the overview dashboard header (its refresh
+	   button is re-parented into the bar by menu-mint.js). Desktop
+	   (>854px) keeps the original in-page titles. */
+	#mz-view > h2,
+	.mint-ovd-header {
+		display: none !important;
+	}
+}
+
+body.mz-has-wallpaper .mz-mobilebar {
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
 }
 
 /* ---------------------------------------------------------------- */
@@ -1155,8 +1170,11 @@ body.mz-login-active #maincontent {
 		padding-left: 64px;
 	}
 
-	.mz-view {
+	#mz-view {
 		padding: var(--mz-spacing-md) var(--mz-spacing-sm);
+		/* No forced left padding anymore (2026-09-09): the hamburger now
+		   lives in the sticky .mz-mobilebar above the content, so the
+		   view keeps symmetric padding with no blank left gutter. */
 	}
 
 	.table, .table .tr, table.table, table.cbi-section-table {
@@ -1183,8 +1201,9 @@ body.mz-login-active #maincontent {
 }
 
 @media (max-width: 480px) {
-	.mz-view {
+	#mz-view {
 		padding: var(--mz-spacing-sm);
+		/* no left gutter: hamburger lives in .mz-mobilebar */
 	}
 
 	.btn {
@@ -2314,6 +2333,9 @@ table.cbi-section-table tbody tr:hover td {
 	margin: 0 auto;
 	padding: 24px 28px;
 }
+
+/* (Removed 2026-09-09: the max-width:854px #mz-view left padding that
+   cleared the fixed corner hamburger - replaced by the sticky mobile bar.) */
 /* (Removed 2026-09-07: .mz-topbar-inner has no matching element in header.ut.) */
 
 /* Overview panels: wider grids on desktop */
@@ -3144,8 +3166,9 @@ html[data-theme="dark"] {
 		margin-bottom: var(--mz-spacing-sm);
 	}
 
-	.mz-view {
+	#mz-view {
 		padding: var(--mz-spacing-sm) var(--mz-spacing-sm) 24px;
+		/* no left gutter: hamburger lives in .mz-mobilebar */
 	}
 
 	.cbi-section {
@@ -3617,21 +3640,34 @@ body.mz-has-wallpaper::before {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
-	/* Unified glass: the page-wide wallpaper overlay uses the SAME tint
-	   (--mz-glass) and the SAME blur/saturate as every card, so the whole
-	   UI reads as one continuous sheet of frosted glass instead of
-	   "background vs panel". Both themes share this rule; only the color
-	   tokens flip (see the theme blocks further down).
+	/* Light theme: a white wash matched to the CARD alpha (2026-09-09
+	   readability round). The user's overlay alpha is scaled x0.95 so the
+	   default 0.45 lands on ~0.43, the same level as the 0.45 card fill;
+	   wallpaper stays visible outside the cards. */
+	background: rgba(240, 246, 252, calc(var(--mz-wallpaper-overlay, 0.45) * 0.95));
+	/* 2026-09-09: the page BETWEEN cards must look like the cards. Cards
+	   are 0.55 white + blur; the wash already matches the alpha, so give
+	   the full-page overlay the same glass blur. max() keeps a stronger
+	   user-configured wallpaper blur (--mz-wallpaper-blur). A plain
+	   blur() fallback stays for engines without math functions. */
+	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+	backdrop-filter: blur(max(var(--mz-glass-blur, 14px), var(--mz-wallpaper-blur, 0px))) saturate(var(--mz-glass-saturate, 1.25));
+	-webkit-backdrop-filter: blur(max(var(--mz-glass-blur, 14px), var(--mz-wallpaper-blur, 0px))) saturate(var(--mz-glass-saturate, 1.25));
+}
 
-	   The user-configurable wallpaper blur (--mz-wallpaper-blur, set on
-	   the Wallpaper Settings page) is ADDED to the glass blur rather than
-	   replaced - an earlier revision overrode backdrop-filter wholesale
-	   here and silently dropped the user's "Blur (px)" setting. */
-	background: var(--mz-glass);
-	backdrop-filter: blur(calc(var(--mz-wallpaper-blur, 0px) + var(--mz-glass-blur-px, 16px)))
-					saturate(var(--mz-glass-sat, 1.2));
-	-webkit-backdrop-filter: blur(calc(var(--mz-wallpaper-blur, 0px) + var(--mz-glass-blur-px, 16px)))
-					saturate(var(--mz-glass-sat, 1.2));
+/* Dark theme (2026-09-09): NO wallpaper - the class only activates the
+   glass component layer. The image layer is blanked and the wash layer
+   becomes PURE BLACK, so every translucent white panel reads as frosted
+   glass over a black page. */
+html[data-theme="dark"] body.mz-has-wallpaper::after {
+	background-image: none;
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper::before {
+	background: #000;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 /* NOTE: never touch .mz-sidebar positioning here - it is fixed/sticky
@@ -3657,8 +3693,8 @@ body.mz-has-wallpaper .mz-footer,
 body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
 body.mz-has-wallpaper #maincontent .cbi-page-actions {
 	background: var(--mz-panel-bg-strong);
-	backdrop-filter: blur(14px) saturate(1.15);
-	-webkit-backdrop-filter: blur(14px) saturate(1.15);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
 }
 
 /* The hamburger must stay above the raised sidebar (review TZ-07). */
@@ -3675,6 +3711,25 @@ body.mz-has-wallpaper #modal_overlay {
 	z-index: 2000;
 }
 
+/* Modal dialog over wallpaper (glass pass 2026-09-08): the modal used to
+   inherit the 7% card wash, which let a busy page bleed through the
+   dense confirmation text. It now gets the dedicated dark readable fill
+   plus a stronger blur - still glass, but one ladder step above cards. */
+body.mz-has-wallpaper #modal_overlay .modal {
+	background: var(--mz-modal-bg);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-glass-border);
+	box-shadow: var(--mz-glass-shadow-lg);
+}
+
+body.mz-has-wallpaper #modal_overlay .modal .cbi-section,
+body.mz-has-wallpaper #modal_overlay .modal table.table {
+	background: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
 /* (Removed 2026-09-07 review TZ-05: old 0.9 table rules, superseded by the glass layer below.) */
 
 /* ================================================================
@@ -3683,59 +3738,74 @@ body.mz-has-wallpaper #modal_overlay {
  * while a slightly stronger background on hover/focus plus a text
  * halo keeps every label readable in light and dark mode.
  * ================================================================ */
-/* Theme-aware glass: light theme uses a white frosted sheet with dark
-   typography so the overall composition reads as a clean light UI; dark
-   theme uses a barely-there white wash on a deep navy plate with light
-   typography. Both share the same blur / saturate so the "frosted"
-   affordance is identical; only the color tokens flip. */
-html:not([data-theme="dark"]) body.mz-has-wallpaper {
-	/* Unified glass: the wallpaper overlay (::before) and every card use
-	   the exact same alpha + blur so the page reads as ONE sheet of
-	   frosted glass - depth comes from white borders + soft shadow,
-	   not from a heavier panel layer.
-	   NOTE the selector: data-theme lives on <html> (set by header.ut and
-	   menu-mint.js via document.documentElement), NOT on <body>. Writing
-	   this as body.mz-has-wallpaper[data-theme="dark"] made the dark
-	   branch dead code and the :not() branch always-true, i.e. dark mode
-	   appeared completely broken while the toggle itself worked fine. */
-	--mz-glass: rgba(255, 255, 255, 0.5);
-	--mz-glass-blur-px: 16px;
-	--mz-glass-sat: 1.2;
-	--mz-glass-blur: blur(16px) saturate(1.2);
-	--mz-panel-bg: var(--mz-glass);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.72);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.38);
-	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.5);
-	--mz-color-text: #1a2233;
-	--mz-color-text-muted: rgba(26, 34, 51, 0.62);
-	--mz-color-surface: var(--mz-glass);
-	--mz-color-surface-2: rgba(255, 255, 255, 0.72);
-	--mz-color-border: rgba(255, 255, 255, 0.65);
-	--mz-color-background: #eef1f6;
-	--mz-color-primary-soft: rgba(79, 110, 247, 0.12);
+/* Tuned 2026-09-09 (reference style: light frosted glass, cf. the GitHub
+   proxy landing page): the wallpaper stays vivid under a LIGHT wash, and
+   every panel is a white frosted sheet (45% white + blur) with dark slate
+   typography on top - the same hierarchy as the reference: wallpaper <
+   light page wash < white glass cards < dark text < solid color buttons.
+   html[data-theme="dark"] restores the previous dark-glass palette below,
+   so both color schemes keep a readable, dedicated palette.
+   (Second pass same day: user asked for "a bit more transparent, but not
+   much" - the whole ladder dropped ~0.1 alpha from the 0.55 first cut.) */
+body.mz-has-wallpaper {
+	--mz-panel-bg: rgba(255, 255, 255, 0.45);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.58);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.32);
+	--mz-panel-halo: 0 1px 2px rgba(255, 255, 255, 0.6);
+	--mz-color-text: #1c2736;
+	--mz-color-text-muted: rgba(40, 54, 74, 0.8);
+	--mz-color-surface: rgba(255, 255, 255, 0.45);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.6);
+	--mz-color-border: rgba(255, 255, 255, 0.5);
+	--mz-color-background: #e9eff7;
+
+	/* Glass tokens (glass-morphism pass, 2026-09-08): single source of
+	   truth for blur radii, borders, shadows and the elevated fills used
+	   by inputs / modals / open dropdowns. Tune here, not per-element. */
+	--mz-glass-blur: 14px;          /* cards, alerts, panels */
+	--mz-glass-blur-strong: 16px;   /* app chrome: sidebar/topbar/footer */
+	--mz-glass-blur-input: 8px;     /* inputs: cheaper, they are small */
+	--mz-glass-saturate: 1.25;
+	--mz-glass-border: rgba(255, 255, 255, 0.55);
+	--mz-glass-border-strong: rgba(255, 255, 255, 0.75);
+	--mz-glass-shadow: 0 4px 16px rgba(31, 45, 61, 0.1);
+	--mz-glass-shadow-lg: 0 12px 32px rgba(31, 45, 61, 0.16);
+	/* Brighter "readable glass" fills: inputs and modals carry dense text,
+	   so they need more ink than the 45% card wash (documented ladder:
+	   page wash ~0.43 < cards 0.45 < chrome 0.58 < input 0.58 < modal
+	   0.84 - all white glass over the light page wash). */
+	--mz-input-bg: rgba(255, 255, 255, 0.58);
+	--mz-input-bg-hover: rgba(255, 255, 255, 0.7);
+	--mz-input-border: rgba(120, 134, 156, 0.45);
+	--mz-modal-bg: rgba(255, 255, 255, 0.84);
 }
 
+/* Dark theme keeps the original dark-glass palette (2026-09-08 look):
+   barely-there 7% white washes, light typography, dark input/modal
+   fills. Every token is restated so the light values above never leak
+   into dark mode. */
 html[data-theme="dark"] body.mz-has-wallpaper {
-	/* Dark theme mirrors the light unified-glass model exactly: one shared
-	   --mz-glass tint for both the page overlay and every card, same
-	   blur/saturate, depth from a light hairline border + soft shadow.
-	   The tint is a deep navy at the user-configured overlay strength so
-	   the Wallpaper Settings "Overlay opacity" slider keeps working. */
-	--mz-glass: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
-	--mz-glass-blur-px: 16px;
-	--mz-glass-sat: 1.1;
-	--mz-glass-blur: blur(16px) saturate(1.1);
-	--mz-panel-bg: var(--mz-glass);
-	--mz-panel-bg-strong: rgba(15, 23, 42, 0.68);
-	--mz-panel-bg-soft: rgba(15, 23, 42, 0.3);
+	--mz-panel-bg: rgba(255, 255, 255, 0.07);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.13);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.045);
 	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.55);
 	--mz-color-text: #eef2f8;
 	--mz-color-text-muted: rgba(228, 235, 246, 0.72);
-	--mz-color-surface: var(--mz-glass);
-	--mz-color-surface-2: rgba(15, 23, 42, 0.68);
-	--mz-color-border: rgba(255, 255, 255, 0.16);
-	--mz-color-background: #16202f;
-	--mz-color-primary-soft: rgba(79, 110, 247, 0.18);
+	--mz-color-surface: rgba(255, 255, 255, 0.07);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
+	--mz-color-border: rgba(255, 255, 255, 0.12);
+	--mz-color-background: #000;
+	--mz-glass-blur: 12px;
+	--mz-glass-blur-strong: 14px;
+	--mz-glass-saturate: 1.15;
+	--mz-glass-border: rgba(148, 163, 184, 0.3);
+	--mz-glass-border-strong: rgba(148, 163, 184, 0.45);
+	--mz-glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+	--mz-glass-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+	--mz-input-bg: rgba(15, 23, 42, 0.42);
+	--mz-input-bg-hover: rgba(15, 23, 42, 0.52);
+	--mz-input-border: rgba(148, 163, 184, 0.42);
+	--mz-modal-bg: rgba(17, 26, 39, 0.86);
 }
 
 body.mz-has-wallpaper .cbi-map,
@@ -3759,73 +3829,9 @@ body.mz-has-wallpaper .ifacebox-body,
 body.mz-has-wallpaper .ifacebadge,
 body.mz-has-wallpaper .cbi-dynlist > .item {
 	background: var(--mz-panel-bg);
-	backdrop-filter: blur(12px) saturate(1.15);
-	-webkit-backdrop-filter: blur(12px) saturate(1.15);
-	border-color: rgba(148, 163, 184, 0.3);
-}
-
-/* Light theme: the overlay and the cards share the same --mz-glass
-   sheet, so without a visible boundary the panels would vanish into the
-   wallpaper overlay. Reuse the SAME --mz-glass-blur (16px) for cards,
-   and add a bright white border + soft drop shadow for depth. The dark
-   theme keeps the original slate-grey border above (it reads fine
-   against the deep navy base). */
-html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-map,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-section,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-section-node,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-section-table,
-html:not([data-theme="dark"]) body.mz-has-wallpaper table.table,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-tabmenu,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-info-card,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-ring-card,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-port-card,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-net-card,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-sys-grid,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-wifi-card,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-empty-state,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .mz-table-card,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox-head,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox-head.active,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebox-body,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .ifacebadge,
-html:not([data-theme="dark"]) body.mz-has-wallpaper .cbi-dynlist > .item {
-	backdrop-filter: var(--mz-glass-blur);
-	-webkit-backdrop-filter: var(--mz-glass-blur);
-	border-color: rgba(255, 255, 255, 0.7);
-	box-shadow: 0 4px 24px rgba(15, 23, 42, 0.12),
-				inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-/* Dark counterpart of the rule above - same unified glass model, only the
-   border / shadow colors flip so cards stay legible against the navy
-   overlay. Without this the dark theme fell back to the generic
-   blur(12px) + slate border and no longer matched the page overlay. */
-html[data-theme="dark"] body.mz-has-wallpaper .cbi-map,
-html[data-theme="dark"] body.mz-has-wallpaper .cbi-section,
-html[data-theme="dark"] body.mz-has-wallpaper .cbi-section-node,
-html[data-theme="dark"] body.mz-has-wallpaper .cbi-section-table,
-html[data-theme="dark"] body.mz-has-wallpaper table.table,
-html[data-theme="dark"] body.mz-has-wallpaper .cbi-tabmenu,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-info-card,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-ring-card,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-port-card,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-net-card,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-sys-grid,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-wifi-card,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-empty-state,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-table-card,
-html[data-theme="dark"] body.mz-has-wallpaper .ifacebox,
-html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-head,
-html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-head.active,
-html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-body,
-html[data-theme="dark"] body.mz-has-wallpaper .ifacebadge,
-html[data-theme="dark"] body.mz-has-wallpaper .cbi-dynlist > .item {
-	backdrop-filter: var(--mz-glass-blur);
-	-webkit-backdrop-filter: var(--mz-glass-blur);
-	border-color: rgba(255, 255, 255, 0.16);
-	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28),
-				inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-glass-border);
 }
 
 /* De-nested glass (review TZ-01/TZ-06, 2026-09-07): only the OUTERMOST
@@ -3874,8 +3880,8 @@ body.mz-has-wallpaper .cbi-section-error,
 body.mz-has-wallpaper .cbi-map > .cbi-map-descr,
 body.mz-has-wallpaper .cbi-tab-descr {
 	background: var(--mz-panel-bg-strong);
-	backdrop-filter: blur(12px) saturate(1.15);
-	-webkit-backdrop-filter: blur(12px) saturate(1.15);
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
 }
 
 /* Generic table headers and hover rows over wallpaper (review TZ-03):
@@ -3884,7 +3890,9 @@ body.mz-has-wallpaper .cbi-tab-descr {
 body.mz-has-wallpaper table.table thead th,
 body.mz-has-wallpaper table.cbi-section-table thead th,
 body.mz-has-wallpaper .table .table-titles .td {
-	background: rgba(148, 163, 184, 0.18);
+	/* Readability round 2026-09-09: 0.18 was fainter than the 0.55 cards
+	   the headers sit on; raised so headers read as a distinct tier. */
+	background: rgba(148, 163, 184, 0.38);
 }
 body.mz-has-wallpaper .table .tr:hover .td,
 body.mz-has-wallpaper table.table tr:hover td,
@@ -3892,7 +3900,74 @@ body.mz-has-wallpaper table.cbi-section-table tr:hover td,
 body.mz-has-wallpaper table.table tbody tr:hover td,
 body.mz-has-wallpaper table.cbi-section-table tbody tr:hover td,
 body.mz-has-wallpaper .mz-data-table tbody tr:hover td {
-	background: rgba(148, 163, 184, 0.16);
+	background: rgba(148, 163, 184, 0.3);
+}
+
+/* Inputs over wallpaper (glass pass 2026-09-08): the 7% card wash was too
+   faint for dense form fields on bright wallpapers. Inputs get the dark
+   readable fill, a soft blur, and keep the stock focus ring. Log
+   viewports stay on the plain surface token (see #maincontent textarea
+   in the base layer) except they inherit the same glass colors. */
+body.mz-has-wallpaper input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]),
+body.mz-has-wallpaper select,
+body.mz-has-wallpaper textarea {
+	background: var(--mz-input-bg);
+	border-color: var(--mz-input-border);
+	backdrop-filter: blur(var(--mz-glass-blur-input));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-input));
+	color: var(--mz-color-text);
+}
+
+body.mz-has-wallpaper input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):hover,
+body.mz-has-wallpaper select:hover,
+body.mz-has-wallpaper textarea:hover {
+	background: var(--mz-input-bg-hover);
+	border-color: var(--mz-glass-border-strong);
+}
+
+body.mz-has-wallpaper input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):focus,
+body.mz-has-wallpaper select:focus,
+body.mz-has-wallpaper textarea:focus {
+	background: var(--mz-input-bg-hover);
+	box-shadow: 0 0 0 3px var(--mz-color-primary-soft);
+	border-color: var(--mz-color-primary);
+}
+
+/* Firefox paints autofill in an opaque system color; normalize it so a
+   saved password never pops a bright yellow chip on the glass. Light
+   theme fills near-white, dark theme keeps the dark slate fill. */
+body.mz-has-wallpaper input:-webkit-autofill,
+body.mz-has-wallpaper input:-webkit-autofill:hover,
+body.mz-has-wallpaper input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0 1000px #f4f7fb inset;
+	-webkit-text-fill-color: var(--mz-color-text);
+	caret-color: var(--mz-color-text);
+	transition: background-color 99999s ease-in-out 0s;
+}
+
+body.mz-has-wallpaper input:autofill {
+	box-shadow: 0 0 0 1000px #f4f7fb inset;
+	-webkit-text-fill-color: var(--mz-color-text);
+	caret-color: var(--mz-color-text);
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper input:-webkit-autofill,
+html[data-theme="dark"] body.mz-has-wallpaper input:-webkit-autofill:hover,
+html[data-theme="dark"] body.mz-has-wallpaper input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0 1000px #16202f inset;
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper input:autofill {
+	box-shadow: 0 0 0 1000px #16202f inset;
+}
+
+/* Disabled controls under wallpaper keep the soft fill and muted text
+   (the generic *:disabled rule below sets bg only). */
+body.mz-has-wallpaper input:disabled,
+body.mz-has-wallpaper select:disabled,
+body.mz-has-wallpaper textarea:disabled {
+	background: var(--mz-panel-bg-soft);
+	border-color: var(--mz-color-border);
 }
 
 /* Sys-info grid uses !important in its base rule; force the glass vars with
@@ -3903,21 +3978,27 @@ body.mz-has-wallpaper .mz-sys-grid {
 }
 
 /* Overview page translucent headers / titles over wallpaper */
-/* Headers share the panel alpha family (reference style: no loud opaque
-   bars) - a 0.4 primary tint keeps white labels readable without turning
-   the header into a solid slab. */
+/* Light theme: a soft primary tint (0.16) under dark text; dark theme
+   keeps the 0.4 tint with light text (rules below). */
 body.mz-has-wallpaper .mz-net-header,
 body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.4);
+	/* Readability round 2026-09-09: 0.16 sat below the card alpha and
+	   washed out on bright wallpapers; 0.32 keeps a primary tint that is
+	   clearly a tier above the 0.55 white card beneath it. */
+	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.32);
 }
 body.mz-has-wallpaper .mz-net-header {
-	color: #fff;
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+	color: var(--mz-color-text);
+	text-shadow: var(--mz-panel-halo);
 }
 
 html[data-theme="dark"] body.mz-has-wallpaper .mz-net-header,
 html[data-theme="dark"] body.mz-has-wallpaper .mz-data-table thead th {
 	background: rgba(var(--mz-color-primary-rgb, 125, 147, 255), 0.4);
+}
+html[data-theme="dark"] body.mz-has-wallpaper .mz-net-header {
+	color: #fff;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 /* LuCI ifacebox headers use inline background-color for firewall zones;
@@ -4095,11 +4176,11 @@ table.table .cbi-button,
  * Mobile adaptation (2026-09-08)
  * ================================================================ */
 /* Login page: on phones the card lets noticeably more wallpaper through.
-   The desktop value (rgba(15,21,36,.55) on .mz-login-card) is untouched
+   The desktop value (rgba(255,255,255,.62) on .mz-login-card) is untouched
    above 640px. */
 @media (max-width: 640px) {
 	.mz-login-card {
-		background: rgba(15, 21, 36, .38);
+		background: rgba(255, 255, 255, .5);
 	}
 }
 
@@ -4192,26 +4273,44 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
 .cbi-button-apply .dropdown,
 .cbi-button-apply + .dropdown-menu,
 .btn + .dropdown-menu {
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	box-shadow: var(--mz-glass-shadow-lg);
 }
 
 body.mz-has-wallpaper .cbi-dropdown[open] > ul,
 body.mz-has-wallpaper .cbi-button-apply .dropdown,
 body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
 body.mz-has-wallpaper .btn + .dropdown-menu {
-	background: #1c2736; /* solid enough to stay readable over any wallpaper */
+	background: rgba(255, 255, 255, 0.96); /* near-solid frost; readable over any wallpaper */
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
+	border: 1px solid var(--mz-glass-border);
+}
+
+/* Dark theme keeps the dark chip for its light text. */
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-dropdown[open] > ul,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-button-apply .dropdown,
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
+html[data-theme="dark"] body.mz-has-wallpaper .btn + .dropdown-menu {
+	background: #1c2736;
 }
 
 body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
+	background: rgba(148, 163, 184, 0.22);
+}
+
+html[data-theme="dark"] body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
 	background: rgba(255, 255, 255, 0.1);
 }
 
-/* Native select option lists pick up the dark scheme so the OS popup is
-   not blinding white in dark / wallpaper mode. */
-body.mz-has-wallpaper select option,
-html[data-theme="dark"] select option {
+/* Native select option lists follow the active wallpaper palette so the
+   OS popup never clashes with the glass. */
+body.mz-has-wallpaper select option {
+	background-color: #f4f7fb;
+	color: #1c2736;
+}
+
+html[data-theme="dark"] select option,
+html[data-theme="dark"] body.mz-has-wallpaper select option {
 	background-color: #1c2736;
 	color: #eef2f8;
 }
@@ -4526,12 +4625,12 @@ ul.cbi-tabmenu {
 	font-size: .8rem;
 }
 
-/* Page description text over bright wallpaper: full-strength color
-   plus a subtle shadow for legibility. */
+/* Page description text over the wallpaper: full-strength color plus the
+   theme halo (white in light mode, dark in dark mode). */
 body.mz-has-wallpaper .cbi-map-descr,
 body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text);
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+	text-shadow: var(--mz-panel-halo);
 }
 
 /* Open dropdown: show every option.
@@ -4571,473 +4670,97 @@ body.mz-has-wallpaper .cbi-section-descr {
 	letter-spacing: .02em;
 }
 
-/* ================================================================ */
-/* nftables status page  (admin/status/nftables)                    */
-/* The upstream view renders every chain as a bare <div class="nft-  */
-/* chain"> holding a flat <table class="nft-rules"> with no card     */
-/* wrapper, so chains read as loose text lines. mz-nftables.js adds  */
-/* the grouping + collapse chrome; this stylesheet just makes it     */
-/* look like the rest of the theme.                                  */
-/* ================================================================ */
-
-/* --- Toolbar (top of the view, built by mz-nftables.js) --- */
-#mz-view .mz-nft-toolbar {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-md);
-	box-shadow: var(--mz-shadow-sm);
-	padding: var(--mz-spacing-md) var(--mz-spacing-lg);
-	margin: 0 0 var(--mz-spacing-lg) 0;
-	display: flex;
-	align-items: center;
-	gap: var(--mz-spacing-md);
-	flex-wrap: wrap;
-}
-
-#mz-view .mz-nft-tb-stats {
-	flex: 1 1 280px;
-	font-size: .92rem;
-	color: var(--mz-color-text-muted);
-	min-width: 0;
-}
-
-#mz-view .mz-nft-tb-controls {
-	display: flex;
-	align-items: center;
-	gap: var(--mz-spacing-sm);
-	flex-wrap: wrap;
-}
-
-#mz-view .mz-nft-btn {
-	background: var(--mz-color-surface-2);
-	border: 1px solid var(--mz-color-border);
-	color: var(--mz-color-text);
-	padding: 6px 12px;
-	border-radius: var(--mz-radius-sm);
-	cursor: pointer;
-	font-size: .88rem;
-	font-weight: 500;
-	transition: background .12s ease, border-color .12s ease, color .12s ease;
-}
-#mz-view .mz-nft-btn:hover {
-	background: var(--mz-color-primary-soft);
-	border-color: var(--mz-color-primary);
-	color: var(--mz-color-primary);
-}
-#mz-view .mz-nft-btn:active {
-	transform: translateY(1px);
-}
-
-#mz-view .mz-nft-toggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	font-size: .88rem;
-	color: var(--mz-color-text-muted);
-	cursor: pointer;
-	user-select: none;
-	padding: 4px 8px;
-	border-radius: var(--mz-radius-sm);
-	transition: background .12s ease;
-}
-#mz-view .mz-nft-toggle:hover {
-	background: var(--mz-color-surface-2);
-}
-#mz-view .mz-nft-toggle input[type="checkbox"] {
-	margin: 0;
-	cursor: pointer;
-}
-
-#mz-view .mz-nft-search {
-	flex: 1 1 220px;
-	min-width: 180px;
-	max-width: 360px;
-	background: var(--mz-color-surface-2);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-sm);
-	padding: 6px 10px;
-	font-size: .88rem;
-	color: var(--mz-color-text);
-	transition: border-color .12s ease, box-shadow .12s ease;
-}
-#mz-view .mz-nft-search:focus {
-	outline: none;
-	border-color: var(--mz-color-primary);
-	box-shadow: 0 0 0 3px var(--mz-color-primary-soft);
-}
-
-/* --- Table card (one card per nft-table, e.g. fw4 / sing-box) --- */
-#mz-view .nft-table {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-md);
-	box-shadow: var(--mz-shadow-sm);
-	margin: 0 0 var(--mz-spacing-xl) 0;
-	padding: var(--mz-spacing-lg) var(--mz-spacing-lg) var(--mz-spacing-md) var(--mz-spacing-lg);
-	overflow: hidden;
-}
-#mz-view .nft-table > h3 {
-	margin: 0 0 var(--mz-spacing-xs) 0;
-	padding: 0;
-	font-size: 1.18rem;
-	font-weight: 700;
-	color: var(--mz-color-text);
-	letter-spacing: .01em;
-}
-#mz-view .nft-table > h3::before {
-	content: '';
-	display: inline-block;
-	width: 4px;
-	height: 1em;
-	background: var(--mz-color-primary);
-	border-radius: 2px;
-	margin-right: 10px;
-	vertical-align: -2px;
-}
-#mz-view .mz-nft-table-summary {
-	display: inline-block;
-	font-size: .82rem;
-	color: var(--mz-color-text-muted);
-	background: var(--mz-color-surface-2);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 999px;
-	padding: 2px 10px;
-	margin: 0 0 var(--mz-spacing-md) 0;
-}
-
-/* --- Group title (one per chain family, e.g. 基本链 / NAT 链) --- */
-#mz-view .mz-nft-grouptitle {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: var(--mz-spacing-sm);
-	margin: var(--mz-spacing-lg) 0 var(--mz-spacing-sm) 0;
-	padding: 0 0 4px 0;
-	border-bottom: 1px dashed var(--mz-color-border);
-	color: var(--mz-color-text-muted);
-	font-size: .82rem;
-	font-weight: 600;
-	letter-spacing: .04em;
-	text-transform: uppercase;
-}
-#mz-view .mz-nft-grouptitle:first-child {
-	margin-top: var(--mz-spacing-md);
-}
-#mz-view .mz-nft-grouptitle-count {
-	font-size: .78rem;
-	color: var(--mz-color-text-muted);
-	background: var(--mz-color-surface-2);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 999px;
-	padding: 1px 8px;
-	font-weight: 500;
-	letter-spacing: 0;
-	text-transform: none;
-}
-
-/* --- Chain card (one per chain, collapsible) --- */
-#mz-view .nft-chain {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-md);
-	box-shadow: var(--mz-shadow-sm);
-	margin: 0 0 var(--mz-spacing-md) 0;
-	overflow: hidden;
-	transition: box-shadow .15s ease, border-color .15s ease;
-}
-#mz-view .nft-chain:hover {
-	border-color: var(--mz-color-primary);
-	box-shadow: var(--mz-shadow-md);
-}
-
-#mz-view .nft-chain > h4 {
-	margin: 0;
-	padding: 10px var(--mz-spacing-md);
-	font-size: .98rem;
-	font-weight: 600;
-	color: var(--mz-color-text);
-	background: var(--mz-color-surface-2);
-	border-bottom: 1px solid var(--mz-color-border);
-	cursor: pointer;
-	user-select: none;
-	display: flex;
-	align-items: center;
-	gap: var(--mz-spacing-sm);
-	flex-wrap: wrap;
-}
-#mz-view .nft-chain > h4::before {
-	content: '';
-	width: 4px;
-	height: 1em;
-	background: var(--mz-color-primary);
-	border-radius: 2px;
-	flex: 0 0 auto;
-}
-#mz-view .nft-chain > h4:hover {
-	background: var(--mz-color-primary-soft);
-}
-#mz-view .nft-chain > h4 > code,
-#mz-view .nft-chain > h4 > strong {
-	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-	background: var(--mz-color-primary-soft);
-	color: var(--mz-color-primary-strong);
-	padding: 1px 8px;
-	border-radius: var(--mz-radius-sm);
-	font-size: .9em;
-	font-weight: 600;
-}
-
-/* The page-anchor inside the h4 used to look like a bullet, now it
-   reads as a tag. */
-#mz-view .nft-chain > h4 > a {
-	color: inherit;
-	text-decoration: none;
-}
-
-#mz-view .mz-nft-chain-toggle {
-	display: inline-block;
-	font-size: .78rem;
-	color: var(--mz-color-text-muted);
-	transition: transform .15s ease;
-	margin-left: auto;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-#mz-view .nft-chain.mz-collapsed > h4 .mz-nft-chain-toggle {
-	transform: rotate(-90deg);
-}
-
-#mz-view .mz-nft-chain-summary {
-	font-size: .78rem;
-	font-weight: 500;
-	color: var(--mz-color-text-muted);
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 999px;
-	padding: 1px 10px;
-	white-space: nowrap;
-}
-#mz-view .mz-nft-chain-nonzero {
-	color: var(--mz-color-success);
-	font-weight: 600;
-}
-#mz-view .mz-nft-chain-zero {
-	color: var(--mz-color-text-muted);
-}
-
-/* --- Chain hook info: split the inline text into proper chips --- */
-#mz-view .nft-chain-hook {
-	padding: var(--mz-spacing-md) var(--mz-spacing-md) 0 var(--mz-spacing-md);
-}
-#mz-view .nft-chain-hook ul {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--mz-spacing-sm);
-}
-#mz-view .nft-chain-hook li {
-	background: var(--mz-color-surface-2);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-sm);
-	padding: 4px 10px;
-	font-size: .85rem;
-	color: var(--mz-color-text-muted);
-	line-height: 1.4;
-}
-#mz-view .nft-chain-hook li strong {
-	color: var(--mz-color-text);
-	font-weight: 600;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: .92em;
-}
-
-/* --- The rule table itself --- */
-#mz-view table.nft-rules {
+/* ---------------------------------------------------------------- */
+/* Firewall - nftables status page (admin/status/nftables)           */
+/* The view renders bare <table class="nft-rules"> with no card      */
+/* wrapper, so the chains read as loose text lines. Give every rule  */
+/* table the theme's card look and keep the two columns readable:    */
+/* the match column is wide and wraps cleanly, the action column     */
+/* stays compact.                                                    */
+/* ---------------------------------------------------------------- */
+table.nft-rules {
 	width: 100%;
 	background: var(--mz-color-surface);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	box-shadow: var(--mz-shadow-sm);
 	border-collapse: separate;
 	border-spacing: 0;
-	margin: var(--mz-spacing-md) 0 0 0;
-	font-size: .9rem;
+	overflow: hidden;
+	margin: 0 0 var(--mz-spacing-lg) 0;
 }
-#mz-view table.nft-rules th,
-#mz-view table.nft-rules td {
-	padding: 8px 12px;
-	text-align: left;
+
+table.nft-rules th,
+table.nft-rules td {
+	padding: var(--mz-spacing-sm) var(--mz-spacing-md);
 	vertical-align: top;
-	border-bottom: 1px solid var(--mz-color-border);
+	text-align: left;
 }
-#mz-view table.nft-rules thead th,
-#mz-view table.nft-rules tr.table-titles th {
+
+table.nft-rules thead th {
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-text);
 	font-weight: 600;
-	font-size: .82rem;
-	letter-spacing: .02em;
 	border-bottom: 1px solid var(--mz-color-border);
 }
-#mz-view table.nft-rules tr.table-titles th {
-	padding: 8px 12px;
-}
-#mz-view table.nft-rules tbody tr:hover td {
-	background: var(--mz-color-surface-2);
-}
-#mz-view table.nft-rules tbody tr:last-child td {
-	border-bottom: 0;
+
+table.nft-rules tbody tr + tr td {
+	border-top: 1px solid var(--mz-color-border);
 }
 
-/* --- Badges inside the rule cells --- */
-#mz-view .ifacebadge {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	background: var(--mz-color-surface-2);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-sm);
-	padding: 2px 8px;
-	margin: 0 4px 4px 0;
-	font-size: .85rem;
-	color: var(--mz-color-text);
-	line-height: 1.35;
-}
-#mz-view .ifacebadge var {
-	font-style: normal;
-	font-weight: 500;
-	color: var(--mz-color-text-muted);
-}
-#mz-view .ifacebadge strong {
-	color: var(--mz-color-text);
-	font-weight: 600;
-}
-#mz-view .ifacebadge a {
-	color: var(--mz-color-primary);
-	text-decoration: none;
-}
-#mz-view .ifacebadge a:hover {
-	text-decoration: underline;
+table.nft-rules td:first-child {
+	width: 68%;
+	overflow-wrap: anywhere;
 }
 
-/* nft-counter: byte count badge, becomes green when non-zero */
-#mz-view .nft-counter {
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	background: var(--mz-color-warning-soft);
-	border-color: var(--mz-color-warning);
-	color: var(--mz-color-warning);
-}
-#mz-view .nft-counter var {
-	font-weight: 600;
-	color: inherit;
+table.nft-rules td:last-child {
+	width: 32%;
+	overflow-wrap: anywhere;
 }
 
-/* nft-comment: the # rule description */
-#mz-view .nft-comment {
-	background: var(--mz-color-primary-soft);
-	border-color: var(--mz-color-primary);
-	color: var(--mz-color-primary-strong);
-}
-#mz-view .nft-comment var {
-	color: var(--mz-color-primary);
-	font-weight: 700;
+/* ================================================================
+ * Glass fallback + mobile tuning (2026-09-08 glass pass)
+ * ================================================================ */
+/* Browsers without backdrop-filter (older Safari, some WebViews) would
+   show bare 7% washes - text drowned on bright wallpapers. Raise the
+   fills to opaque-ish values; NO blur is simulated, readability wins. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	/* Light theme: raise the white washes to near-opaque so dark text
+	   survives on busy wallpapers without any blur. */
+	body.mz-has-wallpaper {
+		--mz-panel-bg: rgba(255, 255, 255, 0.84);
+		--mz-panel-bg-strong: rgba(255, 255, 255, 0.9);
+		--mz-panel-bg-soft: rgba(255, 255, 255, 0.8);
+		--mz-color-surface: rgba(255, 255, 255, 0.84);
+		--mz-color-surface-2: rgba(255, 255, 255, 0.9);
+		--mz-input-bg: rgba(255, 255, 255, 0.92);
+		--mz-input-bg-hover: rgba(255, 255, 255, 0.95);
+		--mz-modal-bg: rgba(255, 255, 255, 0.96);
+	}
+	/* Dark theme: same idea with the dark slate fills. */
+	html[data-theme="dark"] body.mz-has-wallpaper {
+		--mz-panel-bg: rgba(22, 32, 47, 0.82);
+		--mz-panel-bg-strong: rgba(22, 32, 47, 0.88);
+		--mz-panel-bg-soft: rgba(22, 32, 47, 0.78);
+		--mz-color-surface: rgba(22, 32, 47, 0.82);
+		--mz-color-surface-2: rgba(22, 32, 47, 0.88);
+		--mz-input-bg: rgba(22, 32, 47, 0.92);
+		--mz-input-bg-hover: rgba(22, 32, 47, 0.95);
+		--mz-modal-bg: rgba(22, 32, 47, 0.96);
+	}
+	/* Every element that carried a blur() in the glass layer must also
+	   lose it here - backdrop-filter declarations are ignored by the
+	   browser anyway, so no explicit overrides are needed. */
 }
 
-/* --- nft-set ({} container for lists of interfaces / ports) --- */
-#mz-view .nft-set {
-	display: inline-block;
-	background: var(--mz-color-surface-2);
-	border: 1px dashed var(--mz-color-border);
-	border-radius: var(--mz-radius-sm);
-	padding: 2px 8px;
-	margin: 0 4px 4px 0;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: .82rem;
-	color: var(--mz-color-text);
-}
-#mz-view .nft-set-items {
-	display: inline-flex;
-	flex-wrap: wrap;
-	gap: 4px;
-}
-#mz-view .nft-set-item {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 4px;
-	padding: 0 6px;
-	font-size: .8rem;
-	color: var(--mz-color-text);
-}
-
-/* --- The cbi tooltip in the badge: keep readable, but cap width --- */
-#mz-view .ifacebadge .cbi-tooltip {
-	max-width: 320px;
-	white-space: normal;
-	font-size: .82rem;
-	line-height: 1.4;
-}
-
-/* --- Collapse / hide behaviour driven by mz-nftables.js --- */
-#mz-view .nft-chain.mz-collapsed .nft-chain-hook,
-#mz-view .nft-chain.mz-collapsed table.nft-rules {
-	display: none;
-}
-#mz-view tr.mz-nft-hide-zero {
-	display: none;
-}
-#mz-view .nft-chain.mz-nft-search-hide {
-	display: none;
-}
-
-/* --- Empty / single-rule chains get a more compact collapsed view --- */
-#mz-view .nft-chain.mz-collapsed > h4 {
-	border-bottom: 0;
-}
-
-/* --- Mobile: stack the table cells and break long expressions --- */
-@media (max-width: 767px) {
-	#mz-view .nft-table {
-		padding: var(--mz-spacing-md);
-	}
-	#mz-view .nft-chain > h4 {
-		font-size: .92rem;
-	}
-	#mz-view .mz-nft-chain-summary {
-		font-size: .72rem;
-	}
-	#mz-view .nft-chain-hook li {
-		font-size: .8rem;
-	}
-	#mz-view table.nft-rules,
-	#mz-view table.nft-rules tbody,
-	#mz-view table.nft-rules thead {
-		display: block;
-		width: 100%;
-	}
-	#mz-view table.nft-rules tr,
-	#mz-view table.nft-rules tr.table-titles {
-		display: block;
-		padding: 6px 0;
-		border-bottom: 1px solid var(--mz-color-border);
-	}
-	#mz-view table.nft-rules tr.table-titles {
-		display: none;
-	}
-	#mz-view table.nft-rules td {
-		display: block;
-		padding: 4px 0;
-		border-bottom: 0;
-		width: auto !important;
-	}
-	#mz-view table.nft-rules td::before {
-		content: attr(data-mz-col);
-		display: block;
-		font-size: .72rem;
-		color: var(--mz-color-text-muted);
-		text-transform: uppercase;
-		letter-spacing: .04em;
-		margin-bottom: 2px;
-	}
-	#mz-view .mz-nft-tb-stats {
-		flex: 1 1 100%;
+/* Mobile: big blur radii are the single most expensive paint op on
+   low-end SoCs. Drop one notch below 768px and keep every fill
+   unchanged so the look only softens slightly. */
+@media (max-width: 768px) {
+	body.mz-has-wallpaper {
+		--mz-glass-blur: 10px;
+		--mz-glass-blur-strong: 12px;
+		--mz-glass-blur-input: 6px;
+		--mz-glass-shadow-lg: 0 4px 14px rgba(31, 45, 61, 0.18);
 	}
 }
-

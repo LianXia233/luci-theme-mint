@@ -8,23 +8,14 @@
 #
 # Real installation is attempted whenever the matching package manager is
 # available on the runner:
-#   apk   -> apk extract (the payload extraction apk itself performs; a full
-#            "apk add" is not possible without the dependency packages)
+#   apk   -> apk add --allow-untrusted --root <root> --initdb
 #   ipk   -> opkg --offline-root <root> install --force-depends --nodeps
 # If neither is installed (plain Ubuntu image) the payload is unpacked with
 # the same layout the package manager would produce, so the file-level
-# assertions below still run:
-#   ipk   -> the OpenWrt ipk is a gzip tar of debian-binary +
-#            control.tar.* + data.tar.* (ipkg-build since ~2017); the legacy
-#            ar-archive container is handled too
-#   apk   -> APKv2 (concatenated gzip/zstd tar streams) is unpacked with
-#            python; APKv3 (the "ADB" container apk-tools 3.x mkpkg writes,
-#            used by 24.10+/25.12/master SDKs) needs the apk binary - pass
-#            --apk-tool <path> (the SDK ships one in staging_dir/host/bin)
+# assertions below still run.
 #
 # Usage:
 #   ./scripts/install-test.sh --file dist/foo.apk [--root /tmp/rootfs]
-#                             [--apk-tool path/to/apk]
 
 set -uo pipefail
 
@@ -32,14 +23,13 @@ log()  { printf '[install] %s\n' "$*"; }
 fail() { printf '[install] FAIL: %s\n' "$*" >&2; FAILURES=$((FAILURES + 1)); }
 
 FAILURES=0
-FILE="" ROOT="" APK_TOOL=""
+FILE="" ROOT=""
 
 while [ $# -gt 0 ]; do
 	case "$1" in
-	--file)     FILE="${2:-}"; shift 2 ;;
-	--root)     ROOT="${2:-}"; shift 2 ;;
-	--apk-tool) APK_TOOL="${2:-}"; shift 2 ;;
-	-h|--help)  sed -n '2,25p' "$0"; exit 0 ;;
+	--file) FILE="${2:-}"; shift 2 ;;
+	--root) ROOT="${2:-}"; shift 2 ;;
+	-h|--help) sed -n '2,20p' "$0"; exit 0 ;;
 	*) printf '[install] unknown argument: %s\n' "$1" >&2; exit 2 ;;
 	esac
 done
@@ -52,32 +42,17 @@ mkdir -p "$ROOT"
 log "package : $FILE"
 log "root    : $ROOT"
 
-# first bytes decide the container: "!<arch>" (ar ipk), gzip magic (tar ipk
-# or APKv2 streams) or the APKv3 "ADB" envelope ("ADB." plain, "ADBd"
-# deflate, "ADBc" zstd - see adb_comp.c in apk-tools 3)
-magic="$(head -c 4 "$FILE" 2>/dev/null | od -An -tx1 | tr -d ' \n')"
-
 case "$FILE" in
 *.apk)
 	FORMAT=apk
-	case "$magic" in
-	4144422e|41444264|41444263)
-		# "ADB." / "ADBd" / "ADBc" - APKv3 container, opaque to this
-		# script; needs the apk binary (the SDK ships one)
-		APK="${APK_TOOL:-$(command -v apk || true)}"
-		if [ -n "$APK" ] && [ -x "$APK" ]; then
-			log "extracting with apk ($(basename "$APK"))"
-			# --allow-untrusted: OpenWrt's mkpkg does not sign packages
-			"$APK" extract --allow-untrusted --destination "$ROOT" "$FILE" \
-				|| fail "apk extract failed"
-		else
-			fail "APKv3 package but no apk tool available - pass --apk-tool (the SDK ships one in staging_dir/host/bin/apk)"
-		fi
-		;;
-	*)
-		# APKv2: concatenated gzip/zstd tar streams (.PKGINFO + payload)
-		log "unpacking APKv2 streams"
-		python3 - "$FILE" "$ROOT" <<'PY' || fail "apk unpack failed (not an APKv2 stream file?)"
+	if command -v apk >/dev/null 2>&1; then
+		log "installing with apk (--allow-untrusted)"
+		apk add --allow-untrusted --root "$ROOT" --initdb --no-network \
+			--force-overwrite "$FILE" \
+			|| fail "apk add failed"
+	else
+		log "apk not available - unpacking payload instead"
+		python3 - "$FILE" "$ROOT" <<'PY' || fail "apk unpack failed"
 import io, sys, tarfile, zlib, subprocess
 pkg, root = sys.argv[1], sys.argv[2]
 data = open(pkg, 'rb').read()
@@ -110,8 +85,7 @@ while pos < len(data):
             continue
         tf.extract(m, root)
 PY
-		;;
-	esac
+	fi
 	;;
 *.ipk)
 	FORMAT=ipk
@@ -120,23 +94,10 @@ PY
 		opkg --offline-root "$ROOT" --force-depends --nodeps \
 			--force-overwrite install "$FILE" \
 			|| fail "opkg install failed"
-	elif [ "$magic" = "213c6172" ]; then
-		# "!<ar" - legacy ar container
-		log "opkg not available - unpacking ar ipk"
+	else
+		log "opkg not available - unpacking payload instead"
 		tmp="$(mktemp -d)"
 		( cd "$tmp" && ar x "$FILE" ) || fail "ar x failed"
-		data="$(find "$tmp" -name 'data.tar.*' | head -n1)"
-		[ -n "$data" ] || fail "no data.tar.* inside $FILE"
-		case "$data" in
-		*.zst) zstd -d -c "$data" | tar -xf - -C "$ROOT" || fail "unpack failed" ;;
-		*)     tar -xf "$data" -C "$ROOT" || fail "unpack failed" ;;
-		esac
-		rm -rf "$tmp"
-	else
-		# gzip tar of debian-binary + control.tar.* + data.tar.*
-		log "opkg not available - unpacking tarball ipk"
-		tmp="$(mktemp -d)"
-		tar -xzf "$FILE" -C "$tmp" || fail "tar -xzf failed (not a gzip-tar ipk?)"
 		data="$(find "$tmp" -name 'data.tar.*' | head -n1)"
 		[ -n "$data" ] || fail "no data.tar.* inside $FILE"
 		case "$data" in
@@ -149,9 +110,9 @@ PY
 *) log "unsupported file: $FILE"; exit 2 ;;
 esac
 
-# --------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------
 # assertions: the theme must be usable straight after installation
-# --------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------
 
 REQUIRED=(
 	"usr/share/ucode/template/themes/mint/header.ut"

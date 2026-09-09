@@ -9,40 +9,126 @@
 
 ## [Unreleased]
 
-### Fixed (2026-09-09 第六轮 — 移动端菜单栏标题被按钮遮挡)
+### 修复
 
-- **移动端左侧菜单按钮挡住文字**：`menu-mint.js` 在窄屏会把 `#mz-sidebar-toggle` 移入新创建的 `.mz-mobilebar`，但 `cascade.css` 没有给 mobilebar 写任何样式，按钮继续沿用 `position: fixed; top:12px; left:12px`，导致它浮在标题文字上方
-  - 新增 `.mz-mobilebar` 样式：窄屏下 `display:flex` + `position:sticky` + 玻璃背景，按钮与标题排成一行
-  - 当按钮位于 `.mz-mobilebar` 内时覆盖为 `position:relative`，取消固定定位，不再遮挡
-  - `.mz-mobilebar-title` 居中显示、`overflow:hidden` + `text-overflow:ellipsis`、避免长标题换行
-  - 实测 390px 视口：按钮 x=0, 标题 x=44 居中，两者无重叠
+- 概览页旧面板（端口状态/DHCP 租约/无线/UPnP）标题不翻译：overview.js 的 `__`
+  回退到不存在的全局 `_` 时原样返回英文。现优先走 LuCI 的 `_`，未命中时用与
+  固件 lmo 构建器一致的服务端 SuperFastHash（JS 实现）查询 LuCI 客户端目录
+  （window.TR）——规避了 luci.js 客户端 sfh 在 len%4==2 字符串上与固件目录键
+  系统性不一致的问题（"UPnP port mappings" 等永远无法命中的根源）。
 
-### Fixed (2026-09-09 第五轮 — 暗色模式 + 统一毛玻璃 + 轻微阴影)
+### 改进
 
-- **暗色模式切换无效**：菜单顶栏 `#mz-theme-toggle` 能正常切换并持久化 `data-theme`，但壁纸页/概览页视觉上几乎没变
-  - 根因：`data-theme` 属性由 `header.ut` 和 `menu-mint.js` 始终设置在 `<html>`（`document.documentElement`）上，而 `cascade.css` 的玻璃规则全部写成 `body.mz-has-wallpaper[data-theme="dark"]` / `:not([data-theme="dark"])`。`<body>` 上永远没有该属性，导致暗色分支全部失效、亮色分支恒真
-  - 修复：将所有壁纸玻璃规则改为 `html[data-theme="dark"] body.mz-has-wallpaper` 与 `html:not([data-theme="dark"]) body.mz-has-wallpaper`
-  - 统一毛玻璃：把 `body.mz-has-wallpaper::before` 壁纸蒙层也纳入同一模型——背景与卡片使用同一 `--mz-glass` + `--mz-glass-blur`，不再区分“蒙层玻璃 vs 卡片玻璃”。亮色使用 `rgba(255,255,255,0.5)`，暗色使用 `rgba(15,23,42, var(--mz-wallpaper-overlay,0.45))`
-  - 亮色卡片加轻微阴影：在统一玻璃基础上增加 `box-shadow: 0 4px 24px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.6)`，让卡片从壁纸中浮起
-  - 修复壁纸模糊设置被覆盖：`body::before` 不再直接写死 `backdrop-filter`，而是把用户设置的 `--mz-wallpaper-blur` 叠加到玻璃模糊上（`calc(blur + 16px)`），避免“模糊(px)”拉满也无效
-  - 实测：亮色壁纸页卡片 bg=`rgba(255,255,255,0.5)`、暗色切换后卡片/蒙层统一变 navy、文字自动切换为浅色；主题切换按钮点击后立即生效
+- 移动端标题去重（用户反馈：顶栏与页内标题重复显示）：≤854px 隐藏所有页面级标题
+  （`#mz-view > h2` 与概览 `.mint-ovd-header`），仅保留 `.mz-mobilebar` 中的标题；
+  概览刷新按钮（`.mint-ovd-refresh`）由 menu-mint.js 按断点搬入顶栏右侧（保留事件与
+  loading 动画），跨回桌面宽度时自动搬回原 header，桌面端页内标题与刷新按钮完全不受影响。
 
-### Added (2026-09-09 第四轮 — nftables 状态页改版)
+### 修复
 
-- **nftables 状态页改版**：`/admin/status/nftables` 在裸版视图下 39 条链 138 条规则 390+ 个 badge 一字排开（页面 11102px），现在通过主题级增强完成视觉重塑
-  - 新增 `theme/htdocs/luci-static/mint/mz-nftables.js`：仅在该页加载，将链按「基本链 / NAT 链 / 路由 mangle / 区域与转发 / 辅助 / 第三方」分桶，每条链头部自动加 ▾ 折叠按钮 + 「X 条规则 · Y 条有流量 Z KB」摘要徽章，零计数规则默认隐藏，顶部提供「全部展开 / 全部折叠 / 隐藏零计数 / 搜索」工具条
-  - `cascade.css` 追加 `mz-nft-*` 样式段：每张 nft-table 卡片化、每条链独立卡片（hover 提亮）、`nft-chain-hook` 两条粘连的 `<li>` 改为 chip 化布局解决「优先级：0策略：drop」文字粘连、ifacebadge 统一（注释蓝、流量黄、set 容器虚线）、表格统一为斑马纹 + hover 态、移动端 <768px 将表格转块级堆叠并在每个 cell 前补 `data-mz-col` 列名
-  - `footer.ut` 仿照 `overview.js` 模式条件加载 `mz-nftables.js`，仅在 `admin/status/nftables` 路径触发；幂等（`mzNftSig` 签名 + MutationObserver 监听视图轮询）保证每 5s nftables 视图轮询不会重复注入
-  - 实测：默认状态下 19 链展开 / 20 链折叠 / 32 条零计数规则隐藏，页面高度从 11102px 收敛到 3424px；桌面 1440、平板 800、移动 390 三种宽度均整洁可读；搜索「singtun0」保留 6 链隐藏 33 链，全部展开时高度回升到 11303px（与改版前相当），全部折叠时仅 3424px
+- 壁纸开关缺省语义加固：header.ut 现在把 uci 中缺失的 `ui_random` 视为默认值
+  （开启，与 wallpaper.uc 的 `?? '1'` 对齐）。此前选项一旦异常丢失（如 uci 提交
+  被内存异常打断），前端会误判为关闭并静默停用壁纸功能。
 
-### Fixed (2026-09-09 — 白色毛玻璃回归)
+## [1.3.4] - 2026-09-09
 
-- **壁纸模式下 light 主题仍被强制深色玻璃**：9-08 那次「reference style: dark glass home page」把 `body.mz-has-wallpaper` 块统一为深色玻璃（`--mz-color-background: #16202f` + `--mz-color-text: #eef2f8`），且对所有主题生效——light 主题下整页也是深色玻璃 + 浅色文字
-  - `cascade.css` 把该块按 `data-theme` 拆成两套：
-    - `body.mz-has-wallpaper:not([data-theme="dark"])`：白色 70% 玻璃 + 深色文字 `#1a2233` + 浅蓝白底 `#eef1f6` + 浅色光晕
-    - `body.mz-has-wallpaper[data-theme="dark"]`：保留原 dark glass 7% 白色洗 + 浅色文字 + 深蓝底
-  - 同步把 `body.mz-has-wallpaper::before` 蒙层按主题区分：light 用 `rgba(255,255,255, var(--overlay,0.35))` 提亮壁纸，dark 保留 `rgba(15,23,42, 0.45)` 压暗
-  - 实测 light 主题下卡片 computed style：bg=`rgba(255,255,255,0.7)`、text=`#1a2233`、backdrop-filter=`blur(12px) saturate(1.15)`、overlay=`rgba(255,255,255,0.45)`，人物壁纸透出自然
+### 改进
+
+- 移动端导航按钮重排：汉堡按钮从固定左上角移入新增的粘性顶栏（`.mz-mobilebar`，含页面标题），
+  移除 `#mz-view` 在 854/640/480px 断点的整列左侧留白，消除按钮下方的空白列；
+  顶栏随页面滚动保持吸顶，抽屉打开时与页面一同被遮罩压暗，内容零遮挡。
+- 桌面端布局不受影响：顶栏在 >854px 完全隐藏，按钮恢复原有隐藏状态。
+
+## [1.3.3] - 2026-09-09
+
+### Changed
+
+- **透明度整体回调一档**（用户反馈"再稍微透一点点"）：亮色壁纸模式卡片 0.55→0.45、侧栏/顶栏 0.68→0.58、输入框 0.66→0.58、Modal 0.88→0.84、页面水洗 overlay×1.2→×0.95（默认落约 0.43，与卡片同档）；无 backdrop-filter 的 fallback 亮色填充同步回调
+- **暗色主题改为「纯黑背景 + 全局毛玻璃」，不再使用壁纸**：`mz-has-wallpaper` 玻璃组件层在暗色下照常生效，但壁纸图层被涂黑（`::after` 清空、`::before` 纯黑无模糊），JS 侧暗色直接跳过壁纸抓取（零外网请求）；主题切换（按钮或跟随系统）实时同步玻璃/壁纸状态。壁纸现为亮色主题专属
+- **登录页欢迎语翻译更新**：zh_Hans 译文改为「可可，嗨嗨嗨~！登录以管理您的网络。」（英文 msgid 不变）
+- **ACL 收紧**：撤销会话对 `uci:mint` 的写权限（`write.uci` 移除）——原生 cbi.js 的会话级 `uci set` 从此无法暂存/提交 mint 配置，壁纸设置只能经 root 上下文的 `mint save`（带 syslog 审计）写入；实测会话 `uci set` 已被拒绝且无暂存残留。这也根断了「幽灵保存」的又一条隐蔽路径
+
+### Fixed
+
+- **登录页欢迎语显示「你」而非「您」**：LuCI 登录页翻译目录为全机合并加载，同仓库家族的 `luci-theme-mintzero.zh-cn.lmo` 内含同一 msgid 的「你」版译文且按字母序后加载、覆盖了本主题译文。已在设备侧对 mintzero lmo 做等长字节补丁（你→您）；luci-theme-mintzero 仓库的 po 需同步修正（另行处理）
+
+## [1.3.2] - 2026-09-09
+
+### Changed
+
+- **卡片间隙与卡片观感统一**：全页壁纸遮罩层（`body.mz-has-wallpaper::before`）从无模糊改为与卡片相同的玻璃模糊（`blur(max(--mz-glass-blur, --mz-wallpaper-blur)) saturate()`，亮色 14px/暗色 12px，用户配置的壁纸模糊取较大值保留），卡片间隙区域与卡片内部视觉一致；不支持 CSS 数值函数的引擎回落到原 `blur(--mz-wallpaper-blur)`
+
+### Fixed
+
+- **`ui_random` 等开关被"幽灵保存"写回旧值**：根因是保存动作会把页面渲染时的全部控件状态原样提交——一个在开关为 0 时渲染的旧标签页，之后任何一次未改动任何控件的「保存」都会把 0 写回。现改为渲染时快照（`data-mint-init`）、保存时只提交用户实际改动的字段：未编辑任何控件时点保存零写入（空 section 不再触发 RPC 与 commit）。radio 组在切换选择时会补发被取消旧项的 `0`，保证完整回写
+- **rpcd `mint save` 审计日志**：每次 commit 以 `mint-save` 标签写 syslog（仅记 option 名不含值），`logread | grep mint-save` 可追溯所有写入
+
+## [1.3.1] - 2026-09-09
+
+### Changed - 透明度统一（可读性修正）
+
+- **全局背景水洗与卡片对齐**：亮色主题下管理页白色水洗从约 0.25（overlay ×0.55）提升到约 0.54（overlay ×1.2），与卡片 0.55 白玻璃同档，内容区域不再比卡片更透；壁纸在卡片之外仍然可见。登录页样式保持不变
+- **表头/悬停行抬平**：通用表头 0.18→0.38、悬停行 0.16→0.30、Overview 主色表头 0.16→0.32，均明确高于所在卡片的填充档位
+- **次级文字对比度**：亮色壁纸模式 `--mz-color-text-muted` 透明度 0.68→0.8，弱化文字在亮壁纸区域保持可读
+
+## [1.3.0] - 2026-09-09
+
+### Changed - 壁纸模式翻转为亮色玻璃（参考 GitHub 代理加速页面风格）
+
+- **亮色玻璃调色板**：壁纸模式默认调色板整体翻转——卡片/侧栏/顶栏从 7% 白改为 55%-68% 白色磨砂玻璃（blur 14/16px、saturate 1.25），文字从浅色改为深岩蓝 `#1c2736`，页面遮罩从深色压暗改为轻柔白色水洗（用户 overlay 值 × 0.55，默认 0.45 落在约 0.25），壁纸保持鲜活通透
+- **明暗双主题各自成套**：`html[data-theme="dark"]` 恢复 1.2.0 的暗色玻璃（7% 白 + 浅色文字 + 深色输入/Modal 填充），亮暗两套令牌完全独立、互不渗漏
+- **登录页亮色玻璃卡片**：`.mz-login-card` 从深色 55% 改为白色 62% + 深色文字，输入框白色 75%、label/占位符/记住我/版本号/error 提示全部适配深色文字；移动端 ≤640px 卡片 50% 白
+- **组件级适配**：表头从主色 0.4 深条改为 0.16 浅色调（暗色主题保留 0.4 + 白字）；打开的下拉列表改为 96% 白色磨砂（暗色保留深色芯片）；原生 select option、autofill 填充、页面描述文字阴影均按主题拆分
+- **透明度阶梯（亮色）**：页面白色水洗 ~0.25 < 卡片 0.55 < chrome 0.68 < 输入框 0.66 < Modal 0.88；暗色阶梯不变（0.07/0.13/0.42/0.86）
+- **fallback 同步拆分**：`@supports not (backdrop-filter)` 下亮色主题提升到 84%-97% 白色不透明填充、暗色主题保持深色不透明填充；移动端 ≤768px 模糊降一档（14→10、16→12）
+
+## [1.2.0] - 2026-09-08
+
+### Added - 全局玻璃拟态（Glass-morphism）改造
+
+- **玻璃设计令牌集中化**：`body.mz-has-wallpaper` 作用域新增 `--mz-glass-blur`（卡片 12px）/ `--mz-glass-blur-strong`（侧栏/顶栏/页脚 14px）/ `--mz-glass-blur-input`（输入框 8px）/ `--mz-glass-saturate` / `--mz-glass-border(-strong)` / `--mz-glass-shadow(-lg)` / `--mz-input-bg(-hover)`（深色可读填充 rgba(15,23,42,.42/.52)）/ `--mz-modal-bg`（rgba(17,26,39,.86)）；原有散落的 `blur(12px)/blur(14px)` 硬编码全部改为引用令牌，调参一处生效
+- **输入框玻璃化**：壁纸模式下 `input/select/textarea` 使用深色可读填充 + 轻模糊，hover/focus 提升填充与主色描边；补齐 `-webkit-autofill` / `autofill` 覆盖，避免自动填充弹出亮黄色色块；disabled 态回落 soft 填充
+- **Modal 玻璃化分层**：`#modal_overlay .modal` 使用专用 `--mz-modal-bg`（0.86 不透明度，比卡片高一档）+ 14px 模糊，确认框内嵌 section/表格转纯透明防止叠加
+- **Overview 仪表盘卡片玻璃化**：`overview-dashboard.css` 末尾新增壁纸模式规则，gauge/stat/chart/sys 四类卡片统一 `--mz-panel-bg` + 12px 模糊 + 半透明边框
+- **backdrop-filter 兼容 fallback**：`@supports not (backdrop-filter)` 时全部填充令牌提升到 0.78-0.96 不透明深色，无模糊浏览器下文字依然可读
+- **移动端性能降级**：≤768px 时模糊半径降一档（12→8px、14→10px、8→6px）、浮层阴影减弱，降低低端 SoC 填充率压力
+
+### Changed - 全局玻璃拟态改造
+
+- 透明度阶梯明确为：页面背景透明 < 侧栏/顶栏 0.13 < 卡片 0.07 < Modal 0.86 < 输入框 0.42（深色填充），重叠容器继续保持去嵌套规则（内层透明）防止透明度相乘
+- `--mz-panel-bg` 家族单值驱动明暗双主题（壁纸遮罩已压暗底色），无 per-element 明暗覆盖
+
+## [1.1.1] - 2026-09-08
+
+### Fixed
+
+- **手机端（≤854px 与 ≤480px 断点）页面标题被左上角汉堡按钮遮挡**：根因是 `#mz-view`（ID 选择器）的 `padding: 24px 28px` 覆盖了 `.mz-view` 媒体查询。cascade.css 改为在 `#mz-view` 上按断点加 `padding-left: 64px / 60px`，让页面标题从按钮右侧开始
+- **后台页面随机壁纸（`ui_random`）等 CBI 表单开关保存后无反应**：菜单 JS `ensureCbiForm()` 在页面渲染后检测到未被 `<form>` 包裹的 `.cbi-map` 时自动注入一个 form（action = 当前 URL，method = post，enctype = multipart/form-data，附 `token` 与 `cbi.submit=1` 隐藏域），拦截 Save 按钮调用新增的 rpcd `mint save` 方法在 root 上下文执行 `uci set` + `uci commit`，解决设备端 cbi.js 不提交、ubus `uci commit` 被 ACL 拒绝的问题。修复后 `mintwallpaper` 等所有依赖此 form 的页面保存按钮可正常写回 UCI
+- **部分用户 Mint 壁纸设置页未汉化**：LuCI 编译出的 catalog 为 `luci-theme-mint.zh-cn.lmo`，但部分固件将 `luci.main.lang` 设为 `zh_cn` / `zh_CN`，导致 `/cgi-bin/luci/admin/translations/zh_cn` 返回空。`Makefile` 的 `postinst` 现在为 `zh_cn` / `zh_CN` 创建指向 `zh-cn.lmo` 的符号链接，`postrm` 同步清理
+
+### Added
+
+- **GitHub Actions 同时构建 IPK 与 APK**：`.github/workflows/build.yml` 矩阵从 2 项扩为 4 项（x86/64 与 mediatek/filogic × OpenWrt SDK 与 ImmortalWrt SDK）。OpenWrt SDK 产出 `.ipk`、ImmortalWrt SDK 产出 `.apk`，Release 产物文件名带 `-openwrt` / `-immortalwrt` 后缀以便区分。`PKGARCH:=all`，两种产物内容相同仅包格式不同
+- **README 兼容性章节**：`theme/root/etc/config/mint` 实际声明的 `LUCI_DEPENDS:=+luci-base +curl`、编译矩阵、`/usr/lib/lua/luci/i18n/luci-theme-mint.<lang>.lmo` 翻译目录路径，全部按仓库当前内容写实
+
+### Changed
+
+- 移动端断点下 `.mz-view` 顶部留白收紧、汉堡按钮与首行内容不再重叠
+
+## [1.1.0] - 2026-09-08
+
+### Added (2026-09-08 第四轮 — Overview 实时仪表盘)
+
+- **Overview 实时仪表盘**：rpcd `mint` 对象新增 `dashboard` 方法，一次聚合 CPU（/proc/stat 原始计数）、内存、温度（thermal + hwmon）、存储（df）、负载、运行时间、连接数（conntrack）、动态上行（ubus network dump，不硬编码接口名）与系统信息；前端新增 `overview-dashboard.js` + `overview-dashboard.css`：4 个 SVG 环形仪表、信息卡、3 个 Canvas 实时曲线（180 点 ≈ 3 分钟历史，1/3/10 秒三级刷新）、系统信息网格，DOM 构建一次后原地更新，完整生命周期（离开页面 destroy、返回重启，定时器/观察者全清理），数据缺失显示 `--`/N/A 不造假；`overview.js` 在仪表盘激活时抑制旧的 core/system/network 面板，保留端口/DHCP/无线/UPnP
+- **地址卡显示公网出口 IPv4**：后端 `curl ipv4.im` 获取，/tmp 缓存 5 分钟避免每秒轮询打外网；离线显示「未联网」，失败重试 3 次，连续 ≥3 次失败后进入退避，由 ping 223.5.5.5 / 119.29.29.29 探测恢复后再重新抓取
+- ACL `luci-theme-mint.json` 放行 `mint dashboard`
+
+### Changed (2026-09-08 第四轮)
+
+- 上行接口卡 sub 行改为内网 IPv4/掩码 + 网关（`·` 分隔单行），IPv6 不再在此显示（统一在地址卡）
+- 全站删除 `mz-topbar` 整个元素（含 `#indicators`；LuCI 核心 showIndicator 自带空值保护）；面包屑 `mz-breadcrumb` 连同 `renderBreadcrumb` 彻底移除，CSS 留 `display:none` 兜底
+- nftables 状态页（admin/status/nftables）规则表卡片化排版：surface 背景 + 圆角 + 表头底色 + 行分隔 + 68/32 列宽 + `overflow-wrap:anywhere`，修复原裸表格挤压换行的杂乱观感
+- 后台页面随机壁纸开关默认关闭：设置表单默认值、uci-defaults、header.ut 运行时判断三处对齐（仅显式 `ui_random=1` 才开启）
 
 ### Fixed (2026-09-08 第三轮 — 安全/打包/兼容性)
 
