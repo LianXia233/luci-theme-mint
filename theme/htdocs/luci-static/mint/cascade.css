@@ -3555,9 +3555,16 @@ body.mz-has-wallpaper::before {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
+	/* Dark theme: dim the wallpaper so light typography on glass reads
+	   comfortably. Light theme: a soft white wash brightens the image
+	   instead, so white frosted glass with dark text looks natural. */
 	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+}
+
+body.mz-has-wallpaper:not([data-theme="dark"])::before {
+	background: rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.35));
 }
 
 /* NOTE: never touch .mz-sidebar positioning here - it is fixed/sticky
@@ -3609,13 +3616,26 @@ body.mz-has-wallpaper #modal_overlay {
  * while a slightly stronger background on hover/focus plus a text
  * halo keeps every label readable in light and dark mode.
  * ================================================================ */
-/* Tuned 2026-09-08 (reference style: dark glass home page): the wallpaper
-   is the dominant layer and every panel is a barely-there glass sheet -
-   one shared ~7% white wash plus blur - with light typography on top.
-   A single set of values drives BOTH themes so every card shares the
-   exact same transparency; flipping the text variables here keeps labels
-   readable on the darkened wallpaper without per-element overrides. */
-body.mz-has-wallpaper {
+/* Theme-aware glass: light theme uses a white frosted sheet with dark
+   typography so the overall composition reads as a clean light UI; dark
+   theme uses a barely-there white wash on a deep navy plate with light
+   typography. Both share the same blur / saturate so the "frosted"
+   affordance is identical; only the color tokens flip. */
+body.mz-has-wallpaper:not([data-theme="dark"]) {
+	--mz-panel-bg: rgba(255, 255, 255, 0.7);
+	--mz-panel-bg-strong: rgba(255, 255, 255, 0.86);
+	--mz-panel-bg-soft: rgba(255, 255, 255, 0.55);
+	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.6);
+	--mz-color-text: #1a2233;
+	--mz-color-text-muted: rgba(26, 34, 51, 0.62);
+	--mz-color-surface: rgba(255, 255, 255, 0.7);
+	--mz-color-surface-2: rgba(255, 255, 255, 0.86);
+	--mz-color-border: rgba(255, 255, 255, 0.5);
+	--mz-color-background: #eef1f6;
+	--mz-color-primary-soft: rgba(79, 110, 247, 0.12);
+}
+
+body.mz-has-wallpaper[data-theme="dark"] {
 	--mz-panel-bg: rgba(255, 255, 255, 0.07);
 	--mz-panel-bg-strong: rgba(255, 255, 255, 0.13);
 	--mz-panel-bg-soft: rgba(255, 255, 255, 0.045);
@@ -3626,6 +3646,7 @@ body.mz-has-wallpaper {
 	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
 	--mz-color-border: rgba(255, 255, 255, 0.12);
 	--mz-color-background: #16202f;
+	--mz-color-primary-soft: rgba(79, 110, 247, 0.18);
 }
 
 body.mz-has-wallpaper .cbi-map,

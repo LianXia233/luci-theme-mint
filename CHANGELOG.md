@@ -17,6 +17,15 @@
   - `footer.ut` 仿照 `overview.js` 模式条件加载 `mz-nftables.js`，仅在 `admin/status/nftables` 路径触发；幂等（`mzNftSig` 签名 + MutationObserver 监听视图轮询）保证每 5s nftables 视图轮询不会重复注入
   - 实测：默认状态下 19 链展开 / 20 链折叠 / 32 条零计数规则隐藏，页面高度从 11102px 收敛到 3424px；桌面 1440、平板 800、移动 390 三种宽度均整洁可读；搜索「singtun0」保留 6 链隐藏 33 链，全部展开时高度回升到 11303px（与改版前相当），全部折叠时仅 3424px
 
+### Fixed (2026-09-09 — 白色毛玻璃回归)
+
+- **壁纸模式下 light 主题仍被强制深色玻璃**：9-08 那次「reference style: dark glass home page」把 `body.mz-has-wallpaper` 块统一为深色玻璃（`--mz-color-background: #16202f` + `--mz-color-text: #eef2f8`），且对所有主题生效——light 主题下整页也是深色玻璃 + 浅色文字
+  - `cascade.css` 把该块按 `data-theme` 拆成两套：
+    - `body.mz-has-wallpaper:not([data-theme="dark"])`：白色 70% 玻璃 + 深色文字 `#1a2233` + 浅蓝白底 `#eef1f6` + 浅色光晕
+    - `body.mz-has-wallpaper[data-theme="dark"]`：保留原 dark glass 7% 白色洗 + 浅色文字 + 深蓝底
+  - 同步把 `body.mz-has-wallpaper::before` 蒙层按主题区分：light 用 `rgba(255,255,255, var(--overlay,0.35))` 提亮壁纸，dark 保留 `rgba(15,23,42, 0.45)` 压暗
+  - 实测 light 主题下卡片 computed style：bg=`rgba(255,255,255,0.7)`、text=`#1a2233`、backdrop-filter=`blur(12px) saturate(1.15)`、overlay=`rgba(255,255,255,0.45)`，人物壁纸透出自然
+
 ### Fixed (2026-09-08 第三轮 — 安全/打包/兼容性)
 
 - **壁纸脚本本地文件包含（C-2）**：`mz-wallpaper-fetch.sh` 仅放行 `http(s)` 源，curl 加 `--proto '=http,https' --proto-redir '=http,https' --max-filesize 8M --` 防护；图片签名校验由 `$(dd ...)` 命令替换改为 `od -An -tx1` hex 比对，修复 PNG 魔数紧跟 NUL 被 `$(...)` 截断导致校验失效的问题
