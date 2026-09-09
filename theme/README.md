@@ -179,7 +179,14 @@ brackets/newlines before they are ever embedded into the page.
   `flock -n` single instance, `--` end-of-options, and the seaya HTML page is
   scraped for a direct `img.seaya.link` URL which is then re-validated.
 - Dark mode never fetches a wallpaper for admin pages: `menu-mint.js` strips
-  `--mz-wallpaper*` and keeps the glass layer (pure-black glass).
+  `--mz-wallpaper*` and keeps the `mz-has-wallpaper` class so the glass layer
+  still applies. NOTE: the CSS rules meant to paint that layer pure black are
+  currently written as `body.mz-has-wallpaper[data-theme="dark"]` (also
+  `:not([data-theme="dark"])`) while `data-theme` lives on `<html>`, so those
+  four selectors (cascade.css ~3634/3652/3710/3724) never match and dark admin
+  pages still get the light glass tokens plus the gradient backdrop. The
+  correct form is `html[data-theme="dark"] body.mz-has-wallpaper …` (used at
+  ~3847/3858).
 - Preloaded via `new Image()` with `referrerPolicy: 'no-referrer'`, 16 s
   timeout per source, fade-in on success; the source label in the bottom-right
   corner of the login page (local custom / cached random / hostname) is never

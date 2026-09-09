@@ -511,6 +511,17 @@ Overview 时 `destroy()` 全量拆除定时器与 observer（反复进出不泄�
 | `build-ipk.yml` | OpenWrt `24.10` + `23.05`，各 1 个目标 `x86/64` | 同上，`.ipk`（架构记 `all`）；`--allow-legacy` 仅在所请求系列已无 ipk 后端时回退 |
 | `release.yml` | `workflow_run`（两条构建都 completed 后） | 汇总全部产物 + `RELEASE-NOTES.md`，发布到 GitHub Release |
 
+当前状态（核对于 `main` HEAD `90b269b`）：`nightly` prerelease 里目前**只有 1 个**产物
+`luci-theme-mint-…-x86_64-immortalwrt.apk`——它是**已删除**的旧 `build.yml` 流水线在上一轮
+`main` 推送时留下的，而本仓库 HEAD 上的 `Build APK packages` / `Build IPK packages` 四个 job
+全部停在 `Verify package metadata and payload` 步骤（`Build with the official OpenWrt SDK`
+本身是绿的，`Install test` 与 `Upload artifact` 被跳过），所以这一轮没有成对产物发布；
+同一次运行里 `Cache SDK tarball` 也是 skipped——`get-openwrt-sdk.sh --print` 没能给出
+`tarball_sha256`，说明「按 sha256 复用 SDK tarball」这项优化并非每次都生效。
+`softprops/action-gh-release` 的 `allowUpdates` 只新增/覆盖资产、**不删除**历史残留，
+需要清理得手动删 Release 资产。也就是说：**「CI 会产出双格式四件套」是这套流水线的目标形态，
+当前 HEAD 尚未达到**，取包前先看一下 Actions 是否变绿。
+
 流程要点：
 
 - **触发**：推送到 `main`（→ `nightly` prerelease）或手动 `workflow_dispatch`
@@ -725,7 +736,10 @@ make package/feeds/luci/luci-theme-mint/compile -j$(nproc) V=s
 7. 布局验证过的最小宽度约 480px（`≤480px` 有专门断点）；更窄的屏幕未做适配。
 8. `initramfs` 恢复模式与「root 无密码」会各占一条顶部告警条（`header.ut`），这是继承自
    LuCI 的强制安全提示，主题不去掉。
-9. 「移动端」有两套判定：壁纸用 `header.ut` 的 UA 正则，总览页用 `footer.ut` 里更窄的 UA 正则
+9. **流水线当前非绿**：`main` HEAD 上 apk/ipk 四个 job 均失败于
+   `Verify package metadata and payload`，`nightly` 里剩下的唯一产物是已删除的旧 `build.yml`
+   留下的 ImmortalWrt 包（详见[云编译与发布](#云编译与发布)的「当前状态」）。
+10. 「移动端」有两套判定：壁纸用 `header.ut` 的 UA 正则，总览页用 `footer.ut` 里更窄的 UA 正则
    **或** `max-width:854px`。桌面模式 UA 的平板因此可能出现「桌面仪表盘 + 移动端壁纸图源」的组合
    （分析见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#9-已知结构性问题)）。
 

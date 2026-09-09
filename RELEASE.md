@@ -155,9 +155,16 @@ PATCH（修复）。已发布：`v0.1.0`、`v0.2.0`；未发布的变更累积�
 `release.yml`。`verify-package.sh` 失败通常是载荷清单/执行位/架构字段变了：先本地
 `./scripts/ci-simulate.sh` 复现。
 
-**Q：`nightly` 里混进了坏包？**
-历史教训：旧的 `build.yml` 与 `release.yml` 竞争同一个 `nightly` Release，产出过版本号为 0 的
-坏包与 ImmortalWrt 杂项产物；该工作流已删除。现在发布来源唯一（官方 SDK 双流水线）。
+**Q：`nightly` 里只有一个 ImmortalWrt 的 apk？**
+这是**已删除**的旧 `build.yml` 留下的残留：它与 `release.yml` 竞争过同一个 `nightly` Release，
+产出过版本号为 0 的坏包与 ImmortalWrt 杂项产物。两点需要知道：
+
+1. `allowUpdates: true` 只会新增/覆盖同名资产，**不会删除**已经不产出的旧资产——想清掉得手动
+   `gh release delete-asset nightly <文件>`（或删掉整个 Release 重建）；
+2. 截至 `main` HEAD `90b269b`，`Build APK packages` / `Build IPK packages` 的四个 job 全部失败于
+   `Verify package metadata and payload`（SDK 构建本身成功，是验收环节拒绝），因此后续
+   `release.yml` 拿不到成对产物、不会覆盖发布。发布前先确认 Actions 变绿：
+   `gh run list --workflow "Build APK packages" --limit 1`。
 
 **Q：撤销/重发同一版本？**
 

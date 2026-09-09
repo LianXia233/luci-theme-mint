@@ -150,6 +150,17 @@ cgi-io luci-i18n-mint-zh-cn` 都进了 `.config`（缺任何一个即 die——�
 `PKG_VERSION ?=` / `PKG_PO_VERSION ?=` 是刻意留空给 CI 注入主题仓库自身 revision 的口子；
 手工在 feed 里构建时保持留空即可（走 luci.mk 的 `findrev`）。
 
+### 6.1 SDK 缓存的实际生效条件
+
+workflow 里挂缓存的步骤带 `if: steps.resolve.outputs.tarball_sha256 != ''`：只有
+`get-openwrt-sdk.sh --print` 能从目标目录的 `sha256sums` 解析出 tarball 摘要时才创建
+`actions/cache` 条目。main 上最近一次运行该步骤是 **skipped**（没解析到值），也就是那个系列
+每次都会重下 ~300 MB tarball。`--cache-dir` 在本地照样有效，但别把它当成「CI 一定秒级复用」
+的前提；改动解析逻辑后用 `./scripts/ci-mirror-test.sh` 回归 `sha256sums` 发现、缓存复用与
+污染自愈三条路径。
+
+---
+
 ## 7. 真机验证
 
 日常改 CSS/JS 不需要重新打包，直接覆盖 `/www` 下的文件即可：
