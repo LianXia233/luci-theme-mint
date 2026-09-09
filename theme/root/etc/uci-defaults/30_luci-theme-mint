@@ -5,15 +5,11 @@
 # install/upgrade; the user's active theme (luci.main.mediaurlbase) is
 # only touched on fresh installs.
 
-# Each variant gets its own mediaurlbase so that the LuCI theme selector
-# can switch between them: header/footer/sysauth templates are looked up
-# under themes/$(basename mediaurlbase)/, and htdocs/luci-static/ plus
-# ucode/template/themes/ provide mint-light / mint-dark symlinks
-# pointing to the mint originals.
+# The theme ships a single "Mint" variant. Light/dark is handled by the
+# sidebar toggle (data-theme) inside that variant, so no extra
+# mint-light / mint-dark UCI registrations are needed.
 # NOTE: UCI option names may only contain [a-zA-Z0-9_]; hyphens (e.g.
-# "mint-light") make uci set fail with uci: Parse error, so the
-# registered keys use CamelCase while the mediaurlbase values keep the
-# hyphenated symlink paths.
+# "mint-light") make uci set fail with uci: Parse error.
 # Only write a key that is missing (upstream bootstrap/material convention).
 # Unconditional `uci set` + `uci commit` rewrites /etc/config/luci on every
 # install/upgrade for no reason and makes "did the admin change this?"
@@ -27,8 +23,12 @@ set_opt() {
 }
 
 set_opt themes.mint /luci-static/mint
-set_opt themes.MintLight /luci-static/mint-light
-set_opt themes.MintDark /luci-static/mint-dark
+
+# Remove the removed theme variants (including old mintzero spellings).
+uci -q delete luci.themes.MintLight
+uci -q delete luci.themes.MintDark
+uci -q delete luci.themes.MintzeroLight
+uci -q delete luci.themes.MintzeroDark
 
 # Remove stale ACL files left in the legacy luci acl.d directory by older
 # builds. The theme now ships ACLs in /usr/share/rpcd/acl.d/; a leftover
@@ -92,14 +92,12 @@ if [ "$PKG_UPGRADE" != 1 ] && [ "$changed" = 1 ]; then
 	uci -q set luci.main.mediaurlbase=/luci-static/mint
 fi
 
-# Rename fallback: a stale mintzero mediaurlbase (left over from the
-# pre-rename package) points at a path that no longer exists, which makes
-# CSS/JS 404 and the theme fall back. Rewrite it to the new path.
+# Stale variant mediaurlbases no longer exist. Rewrite them all to the
+# single Mint variant so CSS/JS never 404 and the theme still loads.
 _mzbase=$(uci -q get luci.main.mediaurlbase 2>/dev/null)
 case "$_mzbase" in
-	*/mintzero-dark)  uci -q set luci.main.mediaurlbase=/luci-static/mint-dark ;;
-	*/mintzero-light) uci -q set luci.main.mediaurlbase=/luci-static/mint-light ;;
-	*/mintzero)       uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
+	*/mint-dark|*/mint-light|*/mintzero-dark|*/mintzero-light|*/mintzero) \
+		uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
 esac
 
 uci commit luci

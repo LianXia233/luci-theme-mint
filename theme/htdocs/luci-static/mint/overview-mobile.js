@@ -538,7 +538,9 @@
 		html += '</tr></thead><tbody>';
 		rows.forEach(function (row) {
 			html += '<tr>';
-			row.forEach(function (c) { html += '<td>' + esc(c) + '</td>'; });
+			row.forEach(function (c, i) {
+				html += '<td data-label="' + esc(headers[i]) + '">' + esc(c) + '</td>';
+			});
 			html += '</tr>';
 		});
 		html += '</tbody></table></div>';

@@ -9,6 +9,20 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-10 — 保存并应用下拉 / 全局下拉菜单 / 首页与接口布局 / 单一 Mint 变体)
+
+- **保存并应用（ComboButton）下拉菜单失效**：`cbi-page-actions .cbi-dropdown.cbi-button` 被主题写成 `overflow:hidden`，LuCI 打开下拉时把绝对定位的 `ul.dropdown` 一起裁掉，桌面端根本无法展开；同时旧规则无差别给打开的 `ul` 加浮层面板样式，导致 `ul.preview`（LuCI 为保持按钮文字而克隆的 caption）也变成第二个浮层
+  - 修复：追加最终覆盖块——`.cbi-dropdown` 类控件不再裁剪溢出；`ul.dropdown` 作为真正的浮层菜单，`ul.preview` 保持按钮内联 caption；区分 `.open` / `.more` 箭头；`li[display]` / `li[selected]` 关闭态显示、打开态菜单项可点；wallpaper/dark 下菜单实色底保证可读
+- **全局表单下拉样式不正确**：`.cbi-dropdown[open] > ul` 同时命中 `.dropdown` 和 `.preview` 两个子节点。现改为 `.cbi-dropdown[open] > ul.dropdown` 才浮层化，`ul.preview` 仅作按钮标题，所有 cbi 下拉（协议、区域、时长等）恢复单选/多选正常外观
+- **首页端口状态 + 网络/无线原生卡片布局**：LuCI 原生端口网格是 `minmax(70px,1fr)` 且每卡 70–100px，端口挤成窄条；`.network-status-table` 无布局，上/无线卡全宽垂直堆叠。参考 luci-theme-aurora，补充原生端口网格为 `>150px` 卡片、手机两列；`.network-status-table` 桌面 flex 多卡、手机纵向；并修复主题全局 `ifacebox-body > span:not(.cbi-tooltip-container){display:none}` 误吞首页网络/无线正文文字的问题（收窄为接口页、且隐藏括号标点而保留子设备图标）
+- **网络-接口页布局**：`#cbi-network-interface` / `#cbi-network-device` 接口卡改为等高、正文居中；手机端接口卡改为“头部在左、正文在右”的横向卡，避免占满整行
+- **页脚位置**：`<footer>` 从 `.mz-main` 外移入 `.mz-main` 内，消除桌面端页脚被固定侧栏压住、短页面额外滚动的问题
+- **登录页矮屏**：`.mz-login` 允许纵向滚动，`.mz-login-card` 限高，WebAuthn/2FA/横屏等场景不再裁切
+- **移除 MintLight / MintDark / MintzeroLight / MintzeroDark 变体**：uci-defaults 只注册单一 `Mint`（`themes.mint=/luci-static/mint`），并在安装/卸载时删除旧变体键；删除 `mint-light` / `mint-dark` 静态与模板 symlink；残留 `mediaurlbase=/luci-static/mint-light|mint-dark|mintzero*` 一律重写为 `/luci-static/mint`
+- **清理**：删除已被 `footer.ut` 取代、全仓库无引用的旧 `overview.js`；清理被后续 `!important` 完全覆盖的移动端 1 列 port/net 规则；移动端汉堡按钮不再在 `.mz-mobilebar` 之外以 `position:fixed` 兜底显示
+- **壁纸功能兼容性**：全局壁纸/登录页壁纸在本次布局调整后保持可用——桌面端新增 `.mz-topbar` 沿用 `body.mz-has-wallpaper` 玻璃层；下拉菜单在壁纸/暗色下改用 `--mz-panel-bg-strong` 玻璃背景（不再硬编码纯黑）；登录页允许矮屏滚动时，`.mz-login-bg` / `.mz-login-overlay` 改为 `position:fixed`，滚动查看认证字段不会把壁纸卷走
+- **中文翻译**：`theme.po` / `theme.pot` 中旧 `overview.js` 源码引用改指 `overview-mobile.js`，避免翻译工具链以为源码文件已删除；壁纸设置、登录页等中文文案保持完整
+
 ### Fixed (2026-09-09 第十轮 — PC 概览 `<h2>状态</h2>` 标题再度消失（回合制回归）)
 
 - **PC 端 Status > Overview 的 `<h2>状态</h2>` 标题再次消失**：第七轮已修复过一次，但 `8410db6`（第九轮前的 nftables 重构）重排 `footer.ut` 时把第七轮的两处改动一并回退——`overview-dashboard.js` / `overview-mobile.js` / `overview-dashboard.css` 的注入被删、`overview.js`（旧版）加载行被恢复。旧 `overview.js` 不渲染新版仪表盘 DOM（含 `<h2>状态</h2>` 的 header），标题随 DOM 一起缺失；根因是脚本未加载，非 CSS 选择器（`#mz-view > h2` 为直接子代选择器，仪表盘标题嵌套在 `#mint-overview-dashboard > header`，本就不命中）
