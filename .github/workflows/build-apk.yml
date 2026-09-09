@@ -51,13 +51,14 @@ jobs:
           # through with `|| true` (zstd is needed to unpack the SDK).
           sudo apt-get install -y --no-install-recommends \
             ca-certificates curl zstd
-          # apk-tools would upgrade install-test.sh to a real `apk add` run,
-          # but it is not packaged for Ubuntu runners (nor is opkg). Say so
-          # loudly instead of failing silently: install-test.sh detects its
-          # absence and falls back to unpacking the payload and asserting the
-          # file layout.
+          # apk-tools is not packaged for Ubuntu runners (nor is opkg), but
+          # it is not needed as a system package: the SDK ships its own apk
+          # binary (staging_dir/host/bin/apk), which verify-package.sh and
+          # install-test.sh use via --apk-tool to inspect APKv3 containers.
+          # Best-effort install kept for the rare case it appears in the
+          # image; absence is expected and harmless.
           sudo apt-get install -y --no-install-recommends apk-tools \
-            || echo "::warning::apk-tools is unavailable on this runner image - install-test.sh will use its unpack fallback"
+            || echo "::notice::apk-tools is not on this runner image - using the SDK's own apk instead"
 
       - name: Resolve OpenWrt SDK URL
         run: |
@@ -80,13 +81,17 @@ jobs:
             --out dist
 
       - name: Verify package metadata and payload
-        run: ./scripts/verify-package.sh --dir dist --expect-arch all
+        # APKv3 containers are inspected with the SDK's own apk binary.
+        run: |
+          ./scripts/verify-package.sh --dir dist --expect-arch all \
+            --apk-tool "${{ steps.build.outputs.sdk_dir }}/staging_dir/host/bin/apk"
 
       - name: Install test
         run: |
           rm -rf rootfs
           for f in dist/*.apk; do
-            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
+            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs" \
+              --apk-tool "${{ steps.build.outputs.sdk_dir }}/staging_dir/host/bin/apk"
           done
 
       - name: Show build info

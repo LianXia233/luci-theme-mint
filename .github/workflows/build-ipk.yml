@@ -91,13 +91,15 @@ jobs:
             --out dist
 
       - name: Verify package metadata and payload
+        # ipk files are plain gzip tars - no external tool needed.
         run: ./scripts/verify-package.sh --dir dist --expect-arch all
 
       - name: Install test
         run: |
           rm -rf rootfs
           for f in dist/*.ipk; do
-            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
+            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs" \
+              --apk-tool "${{ steps.build.outputs.sdk_dir }}/staging_dir/host/bin/apk"
           done
 
       - name: Show build info
