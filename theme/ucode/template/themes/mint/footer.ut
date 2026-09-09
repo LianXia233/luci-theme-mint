@@ -22,9 +22,10 @@
 		</footer>
 		<script>L.require('menu-mint')</script>
 		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-overview'): %}
-		<link rel="stylesheet" href="{{ media }}/overview-dashboard.css" />
 		<script src="{{ media }}/overview.js" defer></script>
-		<script src="{{ media }}/overview-dashboard.js" defer></script>
+		{% endif %}
+		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-nftables'): %}
+		<script src="{{ media }}/mz-nftables.js" defer></script>
 		{% endif %}
 		{% endif %}
 	</body>
