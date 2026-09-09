@@ -30,16 +30,47 @@ function delay(ms) {
 	return new Promise(function (resolve) { window.setTimeout(resolve, ms); });
 }
 
+/* On some routers the very first RPC of a fresh page load can stall inside
+   LuCI's initial anonymous-session window before the real ubus session is
+   up (the underlying rpc promise neither resolves nor rejects). Guard every
+   single attempt with a hard timeout so the view can never be stuck on the
+   "loading view" spinner forever - a timed-out attempt is treated like a
+   failure and retried after clearing the uci cache. */
+function loadMintWithTimeout(timeoutMs) {
+	return new Promise(function (resolve, reject) {
+		let done = false;
+		var timer = window.setTimeout(function () {
+			if (done) return;
+			done = true;
+			reject(new Error('uci.load(mint) timed out'));
+		}, timeoutMs);
+		uci.load('mint').then(function (r) {
+			if (done) return;
+			done = true;
+			window.clearTimeout(timer);
+			resolve(r);
+		}, function (e) {
+			if (done) return;
+			done = true;
+			window.clearTimeout(timer);
+			reject(e);
+		});
+	});
+}
+
 async function loadMintReady() {
-	for (let i = 0; i < 12; i++) {
+	for (let i = 0; i < 10; i++) {
 		try {
 			uci.unload('mint');
-			await uci.load('mint');
+			await loadMintWithTimeout(3000);
 			return true;
 		} catch (e) {
-			await delay(200);
+			uci.unload('mint');
+			await delay(250);
 		}
 	}
+	/* Give up waiting for the config but don't block the view - render the
+	   settings form as empty. */
 	return false;
 }
 

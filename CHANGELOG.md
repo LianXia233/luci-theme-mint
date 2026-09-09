@@ -9,6 +9,47 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-09 第八轮 — nftables 链名高亮失效 / wallpaper 视图偶发卡死)
+
+- **nftables 状态页链名未按设计蓝色高亮**：`mz-nftables.js` 把链名包成 `h4 > span > code`，而 `cascade.css` 原选择器写的是直接子选择器 `#mz-view .nft-chain > h4 > code`（中间少了 `span`）导致匹配不到，链名显示为深灰，只有左侧竖线是蓝色
+  - 修复：将选择器放宽为后代选择器 `#mz-view .nft-chain > h4 code`（对 `strong` 同理），对 `span` 包裹结构免疫；实测 39/39 个链名均命中蓝色高亮（`color: rgb(61,90,232)`）
+- **mintwallpaper 页面偶发卡在"正在载入视图…"**：`loadMintReady()` 内 `uci.load('mint')` 在大部分环境下正常（实测 49ms resolve），但个别场景（首次整页加载经过 LuCI 匿名 session 窗口）底层 RPC promise 既不解成功也不 reject，永久挂起，视图永远不渲染
+  - 修复：为每次 `uci.load('mint')` 增加硬超时保护（3s，超时视为本次失败并 `uci.unload` 后重试，最多 10 次）；即使最终仍未拿到配置，也降级渲染为"空配置"表单而非卡死。实测整页加载与 SPA 跳转均为 ~0.03s 就绪、渲染正常
+- **主题翻译补部署**：设备此前运行旧版主题且缺少编译后的 `luci-theme-mint.zh-cn.lmo`，`/admin/system/mintwallpaper` 全英文；已本地用 `scripts/po2lmo.py` 编译 `zh_Hans` 目录并部署到设备 i18n 目录，页面 31 处文案全部汉化（含"壁纸设置 / Mint 壁纸 / 上传桌面端图片… 等"），汉化不再依赖服务器在线编译
+
+### Fixed (2026-09-09 第七轮 — PC 总览 `<h2>状态</h2>` 标题消失)
+
+- **PC 端 Status > Overview 的 `<h2>状态</h2>` 标题不显示**：仪表盘 DOM（含 `<h2>状态</h2>`）从未挂载，因为 `overview-dashboard.js` 从未被任何模板加载——`footer.ut` 只加载了旧的 `overview.js`
+  - 根因确认：`cascade.css` 中 `#mz-view > h2 { display:none }`（约 2388 行）使用的是**直接子代选择器**，只匹配 `#mz-view` 直接下的 `<h2>`，而仪表盘标题位于 `#mz-view > #mint-overview-dashboard > header > h2`，是嵌套结构、不在命中范围；真正原因是脚本未加载、DOM 未构建
+  - 修复：`footer.ut` 在 `admin-status-overview` 路径下注入设备识别引导脚本，桌面端加载 `overview-dashboard.js`、移动端加载 `overview-mobile.js`；并将 `overview-dashboard.js` 从「仅核心/系统/网络仪表」升级为**完整 PC 总览视图**（含端口/DHCP/无线/UPnP 面板 + 原生 `.cbi-section` 隐藏 + PC 专属 `boot()` 闸门），从而标题随 DOM 一并挂载
+
+### Changed (2026-09-09 第七轮 — 移动端/PC 前端彻底解耦)
+
+- **前端 UI 按设备拆分为两套独立代码，共用同一后端/API**：入口处按 User-Agent + 屏幕宽度（`max-width: 854px`）自动识别，桌面加载 PC 视图、移动加载移动视图，两端互不耦合、可各自独立开发维护
+  - `overview-dashboard.js`：桌面端专属完整总览仪表盘（核心/系统/网络 Gauge + 图表 + 端口/DHCP/无线/UPnP 面板 + 原生区块隐藏 + 仅 PC 启动闸门 `isMobile()`）
+  - `overview-mobile.js`：移动端专属总览增强（从旧 `overview.js` 1–909 行原样提取的面板 + 原生区块抑制 + 自启动）
+  - `mz-ui.js`：设备无关的通用辅助（apply/revert 通知、cbi-dynlist 编辑/删除按钮），由 `footer.ut` 在**所有后台页面**无条件加载
+  - `footer.ut`：移除旧的 `overview.js` 条件标签，改为先无条件加载 `mz-ui.js`，再于 `admin-status-overview` 注入设备识别引导脚本选择 PC/移动视图；`overview.js` 已删除
+  - `theme/po/*` 源引用从 `overview.js` 重指向 `overview-mobile.js`（行号一致，因其为原样提取）
+
+### Fixed (2026-09-09 第六轮 — 移动端菜单栏标题被按钮遮挡)
+
+- **移动端左侧菜单按钮挡住文字**：`menu-mint.js` 在窄屏会把 `#mz-sidebar-toggle` 移入新创建的 `.mz-mobilebar`，但 `cascade.css` 没有给 mobilebar 写任何样式，按钮继续沿用 `position: fixed; top:12px; left:12px`，导致它浮在标题文字上方
+  - 新增 `.mz-mobilebar` 样式：窄屏下 `display:flex` + `position:sticky` + 玻璃背景，按钮与标题排成一行
+  - 当按钮位于 `.mz-mobilebar` 内时覆盖为 `position:relative`，取消固定定位，不再遮挡
+  - `.mz-mobilebar-title` 居中显示、`overflow:hidden` + `text-overflow:ellipsis`、避免长标题换行
+  - 实测 390px 视口：按钮 x=0, 标题 x=44 居中，两者无重叠
+
+### Fixed (2026-09-09 第五轮 — 暗色模式 + 统一毛玻璃 + 轻微阴影)
+
+- **暗色模式切换无效**：菜单顶栏 `#mz-theme-toggle` 能正常切换并持久化 `data-theme`，但壁纸页/概览页视觉上几乎没变
+  - 根因：`data-theme` 属性由 `header.ut` 和 `menu-mint.js` 始终设置在 `<html>`（`document.documentElement`）上，而 `cascade.css` 的玻璃规则全部写成 `body.mz-has-wallpaper[data-theme="dark"]` / `:not([data-theme="dark"])`。`<body>` 上永远没有该属性，导致暗色分支全部失效、亮色分支恒真
+  - 修复：将所有壁纸玻璃规则改为 `html[data-theme="dark"] body.mz-has-wallpaper` 与 `html:not([data-theme="dark"]) body.mz-has-wallpaper`
+  - 统一毛玻璃：把 `body.mz-has-wallpaper::before` 壁纸蒙层也纳入同一模型——背景与卡片使用同一 `--mz-glass` + `--mz-glass-blur`，不再区分“蒙层玻璃 vs 卡片玻璃”。亮色使用 `rgba(255,255,255,0.5)`，暗色使用 `rgba(15,23,42, var(--mz-wallpaper-overlay,0.45))`
+  - 亮色卡片加轻微阴影：在统一玻璃基础上增加 `box-shadow: 0 4px 24px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.6)`，让卡片从壁纸中浮起
+  - 修复壁纸模糊设置被覆盖：`body::before` 不再直接写死 `backdrop-filter`，而是把用户设置的 `--mz-wallpaper-blur` 叠加到玻璃模糊上（`calc(blur + 16px)`），避免“模糊(px)”拉满也无效
+  - 实测：亮色壁纸页卡片 bg=`rgba(255,255,255,0.5)`、暗色切换后卡片/蒙层统一变 navy、文字自动切换为浅色；主题切换按钮点击后立即生效
+
 ### Added (2026-09-09 第四轮 — nftables 状态页改版)
 
 - **nftables 状态页改版**：`/admin/status/nftables` 在裸版视图下 39 条链 138 条规则 390+ 个 badge 一字排开（页面 11102px），现在通过主题级增强完成视觉重塑

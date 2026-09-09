@@ -4623,8 +4623,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view .nft-chain > h4:hover {
 	background: var(--mz-color-primary-soft);
 }
-#mz-view .nft-chain > h4 > code,
-#mz-view .nft-chain > h4 > strong {
+/* mz-nftables.js wraps the chain name in <span><code>..</code></span>, so
+   match the <code> with a descendant selector (not a direct child) to be
+   immune to the wrapper span. */
+#mz-view .nft-chain > h4 code,
+#mz-view .nft-chain > h4 strong {
 	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-primary-strong);

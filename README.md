@@ -35,7 +35,9 @@ theme/                        # 主题源码（放入 buildroot 的 feeds/luci/t
 ├── Makefile                  # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
 │   ├── cascade.css           # 设计系统 + 布局 + 组件
-│   ├── overview.js           # 总览页增强（仅 Status > Overview 加载）
+│   ├── overview-dashboard.js # PC 端总览仪表盘（仅桌面端 Status > Overview 加载）
+│   ├── overview-mobile.js    # 移动端总览增强（仅手机/平板 Status > Overview 加载）
+│   ├── mz-ui.js              # 设备无关通用 UI 辅助（全后台页面加载）
 │   ├── overview-banner.png   # 顶栏品牌图
 │   ├── login-logo.png        # 登录页 Logo
 │   └── favicon/              # favicon.svg（矢量）/ -48.png / -180.png
