@@ -1,41 +1,39 @@
 {
-	"wallpaper": {
-		"description": "Grant access to the mint wallpaper settings",
+	"luci-theme-mint": {
+		"description": "Grant access to the mint theme wallpaper settings and dashboard",
 		"read": {
-			"uci": [
-				[
-					"mint"
-				]
-			],
 			"ubus": {
 				"mint": [
 					"refresh",
-					"dashboard",
-					"save"
+					"dashboard"
 				]
 			},
+			"uci": [
+				"mint"
+			],
 			"file": {
 				"/www/luci-static/mint": [
 					"list"
 				]
 			}
 		},
-	"write": {
-		"ubus": {
-			"mint": [
-				"refresh",
-				"dashboard",
-				"save"
-			]
-		},
-		"file": {
-			"/www/luci-static/mint/custom-pc.jpg": [
-				"write"
+		"write": {
+			"ubus": {
+				"mint": [
+					"save"
+				]
+			},
+			"uci": [
+				"mint"
 			],
-			"/www/luci-static/mint/custom-mobile.jpg": [
-				"write"
-			]
+			"file": {
+				"/www/luci-static/mint/custom-pc.jpg": [
+					"write"
+				],
+				"/www/luci-static/mint/custom-mobile.jpg": [
+					"write"
+				]
+			}
 		}
-	}
 	}
 }

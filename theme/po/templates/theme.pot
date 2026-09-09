@@ -324,3 +324,115 @@ msgstr ""
 
 msgid "Random wallpaper"
 msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Base chains (input / forward / output / prerouting / postrouting)"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "NAT chains"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Routing / mangle chains"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Zone and forwarding chains (LAN / WAN / UPnP)"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Helper chains (syn_flood / handle_reject / accept_*)"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Other third-party table chains"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s tables · %s chains · %s rules · %s with traffic (%s)"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Expand all"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Collapse all"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Hide zero-counter rules"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Search rules (chain, match, action)"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s chains · %s rules"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s chains"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s rules"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s with traffic (%s)"
+msgstr ""
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "0 traffic"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Offline"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Refresh"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Status"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Gateway"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "N/A"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "No uplink"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "System Information"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "cores"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Device"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Uptime"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Load average"
+msgstr ""
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Model"
+msgstr ""

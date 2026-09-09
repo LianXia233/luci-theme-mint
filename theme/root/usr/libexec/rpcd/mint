@@ -107,15 +107,17 @@ mint_public_ip() {
 		fi
 	fi
 
-	# Fetch with a few retries (1s apart) before giving up.
+	# Fetch with retries (1s apart) before giving up. R-10: keep the worst
+	# case short (~5s: 2 x 2s + 1s sleep) - a hung WAN must not stall the
+	# whole dashboard RPC for ~11s on every poll.
 	ip=""
-	for _i in 1 2 3; do
-		ip=$(curl -s --max-time 3 ipv4.im 2>/dev/null | tr -d '\r\n ')
+	for _i in 1 2; do
+		ip=$(curl -s --max-time 2 ipv4.im 2>/dev/null | tr -d '\r\n ')
 		if [ -n "$ip" ] && printf '%s' "$ip" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
 			break
 		fi
 		ip=""
-		sleep 1
+	sleep 1
 	done
 
 	if [ -n "$ip" ]; then
@@ -131,6 +133,16 @@ mint_public_ip() {
 		printf '%s' "$fc" > "$failf" 2>/dev/null
 		echo "未联网"
 	fi
+}
+
+# Escape a value for safe embedding inside a JSON string literal (R-05).
+# Hostnames, model strings and interface values are operator-controlled and
+# may contain '"', '\' or control characters that would otherwise break the
+# hand-assembled JSON below (and, in the worst case, alter its structure).
+# sed escapes the two JSON metacharacters; tr strips C0 control characters
+# (tab/newline included), which keeps the output single-line and valid.
+json_escape() {
+	printf '%s' "$1" | sed -e 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\000-\037'
 }
 
 mint_dashboard() {
@@ -152,10 +164,11 @@ mint_dashboard() {
 	temps=""
 	add_temp() {
 		[ -z "$2" ] && return
+		name_esc="$(json_escape "$1")"
 		if [ -z "$temps" ]; then
-			temps="{\"name\":\"$1\",\"temp_mc\":$2}"
+			temps="{\"name\":\"$name_esc\",\"temp_mc\":$2}"
 		else
-			temps="$temps,{\"name\":\"$1\",\"temp_mc\":$2}"
+			temps="$temps,{\"name\":\"$name_esc\",\"temp_mc\":$2}"
 		fi
 	}
 	for z in /sys/class/thermal/thermal_zone*/type; do
@@ -194,7 +207,7 @@ mint_dashboard() {
 	spct=$(echo "$storage_line" | awk '{gsub(/%/,"",$5); print $5}')
 	if [ -n "$stotal" ]; then
 		storage_json=$(printf '{"filesystem":"%s","total_kb":%s,"used_kb":%s,"avail_kb":%s,"use_pct":%s,"mount":"/"}' \
-			"$fs" "$stotal" "$sused" "$savail" "${spct:-0}")
+			"$(json_escape "$fs")" "$stotal" "$sused" "$savail" "${spct:-0}")
 	else
 		storage_json="null"
 	fi
@@ -230,7 +243,9 @@ mint_dashboard() {
 				txb=$(cat /sys/class/net/$dev/statistics/tx_bytes 2>/dev/null)
 			fi
 			uplink_json=$(printf '{"name":"%s","device":"%s","proto":"%s","ipv4":"%s","ipv4_mask":%s,"ipv6":"%s","gateway":"%s","metric":%s,"rx_bytes":%s,"tx_bytes":%s}' \
-				"$ifname" "$dev" "$proto" "$ipv4" "${ipv4m:-null}" "$ipv6" "$gw" "${metric:-null}" "${rxb:-null}" "${txb:-null}")
+				"$(json_escape "$ifname")" "$(json_escape "$dev")" "$(json_escape "$proto")" \
+				"$(json_escape "$ipv4")" "${ipv4m:-null}" "$(json_escape "$ipv6")" "$(json_escape "$gw")" \
+				"${metric:-null}" "${rxb:-null}" "${txb:-null}")
 		fi
 	fi
 
@@ -251,7 +266,10 @@ mint_dashboard() {
 	openwrt=$(. /etc/openwrt_release 2>/dev/null; printf '%s' "$DISTRIB_DESCRIPTION")
 	luci_ver=$(grep '^luciversion' /usr/lib/lua/luci/version.lua 2>/dev/null | sed "s/.*= *//; s/[\"']//g")
 	system_json=$(printf '{"hostname":"%s","model":"%s","board_name":"%s","arch":"%s","target":"%s","distribution":"%s","version":"%s","revision":"%s","kernel":"%s","openwrt":"%s","luci":"%s"}' \
-		"$hostname" "$model" "$board_name" "$system_arch" "$target" "$dist" "$ver" "$rev" "$kernel" "$openwrt" "$luci_ver")
+		"$(json_escape "$hostname")" "$(json_escape "$model")" "$(json_escape "$board_name")" \
+		"$(json_escape "$system_arch")" "$(json_escape "$target")" "$(json_escape "$dist")" \
+		"$(json_escape "$ver")" "$(json_escape "$rev")" "$(json_escape "$kernel")" \
+		"$(json_escape "$openwrt")" "$(json_escape "$luci_ver")")
 
 	# ---- Assemble ----
 	if [ -n "$cpu_stat" ]; then
@@ -259,6 +277,14 @@ mint_dashboard() {
 	else
 		stat_json="null"
 	fi
+
+	# ---- Network block (assembled here so the heredoc stays trivial) ----
+	if [ -n "$public_ip" ]; then
+		pub_json=$(printf '"%s"' "$(json_escape "$public_ip")")
+	else
+		pub_json=null
+	fi
+	network_json=$(printf '{"uplink":%s,"public_ipv4":%s}' "$uplink_json" "$pub_json")
 
 	cat <<JSON
 {
@@ -269,7 +295,7 @@ mint_dashboard() {
   "load": { "m1": ${l1:-0}, "m5": ${l5:-0}, "m15": ${l15:-0} },
   "uptime": ${up:-0},
   "conntrack": { "count": ${cc:-null}, "max": ${cm:-null} },
-  "network": { "uplink": $uplink_json, "public_ipv4": $([ -n "$public_ip" ] && printf '"%s"' "$public_ip" || echo "null") },
+  "network": $network_json,
   "system": $system_json
 }
 JSON

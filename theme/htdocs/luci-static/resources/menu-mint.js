@@ -743,7 +743,9 @@ return baseclass.extend({
 
 		const rpcSave = (window.L && L.rpc && typeof L.rpc.declare === 'function')
 			? L.rpc.declare({ object: 'mint', method: 'save', params: ['config', 'section', 'values'] })
-			: (cfg, sec, vals) => fetch('/ubus/', {
+			/* R-09: honour a relocated ubus mount point (luci.main.ubuspath)
+			   instead of hardcoding '/ubus/'. */
+			: (cfg, sec, vals) => fetch((window.L && L.env && L.env.ubuspath) || '/ubus/', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify([{ jsonrpc: '2.0', id: 'mint', method: 'call',

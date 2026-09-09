@@ -32,13 +32,24 @@
 	if (pageKey.indexOf('admin-status-nftables') < 0)
 		return;
 
+	/* R-08: display strings go through LuCI's _() so the zh_Hans catalog
+	   in po/ applies. (The Chinese regular expressions in classifyChain()
+	   below intentionally stay LITERAL: they are parse keys matched
+	   against the upstream nftables view's rendered h4 text, which
+	   follows the UI locale - translating them here would break the
+	   matching, not the translation.) */
+	var __ = function (s) {
+		try { return (typeof _ === 'function') ? (_(s) || s) : s; }
+		catch (e) { return s; }
+	};
+
 	var GROUPS = [
-		{ key: 'basic',    label: '基本链（input / forward / output / prerouting / postrouting）' },
-		{ key: 'nat',      label: 'NAT 链' },
-		{ key: 'mangle',   label: '路由 / Mangle 链' },
-		{ key: 'zone',     label: '区域与转发链（LAN / WAN / Upnp）' },
-		{ key: 'helper',   label: '辅助链（syn_flood / handle_reject / accept_*）' },
-		{ key: 'third',    label: '其他第三方表链' }
+		{ key: 'basic',    label: __('Base chains (input / forward / output / prerouting / postrouting)') },
+		{ key: 'nat',      label: __('NAT chains') },
+		{ key: 'mangle',   label: __('Routing / mangle chains') },
+		{ key: 'zone',     label: __('Zone and forwarding chains (LAN / WAN / UPnP)') },
+		{ key: 'helper',   label: __('Helper chains (syn_flood / handle_reject / accept_*)') },
+		{ key: 'third',    label: __('Other third-party table chains') }
 	];
 
 	function ready(fn) {
@@ -199,15 +210,16 @@
 
 		var bar = el('div', 'mz-nft-toolbar');
 		bar.appendChild(el('div', 'mz-nft-tb-stats',
-			'共 ' + tables.length + ' 张表 · ' + totalChains + ' 条链 · ' + totalRules + ' 条规则 · ' + nonZero + ' 条有流量（' + fmtBytes(totalBytes) + '）'));
+			__('%s tables · %s chains · %s rules · %s with traffic (%s)')
+				.format(tables.length, totalChains, totalRules, nonZero, fmtBytes(totalBytes))));
 
 		var controls = el('div', 'mz-nft-tb-controls');
-		var btnAll = el('button', 'mz-nft-btn', '全部展开');
+		var btnAll = el('button', 'mz-nft-btn', __('Expand all'));
 		btnAll.type = 'button';
 		btnAll.dataset.action = 'expand-all';
 		controls.appendChild(btnAll);
 
-		var btnNone = el('button', 'mz-nft-btn', '全部折叠');
+		var btnNone = el('button', 'mz-nft-btn', __('Collapse all'));
 		btnNone.type = 'button';
 		btnNone.dataset.action = 'collapse-all';
 		controls.appendChild(btnNone);
@@ -218,12 +230,12 @@
 		cbZero.dataset.action = 'hide-zero';
 		cbZero.checked = true;
 		lblZero.appendChild(cbZero);
-		lblZero.appendChild(document.createTextNode('隐藏零计数规则'));
+		lblZero.appendChild(document.createTextNode(__('Hide zero-counter rules')));
 		controls.appendChild(lblZero);
 
 		var search = el('input', 'mz-nft-search');
 		search.type = 'search';
-		search.placeholder = '搜索规则（链名、匹配、动作）';
+		search.placeholder = __('Search rules (chain, match, action)');
 		search.dataset.action = 'search';
 		controls.appendChild(search);
 
@@ -238,7 +250,7 @@
 		var h3 = tbl.querySelector(':scope > h3');
 		var chains = tbl.querySelectorAll(':scope > .nft-chains > .nft-chain');
 		var sum = el('div', 'mz-nft-table-summary',
-			chains.length + ' 条链 · ' + countRules(tbl) + ' 条规则');
+			__('%s chains · %s rules').format(chains.length, countRules(tbl)));
 		if (h3 && h3.nextSibling)
 			tbl.insertBefore(sum, h3.nextSibling);
 		else
@@ -278,7 +290,7 @@
 			var head = el('div', 'mz-nft-grouptitle');
 			head.dataset.bucket = g.key;
 			head.appendChild(el('span', null, g.label));
-			head.appendChild(el('span', 'mz-nft-grouptitle-count', members.length + ' 条'));
+			head.appendChild(el('span', 'mz-nft-grouptitle-count', __('%s chains').format(members.length)));
 			groupsEl.appendChild(head);
 			Array.prototype.forEach.call(members, function (m) { groupsEl.appendChild(m); });
 		});
@@ -302,27 +314,40 @@
 	function enhanceChain(chainEl, h4) {
 		/* 0. wrap the chain name in quotes ("input", "dstnat", "input_lan")
 		   with a <code> so the CSS rule (monospace tag) styles it. The
-		   upstream view ships the name as plain text. */
+		   upstream view ships the name as plain text.
+		   R-07: build the replacement with real DOM nodes (textContent
+		   only, no innerHTML) - chain names come from the firewall
+		   configuration and must never be reinterpreted as markup. */
 		Array.prototype.forEach.call(h4.childNodes, function (n) {
 			if (n.nodeType !== 3) return;
-			var html = n.nodeValue.replace(/"([^"]+)"/g, '<code>$1</code>');
-			if (html !== n.nodeValue) {
-				var span = document.createElement('span');
-				span.innerHTML = html;
-				h4.replaceChild(span, n);
-			}
+			var parts = n.nodeValue.split(/("[^"]+")/g);
+			if (parts.length < 2) return;
+			var frag = document.createDocumentFragment();
+			parts.forEach(function (p) {
+				var m = /^"([^"]+)"$/.exec(p);
+				if (m) {
+					var code = document.createElement('code');
+					code.textContent = m[1];
+					frag.appendChild(code);
+				} else if (p) {
+					frag.appendChild(document.createTextNode(p));
+				}
+			});
+			var span = document.createElement('span');
+			span.appendChild(frag);
+			h4.replaceChild(span, n);
 		});
 
 		/* 1. add toggle + summary to the chain header. The h4 is the
 		   natural click target so we wrap the click on the h4. */
 		var stats = chainStats(chainEl);
 		var summary = el('span', 'mz-nft-chain-summary',
-			stats.ruleRows + ' 条规则');
+			__('%s rules').format(stats.ruleRows));
 		if (stats.nonZero > 0)
 			summary.appendChild(el('span', 'mz-nft-chain-nonzero',
-				' · ' + stats.nonZero + ' 条有流量 ' + fmtBytes(stats.totalBytes)));
+				' · ' + __('%s with traffic (%s)').format(stats.nonZero, fmtBytes(stats.totalBytes))));
 		else
-			summary.appendChild(el('span', 'mz-nft-chain-zero', ' · 0 流量'));
+			summary.appendChild(el('span', 'mz-nft-chain-zero', ' · ' + __('0 traffic')));
 
 		var toggle = el('span', 'mz-nft-chain-toggle');
 		toggle.textContent = '▾';

@@ -125,10 +125,25 @@ REQUIRED=(
 	"etc/config/mint"
 	"etc/uci-defaults/30_luci-theme-mint"
 	"usr/libexec/rpcd/mint"
+	"usr/bin/mz-wallpaper-fetch.sh"
 )
 
 for f in "${REQUIRED[@]}"; do
 	[ -e "$ROOT/$f" ] || fail "missing after install: $f"
+done
+
+# Executable bit must survive packaging (R-01): cron executes
+# /usr/bin/mz-wallpaper-fetch.sh directly; a 0644 payload silently kills
+# the server-side wallpaper cache feature.
+REQUIRED_EXEC=(
+	"usr/bin/mz-wallpaper-fetch.sh"
+	"usr/libexec/rpcd/mint"
+	"etc/uci-defaults/30_luci-theme-mint"
+)
+
+for f in "${REQUIRED_EXEC[@]}"; do
+	[ -e "$ROOT/$f" ] || continue
+	[ -x "$ROOT/$f" ] || fail "not executable after install: $f"
 done
 
 # Shell scripts must be syntactically valid for the target shell (ash/dash).

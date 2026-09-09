@@ -62,15 +62,18 @@ def members_from_tar_bytes(blob):
     try:
         tf = tarfile.open(fileobj=io.BytesIO(blob))
     except Exception as e:
-        return names, meta, 'tar-error: %s' % e
+        return names, meta, [], 'tar-error: %s' % e
+    xfiles = []
     for m in tf.getmembers():
         names.append(m.name)
+        if m.mode & 0o111:
+            xfiles.append(m.name)
         if os.path.basename(m.name) in ('.PKGINFO', 'control'):
             try:
                 meta = parse_control(tf.extractfile(m).read().decode('utf-8', 'replace'))
             except Exception:
                 pass
-    return names, meta, None
+    return names, meta, xfiles, None
 
 def parse_control(text):
     out = {}
@@ -99,7 +102,7 @@ def decompress(blob, kind):
         return p.stdout if p.returncode == 0 else None
     return blob
 
-result = {'kind': 'unknown', 'members': [], 'files': [], 'meta': {}, 'errors': []}
+result = {'kind': 'unknown', 'members': [], 'files': [], 'xfiles': [], 'meta': {}, 'errors': []}
 
 if data[:8] == b'!<arch>\n':
     # ---- ipk: ar archive ------------------------------------------------
@@ -120,7 +123,7 @@ if data[:8] == b'!<arch>\n':
             if blob is None:
                 result['errors'].append('cannot decompress %s' % name)
                 continue
-            _, meta, err = members_from_tar_bytes(blob)
+            _, meta, xfiles, err = members_from_tar_bytes(blob)
             result['meta'].update(meta)
             if err:
                 result['errors'].append(err)
@@ -131,7 +134,10 @@ if data[:8] == b'!<arch>\n':
                 continue
             try:
                 tf = tarfile.open(fileobj=io.BytesIO(blob))
-                result['files'] += [m.name for m in tf.getmembers()]
+                for m in tf.getmembers():
+                    result['files'].append(m.name)
+                    if m.mode & 0o111:
+                        result['xfiles'].append(m.name)
             except Exception as e:
                 result['errors'].append('data.tar: %s' % e)
     result['members'] = names
@@ -172,6 +178,8 @@ elif data[:2] == b'\x1f\x8b':
             if m.name.startswith('.SIGN.'):
                 continue
             result['files'].append(m.name)
+            if m.mode & 0o111:
+                result['xfiles'].append(m.name)
             if os.path.basename(m.name) == '.PKGINFO':
                 try:
                     result['meta'].update(
@@ -198,6 +206,8 @@ for n in result['members']:
     emit('member', n)
 for f in result['files']:
     emit('file', f)
+for f in result['xfiles']:
+    emit('xfile', f)
 for e in result['errors']:
     emit('error', e)
 PY
@@ -218,6 +228,17 @@ REQUIRED_FILES=(
 	"etc/config/mint"
 	"etc/uci-defaults/30_luci-theme-mint"
 	"usr/libexec/rpcd/mint"
+	"usr/bin/mz-wallpaper-fetch.sh"
+)
+
+# Payload entries that MUST carry the executable bit. luci.mk copies root/
+# with `cp -pR`, so a script committed as 0644 lands on the device as 0644:
+# cron then cannot run /usr/bin/mz-wallpaper-fetch.sh at all (R-01). This
+# assertion exists so that class of mistake can never ship silently again.
+REQUIRED_EXEC=(
+	"usr/bin/mz-wallpaper-fetch.sh"
+	"usr/libexec/rpcd/mint"
+	"etc/uci-defaults/30_luci-theme-mint"
 )
 
 for pkg in "${FILES[@]}"; do
@@ -295,6 +316,12 @@ for pkg in "${FILES[@]}"; do
 	for req in "${REQUIRED_FILES[@]}"; do
 		printf '%s\n' "${payload[@]}" | grep -qx "$req" \
 			|| fail "$pkg is missing ${req}"
+	done
+
+	mapfile -t xpayload < <(get xfile | sed 's|^\./||' | sort -u)
+	for req in "${REQUIRED_EXEC[@]}"; do
+		printf '%s\n' "${xpayload[@]}" | grep -qx "$req" \
+			|| fail "$pkg ships ${req} WITHOUT the executable bit"
 	done
 
 	present_css="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/mint/.*\.css$' || true)"

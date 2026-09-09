@@ -32,8 +32,8 @@ MAX_BYTES=8388608
 # the uhttpd document root, which is readable WITHOUT authentication (the
 # login page needs it). curl natively speaks file://, ftp:// and friends, so
 # an unrestricted UCI value turns "set a wallpaper source" into "publish any
-# local file to anonymous readers" - see the rpcd ACL group "wallpaper",
-# which grants write access to uci:mint.
+# local file to anonymous readers" - see the rpcd ACL group
+# "luci-theme-mint", which grants write access to uci:mint.
 valid_src() {
 	case "$1" in
 		http://*|https://*) return 0 ;;

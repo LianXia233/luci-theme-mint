@@ -128,6 +128,23 @@ setup_feeds() {
 	cp -a "$THEME_SRC/." "$THEME_FEED_DIR/"
 	[ -f "$THEME_FEED_DIR/Makefile" ] || die "theme Makefile missing after copy"
 
+	# R-11: version the package by the THEME repository's own revision
+	# (same <yy>.<doy>.<secs>~<hash> scheme luci.mk's findrev uses), not by
+	# whatever HEAD feeds/luci happens to sit on. The Makefile ships
+	# "PKG_VERSION ?=" exactly for this injection; a plain in-feed build
+	# (no PKG_VERSION line match / no git) silently keeps stock behaviour.
+	local trev thash tsecs tyday tver
+	trev="$(git -C "$REPO_ROOT" log -1 --format='%ct' --abbrev=7 -- theme 2>/dev/null || true)"
+	thash="$(git -C "$REPO_ROOT" log -1 --format='%h' --abbrev=7 -- theme 2>/dev/null || true)"
+	if [ -n "$trev" ] && [ -n "$thash" ]; then
+		tsecs=$((trev % 86400))
+		tyday="$(date --utc --date="@$trev" '+%y.%j')"
+		tver="$(printf '%s.%05d~%s' "$tyday" "$tsecs" "$thash")"
+		sed -i "s/^PKG_VERSION ?=.*/PKG_VERSION := $tver/" "$THEME_FEED_DIR/Makefile" \
+			&& log "theme version : ${tver} (from theme repo HEAD)" \
+			|| warn "could not inject PKG_VERSION - luci.mk findrev fallback in effect"
+	fi
+
 	# feeds install cannot see directories injected after "update", so link it
 	# in by hand - the same thing the buildroot does for regular feed packages.
 	mkdir -p "$sdk/package/feeds/luci"

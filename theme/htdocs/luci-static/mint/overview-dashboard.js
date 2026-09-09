@@ -52,6 +52,9 @@
 		'LuCI Version': 'LuCI 版本',
 		'No uplink': '无上行',
 		'N/A': 'N/A',
+		'Offline': '未联网',
+		'Refresh': '刷新',
+		'Status': '状态',
 		'cores': '核心',
 		'CPU / Memory (last ~3 min)': 'CPU / 内存（近 3 分钟）',
 		'Network RX / TX (last ~3 min)': '网络 RX / TX（近 3 分钟）',
@@ -439,13 +442,15 @@
 			}
 		}
 		/* Address: public (exit) IPv4 from ipv4.im, plus the device IPv6.
-		   When offline the backend reports the sentinel "未联网". */
+		   When offline the backend reports the sentinel "未联网" (kept
+		   as the wire contract); the display string is translated here
+		   instead of echoing the raw sentinel (R-08). */
 		if (refs.val && refs.val.address) {
 			var pub = (d.network && d.network.public_ipv4) ? d.network.public_ipv4 : null;
 			if (!up && !pub) {
 				setText('val', 'address', __('N/A'));
 			} else if (pub === '未联网') {
-				setText('val', 'address', '未联网');
+				setText('val', 'address', __('Offline'));
 			} else {
 				var alines = [];
 				if (pub) alines.push(pub);

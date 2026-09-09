@@ -662,14 +662,18 @@
 	}
 
 	function buildCoreHtml(core) {
+		/* R-08: the labels WE render are translatable; the Chinese lookup
+		   keys used when PARSING the stock overview DOM (pick(...),
+		   CAT_PREFIXES, scoreTable marks) intentionally stay literal,
+		   like the bilingual fallbacks next to them. */
 		return '<div class="mz-info-cards">' +
-			'<div class="mz-info-card"><div class="mz-info-label">设备</div>' +
+			'<div class="mz-info-card"><div class="mz-info-label">' + __('Device') + '</div>' +
 			'<div class="mz-info-value" data-mz-id="hostname">' + esc(core.hostname) + '</div></div>' +
-			'<div class="mz-info-card"><div class="mz-info-label">运行时间</div>' +
+			'<div class="mz-info-card"><div class="mz-info-label">' + __('Uptime') + '</div>' +
 			'<div class="mz-info-value" data-mz-id="uptime">' + esc(core.uptime) + '</div></div>' +
-			'<div class="mz-info-card"><div class="mz-info-label">平均负载</div>' +
+			'<div class="mz-info-card"><div class="mz-info-label">' + __('Load average') + '</div>' +
 			'<div class="mz-info-value" data-mz-id="load">' + esc(core.load) + '</div></div>' +
-			'<div class="mz-info-card"><div class="mz-info-label">型号</div>' +
+			'<div class="mz-info-card"><div class="mz-info-label">' + __('Model') + '</div>' +
 			'<div class="mz-info-value" data-mz-id="model">' + esc(core.model) + '</div></div>' +
 			'</div>' +
 			'<div class="mz-rings">' +

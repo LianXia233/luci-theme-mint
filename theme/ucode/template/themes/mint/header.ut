@@ -92,11 +92,12 @@
 				enabled: {{ (wp.enabled == '0' || wallpaper.enabled == false) ? 'false' : 'true' }},
 				overlay: {{ sprintf('%J', wallpaper.overlay ?? '0.45') }},
 				blur: {{ sprintf('%J', wallpaper.blur ?? '0') }},
-				/* Missing ui_random means the uci default ('1', see
-				   wallpaper.uc "?? '1'"): never map a deleted option to
-				   false, or a corrupted/trimmed /etc/config/mint would
-				   silently turn the wallpaper feature off. */
-				ui_random: {{ ((wp.ui_random ?? '1') == '1') ? 'true' : 'false' }},
+				/* Missing ui_random means the uci default ('0', see
+				   wallpaper.uc "?? '0'"): admin-page random wallpaper is
+				   OFF by default (OT-09), and a trimmed/corrupted
+				   /etc/config/mint must silently follow that same default
+				   instead of diverging. */
+				ui_random: {{ ((wp.ui_random ?? '0') == '1') ? 'true' : 'false' }},
 				pc: {
 					mode: {{ sprintf('%J', wallpaper.pc?.mode ?? 'random') }},
 					url: {{ sprintf('%J', wallpaper.pc?.url ?? '') }},
@@ -132,7 +133,9 @@
 			};
 		</script>
 		{% if (wallpaper_error): %}
-		<!-- mint wallpaper backend failed ({{ wallpaper_error }}); fell back to random APIs -->
+		{# R-06: entityencode - a raw backend message containing "-->" would
+		    otherwise close this comment early and escape into page markup. #}
+		<!-- mint wallpaper backend failed ({{ entityencode(wallpaper_error) }}); fell back to random APIs -->
 		{% endif %}
 	</head>
 

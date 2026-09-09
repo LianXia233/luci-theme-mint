@@ -159,7 +159,12 @@ function loadConfig() {
 	const wp = cursor().get_all('mint', 'wallpaper') ?? {};
 	return {
 		enabled: wp.enabled ?? DEFAULTS.enabled,
-		ui_random: wp.ui_random ?? '1',
+		/* OT-09 / R-02: admin-page random wallpaper defaults to OFF. Every
+		   source of truth agrees now: shipped /etc/config/mint ('0'),
+		   uci-defaults seed (0), the settings form default ('0') and this
+		   runtime fallback. A deleted option must NEVER silently flip the
+		   admin pages back to fetching remote images. */
+		ui_random: wp.ui_random ?? '0',
 		pc_mode: sourceMode(wp.pc_mode, DEFAULTS.pc_mode),
 		pc_url: validCustomUrl(wp.pc_url ?? ''),
 		pc_sources: sourceList(wp.pc_sources, DEFAULTS.pc_sources),

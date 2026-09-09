@@ -329,3 +329,115 @@ msgstr "随机壁纸"
 
 msgid "Cached random wallpaper"
 msgstr "缓存随机壁纸"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Base chains (input / forward / output / prerouting / postrouting)"
+msgstr "基本链（input / forward / output / prerouting / postrouting）"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "NAT chains"
+msgstr "NAT 链"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Routing / mangle chains"
+msgstr "路由 / Mangle 链"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Zone and forwarding chains (LAN / WAN / UPnP)"
+msgstr "区域与转发链（LAN / WAN / Upnp）"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Helper chains (syn_flood / handle_reject / accept_*)"
+msgstr "辅助链（syn_flood / handle_reject / accept_*）"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Other third-party table chains"
+msgstr "其他第三方表链"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s tables · %s chains · %s rules · %s with traffic (%s)"
+msgstr "共 %s 张表 · %s 条链 · %s 条规则 · %s 条有流量（%s）"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Expand all"
+msgstr "全部展开"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Collapse all"
+msgstr "全部折叠"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Hide zero-counter rules"
+msgstr "隐藏零计数规则"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "Search rules (chain, match, action)"
+msgstr "搜索规则（链名、匹配、动作）"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s chains · %s rules"
+msgstr "%s 条链 · %s 条规则"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s chains"
+msgstr "%s 条"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s rules"
+msgstr "%s 条规则"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "%s with traffic (%s)"
+msgstr "%s 条有流量（%s）"
+
+#: htdocs/luci-static/mint/mz-nftables.js
+msgid "0 traffic"
+msgstr "0 流量"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Offline"
+msgstr "未联网"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Refresh"
+msgstr "刷新"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Status"
+msgstr "状态"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "Gateway"
+msgstr "网关"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "N/A"
+msgstr "N/A"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "No uplink"
+msgstr "无上行"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "System Information"
+msgstr "系统信息"
+
+#: htdocs/luci-static/mint/overview-dashboard.js
+msgid "cores"
+msgstr "核心"
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Device"
+msgstr "设备"
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Uptime"
+msgstr "运行时间"
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Load average"
+msgstr "平均负载"
+
+#: htdocs/luci-static/mint/overview-mobile.js
+msgid "Model"
+msgstr "型号"

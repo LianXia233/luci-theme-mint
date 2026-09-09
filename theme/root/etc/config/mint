@@ -3,8 +3,10 @@
 
 config mint 'wallpaper'
 	option enabled '1'
-	# Random wallpaper on admin pages (in addition to the login page)
-	option ui_random '1'
+	# Random wallpaper on admin pages (in addition to the login page).
+	# OFF by default (OT-09): the login page still gets a wallpaper; admin
+	# pages only fetch a random image when the admin opts in here.
+	option ui_random '0'
 	# Desktop source: 'random' (multi-source) or 'custom'
 	option pc_mode 'random'
 	# Desktop custom image: direct http(s) link (an uploaded custom-pc.jpg wins)
