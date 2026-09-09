@@ -52,23 +52,31 @@ jobs:
       - name: Install host tools
         run: |
           sudo apt-get update
+          # Required tools - a failure here must fail the job, not be waved
+          # through with `|| true` (zstd unpacks the SDK, binutils provides
+          # `ar` for install-test.sh's ipk inspection).
           sudo apt-get install -y --no-install-recommends \
-            ca-certificates curl zstd binutils opkg || true
+            ca-certificates curl zstd binutils
+          # opkg would upgrade install-test.sh to a real `opkg install` run,
+          # but it is not packaged for Ubuntu runners (nor is apk-tools).
+          # Say so loudly instead of failing silently: install-test.sh
+          # detects its absence and falls back to unpacking the payload and
+          # asserting the file layout.
+          sudo apt-get install -y --no-install-recommends opkg \
+            || echo "::warning::opkg is unavailable on this runner image - install-test.sh will use its unpack fallback"
 
       - name: Resolve OpenWrt SDK URL
         run: |
           set -euo pipefail
-          # For ipk, a modern series may only ship apk; discovery of the
-          # requested series is best-effort. The build step still falls back
-          # to 24.10/23.05 via --allow-legacy when needed.
+          # Discovery only (--print resolves the tarball URL from the
+          # official download index). Whether the resolved series can emit
+          # ipk is decided by build-package.sh: modern SDKs bake
+          # CONFIG_USE_APK=y into a promptless kconfig symbol and the script
+          # then falls back to 24.10 / 23.05 via --allow-legacy.
           ./scripts/get-openwrt-sdk.sh \
             --version "${{ matrix.openwrt }}" \
             --target "${{ matrix.target }}" \
-            --print \
-            || ./scripts/get-openwrt-sdk.sh \
-              --version 24.10 \
-              --target "${{ matrix.target }}" \
-              --print
+            --print
 
       - name: Build with the official OpenWrt SDK
         id: build

@@ -28,7 +28,9 @@
 ## 目录结构
 
 ```
-.github/workflows/build.yml   # GitHub Actions 云编译（x86_64 + mediatek/filogic）
+.github/workflows/build-apk.yml # GitHub Actions 云编译：OpenWrt 25.12/snapshot → .apk
+.github/workflows/build-ipk.yml # 兼容构建：ipk（必要时回退 24.10/23.05 SDK）
+.github/workflows/build.yml     # nightly：OpenWrt + ImmortalWrt snapshot SDK
 theme/                        # 主题源码（放入 buildroot 的 feeds/luci/themes/ 下编译）
 ├── Makefile                  # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
@@ -60,17 +62,21 @@ theme/                        # 主题源码（放入 buildroot 的 feeds/luci/t
 
 ## 云编译（GitHub Actions）
 
-推送到 `main` 分支自动触发构建（x86_64 与 mediatek/filogic 两个目标）：
+推送到 `main` 分支或打 `v*` 标签自动触发，也可在 Actions 页面手动触发（workflow_dispatch）。三个 workflow 各司其职：
 
-- 基于官方**预编译 SDK**（跳过工具链编译，单次构建从约 40-60 分钟降到 5-10 分钟）
-- 构建产物上传至 workflow artifacts
-- 同时发布到 `nightly` prerelease
+| Workflow | 说明 |
+| --- | --- |
+| `build-apk.yml` | 主构建：OpenWrt 25.12 + snapshot × x86/64 + mediatek/filogic，产出 `.apk`（25.12+/snapshot 的原生格式） |
+| `build-ipk.yml` | 兼容构建：同一矩阵请求 `.ipk`；若该系列 SDK 已不再提供 ipk 后端，自动回退到 24.10 / 23.05 SDK 并在 `.buildinfo.txt` 中标记 `legacy_compat_sdk=1` |
+| `build.yml` | nightly：OpenWrt 与 ImmortalWrt 的 snapshot SDK 各编一份，验证两家发行版的兼容性 |
 
-也可在 Actions 页面手动触发（workflow_dispatch）。
+- 基于官方**预编译 SDK**：不编工具链，但会真实编译主题的完整依赖链（rpcd、ucode、lucihttp、curl 等），单次构建约 10-20 分钟
+- 产物上传至 workflow artifacts，`v*` 标签同时发布到 Release；文件名带 `-格式-版本-目标-` 后缀，同名不互相覆盖
+- 每个 `.apk`/`.ipk` 旁附 `.buildinfo.txt`（SDK 来源、LuCI 分支与 commit、内核版本等构建证据）
 
 ## 本地编译
 
-本主题是纯数据包（无 C/Lua 源码，luci.mk 的 `Build/Compile` 为空），构建实际只有文件装配 + po 转 lmo。**不要**为它编译整套 OpenWrt 工具链——用官方预编译 SDK 最快（几分钟），或只在完整 buildroot 里启用 ccache。
+本主题是纯数据包（无 C/Lua 源码，主题自身的 `Build/Compile` 只是文件装配 + po 转 lmo），但它依赖的 `luci-base` 及其依赖链是真实代码，需要 SDK 的交叉工具链。**不要**为它手编整套 OpenWrt 工具链——用官方预编译 SDK 最快，或只在完整 buildroot 里启用 ccache。
 
 ### 方式一：官方预编译 SDK（推荐）
 
@@ -83,16 +89,29 @@ tar --zstd -xf "$SDK"
 mv openwrt-sdk-* sdk
 cd sdk
 
-echo "src-git luci https://github.com/openwrt/luci.git;master" > feeds.conf.default
-./scripts/feeds update luci
+# 关键：保留 SDK 自带的 feeds.conf.default（base feed 提供 rpcd/ucode/libubox，
+# packages feed 提供 curl/cgi-io），只更新 feeds，不要用 luci 单 feed 覆盖它——
+# 否则 luci-base 的依赖链会在元数据扫描时被静默丢弃，编译到一半才报缺头文件。
+./scripts/feeds update -a
+
+# 注入主题并手动链接（feeds update 生成的索引看不到后注入的目录）
 mkdir -p feeds/luci/themes/luci-theme-mint
-cp -a /本地路径/luci-theme-mint/theme/* feeds/luci/themes/luci-theme-mint/
+cp -a /本地路径/luci-theme-mint/theme/. feeds/luci/themes/luci-theme-mint/
 ./scripts/feeds install -a
+mkdir -p package/feeds/luci
+ln -sfn ../../../feeds/luci/themes/luci-theme-mint package/feeds/luci/luci-theme-mint
 
 echo "CONFIG_PACKAGE_luci-theme-mint=m" >> .config
+echo "CONFIG_LUCI_JSMIN=y" >> .config          # jsmin 随 luci-base/host 提供
+echo "# CONFIG_LUCI_CSSTIDY is not set" >> .config
 make defconfig
+grep -q '^CONFIG_PACKAGE_luci-theme-mint=m' .config   # 确认主题被选中
+
+make package/feeds/luci/luci-base/host/compile -j$(nproc) V=s  # po2lmo/jsmin
 make package/feeds/luci/luci-theme-mint/compile -j$(nproc) V=s
 ```
+
+> 提示：SDK 的包格式由其自带配置决定（25.12+/snapshot 为 `.apk`，24.10 SDK 为 `.ipk`），`CONFIG_USE_APK` 在 SDK 内是无提示项，改 `.config` 不会生效。以上流程等价于仓库里的 `scripts/build-package.sh`，需要多目标/双格式时可直接用它。
 
 ### 方式二：完整 buildroot
 
@@ -179,7 +198,7 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 | ImmortalWrt | 21.02+ | ucode | `.apk` | ImmortalWrt 早于主线迁移至 ucode，并默认使用 apk 包管理 |
 | LEDE / OpenWrt ≤ 19.07 | — | — | — | **不支持**：ucode 模板与 rpcd ACL 路径在旧分支不可用 |
 
-云编译产物在每次 Release 同时提供 `.ipk`（OpenWrt SDK）与 `.apk`（ImmortalWrt SDK）双格式，直接选择与你设备包管理器对应的产物安装。
+云编译产物在每次 Release 同时提供双格式：`.apk`（OpenWrt 25.12 / snapshot SDK 构建）与 `.ipk`（24.10 SDK 兼容构建，`.buildinfo.txt` 中有标记），直接选择与你设备包管理器对应的产物安装。
 
 ### 运行时依赖
 

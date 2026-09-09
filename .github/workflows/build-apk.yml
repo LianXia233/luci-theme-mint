@@ -47,9 +47,17 @@ jobs:
       - name: Install host tools
         run: |
           sudo apt-get update
-          # zstd: SDK tarballs; apk-tools: real "apk add" install test
+          # Required tools - a failure here must fail the job, not be waved
+          # through with `|| true` (zstd is needed to unpack the SDK).
           sudo apt-get install -y --no-install-recommends \
-            ca-certificates curl zstd apk-tools || true
+            ca-certificates curl zstd
+          # apk-tools would upgrade install-test.sh to a real `apk add` run,
+          # but it is not packaged for Ubuntu runners (nor is opkg). Say so
+          # loudly instead of failing silently: install-test.sh detects its
+          # absence and falls back to unpacking the payload and asserting the
+          # file layout.
+          sudo apt-get install -y --no-install-recommends apk-tools \
+            || echo "::warning::apk-tools is unavailable on this runner image - install-test.sh will use its unpack fallback"
 
       - name: Resolve OpenWrt SDK URL
         run: |
