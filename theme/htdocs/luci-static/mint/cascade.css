@@ -304,6 +304,68 @@ a:hover {
 	opacity: 1;
 }
 
+/* Mobile-only top bar (created by menu-mint.js initMobileBar).
+   The hamburger is moved into this bar on narrow viewports so it stops
+   floating fixed over the page content and instead participates in a
+   normal flex row. The bar is hidden on desktop. */
+.mz-mobilebar {
+	display: none;
+}
+
+@media (max-width: 854px) {
+	.mz-mobilebar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		position: sticky;
+		top: 0;
+		z-index: 55;
+		height: 48px;
+		padding: 0 12px;
+		margin: -8px -12px 12px;
+		background: var(--mz-color-surface);
+		backdrop-filter: blur(12px) saturate(1.1);
+		-webkit-backdrop-filter: blur(12px) saturate(1.1);
+		border-bottom: 1px solid var(--mz-color-border);
+		box-shadow: var(--mz-shadow-sm);
+	}
+
+	body.mz-has-wallpaper .mz-mobilebar {
+		background: var(--mz-panel-bg-strong);
+	}
+
+	/* When the toggle lives inside the mobile bar it must NOT keep its
+	   fixed positioning - otherwise it floats over the title text. */
+	.mz-mobilebar .mz-sidebar-toggle {
+		position: relative;
+		top: auto;
+		left: auto;
+		flex: 0 0 auto;
+		width: 36px;
+		height: 36px;
+		margin: 0;
+	}
+
+	.mz-mobilebar-title {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 36px;
+		text-align: center;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		color: var(--mz-color-text);
+	}
+
+	/* Dashboard refresh button when re-parented into the bar */
+	.mz-mobilebar .mint-ovd-refresh {
+		flex: 0 0 auto;
+		margin-left: auto;
+	}
+}
+
 /* ---------------------------------------------------------------- */
 /* Main area                                                         */
 /* ---------------------------------------------------------------- */

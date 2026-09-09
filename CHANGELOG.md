@@ -9,6 +9,14 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-09 第六轮 — 移动端菜单栏标题被按钮遮挡)
+
+- **移动端左侧菜单按钮挡住文字**：`menu-mint.js` 在窄屏会把 `#mz-sidebar-toggle` 移入新创建的 `.mz-mobilebar`，但 `cascade.css` 没有给 mobilebar 写任何样式，按钮继续沿用 `position: fixed; top:12px; left:12px`，导致它浮在标题文字上方
+  - 新增 `.mz-mobilebar` 样式：窄屏下 `display:flex` + `position:sticky` + 玻璃背景，按钮与标题排成一行
+  - 当按钮位于 `.mz-mobilebar` 内时覆盖为 `position:relative`，取消固定定位，不再遮挡
+  - `.mz-mobilebar-title` 居中显示、`overflow:hidden` + `text-overflow:ellipsis`、避免长标题换行
+  - 实测 390px 视口：按钮 x=0, 标题 x=44 居中，两者无重叠
+
 ### Fixed (2026-09-09 第五轮 — 暗色模式 + 统一毛玻璃 + 轻微阴影)
 
 - **暗色模式切换无效**：菜单顶栏 `#mz-theme-toggle` 能正常切换并持久化 `data-theme`，但壁纸页/概览页视觉上几乎没变
