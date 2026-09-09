@@ -16,15 +16,17 @@
 
 #### build-apk.yml（APK）
 
-- 矩阵：OpenWrt `25.12` / `snapshot` × `x86/64` / `mediatek/filogic`
-- 使用官方 SDK 的 apk 后端（`CONFIG_USE_APK=y`）真实构建
-- 每个产物都经过结构校验与安装测试
+- OpenWrt `25.12` / `snapshot`，各 1 个目标（`x86/64`）——主题是纯数据包（无 `src/`），
+  包与目标平台无关，多 target 只会产出内容相同的包
+- 使用官方 SDK 的 apk 后端（`CONFIG_USE_APK=y`）真实构建，包架构记录为 `noarch`
+- 每个产物都经过结构校验（`verify-package.sh`）与安装测试（`install-test.sh`）
 
-#### build-ipk.yml（IPK，兼容构建）
+#### build-ipk.yml（IPK）
 
-- 矩阵同上；包格式由 SDK 的 ipk 后端产生（`CONFIG_USE_APK` 关闭）
-- 若该系列官方 SDK 已不提供 ipk 后端，自动回退到仍提供的官方 SDK（24.10 → 23.05），
-  并在文件名、`.buildinfo.txt` 与 Release 表格中标注为「兼容构建」
+- OpenWrt `24.10` / `23.05`，各 1 个目标（`x86/64`）——这两个系列原生提供 ipk 后端
+  （23.05 仍走独立的 `package-ipkg.mk` 代码路径，值得保留覆盖）
+- 若请求的系列已不再提供 ipk 后端，`--allow-legacy` 会回退到仍提供该后端的官方 SDK
+  （24.10 → 23.05），并在 `.buildinfo.txt` 与 Release 表格中标注「兼容构建」
 - 绝不通过改名 / 换后缀伪造 ipk
 
 #### release.yml（汇总发布）
@@ -34,33 +36,36 @@
 ```
 nightly
 ├── APK   # 推荐用于 OpenWrt 25.12+
-│   ├── OpenWrt 25.12 (x86_64 / mediatek_filogic)
-│   └── OpenWrt snapshot (x86_64 / mediatek_filogic)
-└── IPK   # 用于仍使用 opkg/ipkg 的兼容系统
-    ├── OpenWrt 25.12 兼容（或直接原生）
-    └── OpenWrt legacy 兼容（24.10 / 23.05 SDK）
+│   ├── OpenWrt 25.12 (x86_64)
+│   └── OpenWrt snapshot (x86_64)
+└── IPK   # 用于仍使用 opkg/ipkg 的系统（24.10 / 23.05）
+    ├── OpenWrt 24.10 (x86_64)
+    └── OpenWrt 23.05 (x86_64)
 ```
 
 Release 说明中会明确写出：**APK 与 IPK 不能互换**——APK 包无法被 opkg 安装，IPK 包无法被 apk 安装。
 
 ### 产物说明
 
-编译产物为架构无关的 OpenWrt 安装包（主题无 `src/`，luci.mk 设 `PKGARCH=all`，架构恒为 `all`；
-多 target 构建仅用于验证不同 SDK 环境，产物内容相同）：
+每个 OpenWrt 系列提供**两个**架构无关的包（官方 LuCI 规范将 `po/` 编译为独立翻译包；
+只装主题时界面为英文）：
 
 ```
-luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.apk
-luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.ipk
+luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.{apk,ipk}        # 主题
+luci-i18n-mint-zh-cn-<版本>-<OpenWrt 系列>-<target>-all.{apk,ipk}   # 简中翻译
 ```
+
+包内架构字段：ipk 为 `all`，apk 为 `noarch`（均为「架构无关」，内容相同）。
 
 例如：
 
-- `luci-theme-mint-v1.0.0-25.12-x86_64-all.apk` - OpenWrt 25.12 SDK / x86_64 环境下构建，架构 all
-- `luci-theme-mint-v1.0.0-snapshot-mediatek_filogic-all.apk` - main 快照 SDK / filogic 环境下构建
-- `luci-theme-mint-v1.0.0-25.12-x86_64-all.ipk` - ipk 兼容构建（包名中的系列为实际使用的 SDK 系列）
+- `luci-theme-mint-v1.0.0-25.12-x86_64-all.apk` - OpenWrt 25.12 SDK 构建
+- `luci-i18n-mint-zh-cn-v1.0.0-25.12-x86_64-all.apk` - 同 SDK 构建的简中翻译
+- `luci-theme-mint-v1.0.0-24.10-x86_64-all.ipk` - OpenWrt 24.10 SDK 构建
+- `luci-i18n-mint-zh-cn-v1.0.0-24.10-x86_64-all.ipk` - 同 SDK 构建的简中翻译
 
 每个产物附带同名 `.buildinfo.txt`，记录 SDK 下载地址、OpenWrt 版本、Kernel 版本、LuCI 分支与 commit、
-是否为兼容构建。
+包格式/架构、是否为兼容构建。
 
 每个版本在两个位置都可下载：
 1. **GitHub Releases** - 正式版本页面
@@ -91,7 +96,7 @@ luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.ipk
 # 创建注解标签
 git tag -a v1.0.0 -m "Release v1.0.0"
 
-# 推送标签到远程
+# 推送标签到远程仓库
 git push origin v1.0.0
 
 # 或推送所有标签
@@ -111,7 +116,7 @@ git push origin --tags
 ### GitHub Actions
 
 1. 访问 https://github.com/LianXia233/luci-theme-mint/actions
-2. 找到最新的 "Build Package" 工作流运行
+2. 找到 "Build APK packages" / "Build IPK packages" 工作流运行
 3. 查看各个步骤的日志
 
 ### Releases 页面
@@ -166,16 +171,16 @@ git push origin --tags
 
 # 安装
 
-按设备的包管理器选择对应格式（**APK 与 IPK 不能互换**）：
+按设备的包管理器选择对应格式（**APK 与 IPK 不能互换**；主题与简中翻译**成对安装**）：
 
 ```sh
 # OpenWrt 25.12+（apk）
-scp luci-theme-mint-v1.0.0-25.12-x86_64-all.apk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "apk add --allow-untrusted /tmp/luci-theme-mint-*.apk"
+scp luci-theme-mint-v1.0.0-25.12-x86_64-all.apk luci-i18n-mint-zh-cn-v1.0.0-25.12-x86_64-all.apk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "apk add --allow-untrusted /tmp/luci-theme-mint-*.apk /tmp/luci-i18n-mint-zh-cn-*.apk"
 
-# 仍使用 opkg 的系统
-scp luci-theme-mint-v1.0.0-25.12-x86_64-all.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-*.ipk"
+# 仍使用 opkg 的系统（24.10 / 23.05）
+scp luci-theme-mint-v1.0.0-24.10-x86_64-all.ipk luci-i18n-mint-zh-cn-v1.0.0-24.10-x86_64-all.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-*.ipk /tmp/luci-i18n-mint-zh-cn-*.ipk"
 ```
 
 # 致谢

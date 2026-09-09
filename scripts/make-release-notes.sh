@@ -70,9 +70,13 @@ emit_table() {
 
 	printf '## 下载说明\n\n'
 	printf -- '- **APK**：推荐用于 **OpenWrt 25.12+**（默认 apk 包管理器）。\n'
-	printf -- '- **IPK**：用于仍使用 **opkg/ipkg** 的兼容系统（如 OpenWrt 24.10 / 23.05）。\n'
+	printf -- '- **IPK**：用于仍使用 **opkg/ipkg** 的系统（OpenWrt 24.10 / 23.05）。\n'
 	printf -- '- 两种格式**不可互换**：APK 包无法被 opkg 安装，IPK 包无法被 apk 安装。\n'
-	printf -- '- 所有包架构均为 `all`（纯数据主题：CSS / JS / ucode 模板 / menu / ACL）。\n\n'
+	printf -- '- 每个 OpenWrt 系列提供两个包：主题 `luci-theme-mint` 与简中翻译\n'
+	printf -- '  `luci-i18n-mint-zh-cn`（官方 LuCI 规范将翻译独立成包；只装主题时\n'
+	printf -- '  界面为英文）。两者必须成对安装。\n'
+	printf -- '- 所有包均为架构无关（纯数据：CSS / JS / ucode 模板 / menu / ACL）：\n'
+	printf -- '  ipk 记录为 `all`，apk 记录为 `noarch`，内容相同、可装于任意目标平台。\n\n'
 
 	printf '## 构建产物\n\n'
 	emit_table apk "APK（推荐用于 OpenWrt 25.12+）" \
@@ -82,13 +86,14 @@ emit_table() {
 
 	printf '## 安装\n\n'
 	printf '```sh\n'
-	printf '# OpenWrt 25.12+（apk）\n'
-	printf 'apk add --allow-untrusted ./luci-theme-mint-*.apk\n\n'
-	printf '# 仍使用 opkg 的系统\n'
-	printf 'opkg install ./luci-theme-mint-*.ipk\n'
+	printf '# OpenWrt 25.12+（apk）：主题 + 简中翻译，成对安装\n'
+	printf 'apk add --allow-untrusted ./luci-theme-mint-*.apk ./luci-i18n-mint-zh-cn-*.apk\n\n'
+	printf '# 仍使用 opkg 的系统（24.10 / 23.05）\n'
+	printf 'opkg install ./luci-theme-mint-*.ipk ./luci-i18n-mint-zh-cn-*.ipk\n'
 	printf '```\n\n'
 	printf '安装后执行 `/etc/init.d/rpcd reload` 或重新登录即可在'
-	printf '「系统 → 系统 → 语言和界面」中选择 Mint / Mint Light / Mint Dark。\n'
+	printf '「系统 → 系统 → 语言和界面」中选择 Mint / Mint Light / Mint Dark，\n'
+	printf '并将语言设为简体中文（`luci-i18n-mint-zh-cn` 会自动注册 `zh-cn`）。\n'
 } > "$OUT"
 
 printf 'release notes written to %s\n' "$OUT"

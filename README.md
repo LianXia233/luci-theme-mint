@@ -17,7 +17,7 @@
 - 总览页增强（仅在 Status > Overview 加载）：端口状态、系统信息、DHCP/Wireless/UPnP 区块卡片化；不支持的值显示 N/A，绝不造假数据
 - 无障碍：跳转链接、focus-visible、aria 标签、键盘可操作的登录页
 - 无 CDN、无 Web 字体、无图标字体、无前端框架、无 jQuery
-- 国际化就绪（英文 + 简体中文，po 编译为 lmo 随包安装）
+- 国际化就绪（英文 + 简体中文：`po/` 编译为独立翻译包 `luci-i18n-mint-zh-cn` 随 Release 发布）
 - LuCI 弹窗系统主题化（#modal_overlay 遮罩 + 居中对话框，保存并应用进度可见）
 - cbi 选项卡（ul.cbi-tabmenu）完整样式与显隐规则
 - cbi-dropdown 深度主题化：[open] 属性选择器 + 核心样式反制，全站下拉（含编辑弹窗设备选择）可正常展开选择
@@ -29,8 +29,8 @@
 
 ```
 .github/workflows/build-apk.yml # GitHub Actions 云编译：OpenWrt 25.12/snapshot → .apk
-.github/workflows/build-ipk.yml # 兼容构建：ipk（必要时回退 24.10/23.05 SDK）
-.github/workflows/build.yml     # nightly：OpenWrt + ImmortalWrt snapshot SDK
+.github/workflows/build-ipk.yml # ipk 构建：OpenWrt 24.10 / 23.05（原生 ipk 后端）
+.github/workflows/release.yml   # 汇总两条流水线并发布到 GitHub Release
 theme/                        # 主题源码（放入 buildroot 的 feeds/luci/themes/ 下编译）
 ├── Makefile                  # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
@@ -64,16 +64,21 @@ theme/                        # 主题源码（放入 buildroot 的 feeds/luci/t
 
 ## 云编译（GitHub Actions）
 
-推送到 `main` 分支或打 `v*` 标签自动触发，也可在 Actions 页面手动触发（workflow_dispatch）。三个 workflow 各司其职：
+推送到 `main` 分支或打 `v*` 标签自动触发，也可在 Actions 页面手动触发（workflow_dispatch）。两条构建流水线 + 一条汇总发布：
 
 | Workflow | 说明 |
 | --- | --- |
-| `build-apk.yml` | 主构建：OpenWrt 25.12 + snapshot × x86/64 + mediatek/filogic，产出 `.apk`（25.12+/snapshot 的原生格式） |
-| `build-ipk.yml` | 兼容构建：同一矩阵请求 `.ipk`；若该系列 SDK 已不再提供 ipk 后端，自动回退到 24.10 / 23.05 SDK 并在 `.buildinfo.txt` 中标记 `legacy_compat_sdk=1` |
-| `build.yml` | nightly：OpenWrt 与 ImmortalWrt 的 snapshot SDK 各编一份，验证两家发行版的兼容性 |
+| `build-apk.yml` | OpenWrt 25.12 + snapshot（各 1 个目标），apk 后端（`CONFIG_USE_APK=y`）原生构建，产出 `.apk`（`noarch`） |
+| `build-ipk.yml` | OpenWrt 24.10 + 23.05（各 1 个目标），ipk 后端原生构建，产出 `.ipk`（`all`）；23.05 仍走独立的 `package-ipkg.mk` 代码路径，值得保留覆盖 |
+| `release.yml` | 两条流水线都成功后汇总全部产物，发布 `nightly`（推 main）或正式版本（打 `v*` 标签） |
 
+每个 OpenWrt 系列产出**两个包**：主题 `luci-theme-mint` 与简中翻译 `luci-i18n-mint-zh-cn`
+（官方 LuCI 规范将 `po/` 编译为独立翻译包，只装主题时界面为英文），两者成对发布、成对安装。
+
+- 主题是纯数据包（无 `src/`），包与目标平台无关：每个 OpenWrt 系列只构建 1 个目标（x86/64），产物可装于任意平台
 - 基于官方**预编译 SDK**：不编工具链，但会真实编译主题的完整依赖链（rpcd、ucode、lucihttp、curl 等），单次构建约 10-20 分钟
-- 产物上传至 workflow artifacts，`v*` 标签同时发布到 Release；文件名带 `-格式-版本-目标-` 后缀，同名不互相覆盖
+- SDK tarball 按官方 sha256 缓存（GitHub Actions cache），重复构建/重试秒级复用；每次仍按官方 `sha256sums` 重新校验
+- 每个产物先过 `scripts/verify-package.sh`（结构 + 元数据 + 载荷清单 + 可执行位），再进 `scripts/install-test.sh`（真实包管理器安装到临时 root）
 - 每个 `.apk`/`.ipk` 旁附 `.buildinfo.txt`（SDK 来源、LuCI 分支与 commit、内核版本等构建证据）
 
 ## 本地编译
@@ -104,6 +109,7 @@ mkdir -p package/feeds/luci
 ln -sfn ../../../feeds/luci/themes/luci-theme-mint package/feeds/luci/luci-theme-mint
 
 echo "CONFIG_PACKAGE_luci-theme-mint=m" >> .config
+echo "CONFIG_PACKAGE_luci-i18n-mint-zh-cn=m" >> .config   # 简中翻译（独立包，menuconfig 中 HIDDEN）
 echo "CONFIG_LUCI_JSMIN=y" >> .config          # jsmin 随 luci-base/host 提供
 echo "# CONFIG_LUCI_CSSTIDY is not set" >> .config
 make defconfig
@@ -200,7 +206,8 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 | ImmortalWrt | 21.02+ | ucode | `.apk` | ImmortalWrt 早于主线迁移至 ucode，并默认使用 apk 包管理 |
 | LEDE / OpenWrt ≤ 19.07 | — | — | — | **不支持**：ucode 模板与 rpcd ACL 路径在旧分支不可用 |
 
-云编译产物在每次 Release 同时提供双格式：`.apk`（OpenWrt 25.12 / snapshot SDK 构建）与 `.ipk`（24.10 SDK 兼容构建，`.buildinfo.txt` 中有标记），直接选择与你设备包管理器对应的产物安装。
+云编译产物在每次 Release 同时提供双格式：`.apk`（OpenWrt 25.12 / snapshot SDK 构建）与 `.ipk`
+（24.10 / 23.05 SDK 构建），直接选择与你设备包管理器对应的产物安装；每系列各含主题与简中翻译两个包。
 
 ### 运行时依赖
 
@@ -211,7 +218,8 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 | `luci-base` | 模板引擎、ACL、ubus 桥接、cbi.js / i18n 端点 | 必需 |
 | `curl` | 壁纸随机源抓取 cron 脚本 `mz-wallpaper-fetch.sh` 的唯一可用下载器；OpenWrt 默认仅装 `uclient-fetch`，缺它时 cron 必然失败 | 必需 |
 | rpcd：`mint` 对象 | `dashboard`（Overview 实时仪表盘）、`refresh`（壁纸强制刷新） | 必需；ACL 由 `/usr/share/rpcd/acl.d/luci-theme-mint.json` 注册 |
-| LuCI i18n 基础包 | 主题自带 `luci-theme-mint.zh-cn.lmo`；同时需安装 `luci-i18n-base-zh-cn` 才能完整显示所有内置界面字符串 | 强烈建议 |
+| `luci-i18n-mint-zh-cn` | 本主题的简体中文翻译（`luci-theme-mint.zh-cn.lmo`，官方 LuCI 规范的独立翻译包） | 需要中文界面时必需，与主题成对安装 |
+| `luci-i18n-base-zh-cn` | LuCI 内置界面的简体中文翻译 | 强烈建议 |
 
 ### 浏览器
 

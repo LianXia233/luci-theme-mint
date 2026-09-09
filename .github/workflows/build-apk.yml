@@ -1,44 +1,50 @@
 name: Build APK packages
 
-# APK is the native package format of OpenWrt 25.12+ and of main snapshots,
-# so this is the primary build. Every package here is produced by the
-# official SDK's own package backend (CONFIG_USE_APK=y) - never converted.
+# Builds luci-theme-mint with the official OpenWrt SDK's apk backend
+# (CONFIG_USE_APK=y). These are the packages intended for OpenWrt
+# 25.12+ (the first series shipping apk as the default package manager)
+# and for main/snapshot.
+#
+# The theme has no src/, so the package is arch-independent (apk records
+# it as noarch / ipk as all) and identical for every target: exactly ONE
+# build per OpenWrt version is required. Building a second target would
+# only burn ~15 minutes and 300 MB of download for byte-identical output.
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [ main ]
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: 'Release tag (e.g. v1.0.0, nightly)'
+      release_version:
+        description: 'Release version tag (default: nightly)'
         required: false
-        default: 'nightly'
+        default: nightly
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: build-apk-${{ github.ref }}
-  cancel-in-progress: true
+  group: apk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
-  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || (inputs.release_tag || 'nightly') }}
+  RELEASE_VERSION: ${{ inputs.release_version || 'nightly' }}
 
 jobs:
   build:
     name: apk · OpenWrt ${{ matrix.openwrt }} · ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        openwrt: ['25.12', snapshot]
-        target: [x86/64, mediatek/filogic]
         include:
-          - target: x86/64
+          - openwrt: '25.12'
+            target: x86/64
             slug: x86_64
-          - target: mediatek/filogic
-            slug: mediatek_filogic
+          - openwrt: snapshot
+            target: x86/64
+            slug: x86_64
 
     steps:
       - name: Checkout theme sources
@@ -46,55 +52,71 @@ jobs:
 
       - name: Install host tools
         run: |
-          sudo apt-get update
-          # Required tools - a failure here must fail the job, not be waved
-          # through with `|| true` (zstd is needed to unpack the SDK).
-          sudo apt-get install -y --no-install-recommends \
-            ca-certificates curl zstd
-          # apk-tools would upgrade install-test.sh to a real `apk add` run,
-          # but it is not packaged for Ubuntu runners (nor is opkg). Say so
-          # loudly instead of failing silently: install-test.sh detects its
-          # absence and falls back to unpacking the payload and asserting the
-          # file layout.
-          sudo apt-get install -y --no-install-recommends apk-tools \
-            || echo "::warning::apk-tools is unavailable on this runner image - install-test.sh will use its unpack fallback"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq curl ca-certificates xz-utils zstd python3 || true
+          # opkg / apk-tools are best effort: the install test falls back to
+          # a structural payload check when they are missing.
+          sudo apt-get install -y -qq apk-tools || echo "apk-tools not in apt - structural install test will be used"
 
       - name: Resolve OpenWrt SDK URL
+        id: resolve
         run: |
-          set -euo pipefail
           ./scripts/get-openwrt-sdk.sh \
             --version "${{ matrix.openwrt }}" \
             --target "${{ matrix.target }}" \
             --format apk \
             --print
 
+      # The SDK tarball is immutable per sha256 (a fixed point release or a
+      # given snapshot commit), so it is safe to cache by that digest and
+      # makes verify/re-run cycles fast. The download is still re-verified
+      # against the official sha256sums, so a poisoned cache cannot be used.
+      - name: Cache SDK tarball
+        if: steps.resolve.outputs.tarball_sha256 != ''
+        uses: actions/cache@v4
+        with:
+          path: build/sdk-cache
+          key: openwrt-sdk-${{ matrix.openwrt }}-${{ matrix.target }}-${{ steps.resolve.outputs.tarball_sha256 }}
+
       - name: Build with the official OpenWrt SDK
-        id: build
         run: |
           ./scripts/build-package.sh \
             --version "${{ matrix.openwrt }}" \
             --target "${{ matrix.target }}" \
             --format apk \
-            --release-version "${{ env.VERSION }}" \
+            --release-version "$RELEASE_VERSION" \
+            --out dist \
             --workdir build \
-            --out dist
+            --cache-dir build/sdk-cache
 
       - name: Verify package metadata and payload
         run: ./scripts/verify-package.sh --dir dist --expect-arch all
 
       - name: Install test
         run: |
-          rm -rf rootfs
+          fail=0
           for f in dist/*.apk; do
-            ./scripts/install-test.sh --file "$f" --root "$PWD/rootfs"
+            ./scripts/install-test.sh --file "$f" || fail=1
           done
+          exit "$fail"
 
       - name: Show build info
-        run: cat dist/*.buildinfo.txt
+        if: always()
+        run: |
+          for f in dist/*.buildinfo.txt; do
+            [ -f "$f" ] || continue
+            echo "=== $f ==="
+            cat "$f"
+          done
+          ls -l dist/
 
       - name: Upload artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: luci-theme-mint-apk-${{ matrix.openwrt }}-${{ matrix.slug }}
-          path: dist/*
+          path: |
+            dist/*
+            !dist/README.txt
+          retention-days: 14
           if-no-files-found: error

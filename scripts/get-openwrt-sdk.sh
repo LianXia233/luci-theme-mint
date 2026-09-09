@@ -20,11 +20,15 @@
 #   --workdir  where to download / unpack            (default: ./build)
 #   --sdk-dir  final SDK path                        (default: $workdir/sdk)
 #   --format   apk | ipk - only affects capability reporting
+#   --cache-dir DIR to reuse / store the downloaded SDK tarball in
+#               (shared across jobs/runs, e.g. a GitHub Actions cache;
+#               the sha256 against the official sums is still enforced)
 #   --print    print resolved metadata and exit without downloading
 #
 # Outputs (stdout, and $GITHUB_OUTPUT when running inside Actions):
-#   sdk_dir, sdk_url, sdk_file, openwrt_release, openwrt_series,
-#   openwrt_base_url, kernel_version, supports_apk, supports_ipk
+#   sdk_dir, sdk_url, sdk_file, tarball_sha256, openwrt_release,
+#   openwrt_series, openwrt_base_url, kernel_version, supports_apk,
+#   supports_ipk
 #
 # Progress and diagnostics go to stderr so callers can safely capture the
 # machine-readable key=value summary from stdout.
@@ -96,12 +100,12 @@ url_exists() {
 		--max-time 30 -o /dev/null "$1" 2>/dev/null
 }
 
-# Verify a downloaded SDK tarball against the target directory's official
+# Check a downloaded SDK tarball against the target directory's official
 # sha256sums (supply-chain integrity: the tarball is cross-compiled code that
-# gets released to end users). Hard-fail on a mismatch; skip with a warning
-# only when the mirror genuinely does not publish sums (e.g. a local test
-# mirror serving plain files).
-verify_sdk_sha256() {
+# gets released to end users). Returns 1 on mismatch, 0 otherwise; skips with
+# a warning only when the mirror genuinely does not publish sums (e.g. a
+# local test mirror serving plain files).
+check_sdk_sha256() {
 	local dir_url="$1" sdk_file="$2" archive="$3"
 	local sums line
 
@@ -118,8 +122,38 @@ verify_sdk_sha256() {
 	fi
 
 	log "verifying sha256 of ${sdk_file}"
-	( cd "$(dirname "$archive")" && printf '%s\n' "$line" | sha256sum -c - ) \
-		|| die "SHA256 MISMATCH for ${sdk_file} - refusing to use a corrupted SDK"
+	( cd "$(dirname "$archive")" && printf '%s\n' "$line" | sha256sum -c - )
+}
+
+# Hard variant used when there is no cache to fall back to.
+verify_sdk_sha256() {
+	check_sdk_sha256 "$@" \
+		|| die "SHA256 MISMATCH for $2 - refusing to use a corrupted SDK"
+}
+
+# Download $2 into $1, or copy it from the shared cache directory $3 first
+# (empty $3 = download unconditionally). Rejects tiny "downloads" that are
+# obviously error pages.
+fetch_sdk_archive() {
+	local archive="$1" url="$2" cache="$3" fname sz
+	fname="$(basename "$url")"
+	if [ -n "$cache" ] && [ -s "$cache/$fname" ]; then
+		log "copying $fname from shared SDK cache"
+		cp -f "$cache/$fname" "$archive"
+		return 0
+	fi
+	log "downloading $url"
+	curl -fsSL --retry 4 --retry-delay 5 --retry-all-errors \
+		--connect-timeout 20 --max-time 1800 \
+		-A "luci-theme-mint-sdk-resolver/1.0" \
+		"$url" -o "$archive.part" \
+		|| die "download failed: $url"
+	sz="$(wc -c < "$archive.part" | tr -d ' ')"
+	if [ "${sz:-0}" -lt 1000000 ]; then
+		rm -f "$archive.part"
+		die "downloaded file too small (${sz} bytes) from $url"
+	fi
+	mv "$archive.part" "$archive"
 }
 
 # Run grep without tripping set -e/pipefail when there are no matches.
@@ -218,12 +252,23 @@ extract_sdk_name() {
 	printf '%s' "$sdk"
 }
 
+# Extract the official sha256 of a tarball from a plain-text sha256sums body.
+# Prints the 64-char hex digest or nothing.
+extract_sdk_sha256() {
+	local body="$1" sdk="$2"
+	[ -n "$sdk" ] || return 0
+	printf '%s\n' "$body" \
+		| safe_grep -E "^[0-9a-fA-F]{64}[[:space:]]+(\*/)?${sdk}\$" \
+		| awk '{print $1}' | tr 'A-F' 'a-f' | head -n1
+}
+
 # Pick the SDK tarball from a target directory. Tries sha256sums first (plain
 # text, stable), then the HTML directory index. Prints
-# "mirror|path_prefix|filename" on success.
+# "mirror|path_prefix|filename|sha256" on success (sha256 empty when the
+# listing did not carry it, e.g. HTML index only).
 find_sdk_on_mirrors() {
 	local version="$1" target="$2"
-	local mirror path_prefix dir_url body sdk
+	local mirror path_prefix dir_url body sdk sha
 	local -a tried=()
 
 	for mirror in $OPENWRT_MIRRORS; do
@@ -240,8 +285,9 @@ find_sdk_on_mirrors() {
 		if [ -n "$body" ]; then
 			sdk="$(extract_sdk_name "$body")"
 			if [ -n "$sdk" ]; then
+				sha="$(extract_sdk_sha256 "$body" "$sdk")"
 				log "found via sha256sums on ${mirror}"
-				printf '%s|%s|%s\n' "$mirror" "$path_prefix" "$sdk"
+				printf '%s|%s|%s|%s\n' "$mirror" "$path_prefix" "$sdk" "$sha"
 				return 0
 			fi
 			warn "sha256sums at ${dir_url} has no SDK entry"
@@ -253,7 +299,7 @@ find_sdk_on_mirrors() {
 			sdk="$(extract_sdk_name "$body")"
 			if [ -n "$sdk" ]; then
 				log "found via directory index on ${mirror}"
-				printf '%s|%s|%s\n' "$mirror" "$path_prefix" "$sdk"
+				printf '%s|%s|%s|\n' "$mirror" "$path_prefix" "$sdk"
 				return 0
 			fi
 			warn "directory index at ${dir_url} has no SDK entry"
@@ -453,17 +499,18 @@ unpack_sdk() {
 # ---------------------------------------------------------------------------
 
 sdk_main() {
-	local version="" target="" workdir="build" sdk_dir="" format="" print_only=0
+	local version="" target="" workdir="build" sdk_dir="" format="" print_only=0 cache_dir=""
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		--version) version="${2:-}"; shift 2 ;;
-		--target)  target="${2:-}"; shift 2 ;;
-		--workdir) workdir="${2:-}"; shift 2 ;;
-		--sdk-dir) sdk_dir="${2:-}"; shift 2 ;;
-		--format)  format="${2:-}"; shift 2 ;;
-		--print)   print_only=1; shift ;;
-		-h|--help) sed -n '2,30p' "$0"; exit 0 ;;
+		--version)   version="${2:-}"; shift 2 ;;
+		--target)    target="${2:-}"; shift 2 ;;
+		--workdir)   workdir="${2:-}"; shift 2 ;;
+		--sdk-dir)   sdk_dir="${2:-}"; shift 2 ;;
+		--format)    format="${2:-}"; shift 2 ;;
+		--cache-dir) cache_dir="${2:-}"; shift 2 ;;
+		--print)     print_only=1; shift ;;
+		-h|--help)   sed -n '2,38p' "$0"; exit 0 ;;
 		*) die "unknown argument: $1" ;;
 		esac
 	done
@@ -474,14 +521,14 @@ sdk_main() {
 
 	[ -n "$sdk_dir" ] || sdk_dir="$workdir/sdk"
 
-	local mirror path_prefix sdk_file sdk_url base_url release kernel s_apk s_ipk
+	local mirror path_prefix sdk_file tarball_sha sdk_url base_url release kernel s_apk s_ipk
 	local resolved
 
 	log "resolving SDK for version=${version} target=${target}"
 	resolved="$(find_sdk_on_mirrors "$version" "$target")" \
 		|| die "SDK discovery failed for ${version}/${target}"
 
-	IFS='|' read -r mirror path_prefix sdk_file <<<"$resolved"
+	IFS='|' read -r mirror path_prefix sdk_file tarball_sha <<<"$resolved"
 	base_url="${mirror}/${path_prefix}"
 	sdk_url="${base_url}/targets/${target}/${sdk_file}"
 
@@ -490,6 +537,11 @@ sdk_main() {
 		printf 'dir_url=%s\n' "${base_url}/targets/${target}/"
 		printf 'sdk_url=%s\n' "$sdk_url"
 		printf 'sdk_file=%s\n' "$sdk_file"
+		printf 'tarball_sha256=%s\n' "${tarball_sha:-}"
+		github_out base_url "$base_url"
+		github_out sdk_url "$sdk_url"
+		github_out sdk_file "$sdk_file"
+		github_out tarball_sha256 "${tarball_sha:-}"
 		return 0
 	fi
 
@@ -501,29 +553,40 @@ sdk_main() {
 	log "sdk          : ${sdk_file}"
 
 	local archive="$workdir/$(basename "$sdk_file")"
+	local from_cache=0
 	if [ -s "$archive" ]; then
-		log "reusing cached $(basename "$archive")"
+		log "reusing $(basename "$archive") from workdir"
 	else
-		log "downloading ${sdk_url}"
-		curl -fsSL --retry 4 --retry-delay 5 --retry-all-errors \
-			--connect-timeout 20 --max-time 1800 \
-			-A "luci-theme-mint-sdk-resolver/1.0" \
-			"$sdk_url" -o "$archive.part" \
-			|| die "download failed: ${sdk_url}"
-		# Reject tiny "downloads" that are clearly error pages.
-		local sz
-	sz="$(wc -c < "$archive.part" | tr -d ' ')"
-		if [ "${sz:-0}" -lt 1000000 ]; then
-			rm -f "$archive.part"
-			die "downloaded file too small (${sz} bytes) from ${sdk_url}"
-		fi
-		mv "$archive.part" "$archive"
+		# Shared tarball cache first (e.g. a GitHub Actions cache restored
+		# for this job): integrity is re-verified below against the
+		# mirror's sha256sums, so a stale entry can never be used silently.
+		from_cache=0
+		[ -n "$cache_dir" ] && [ -s "$cache_dir/$(basename "$sdk_file")" ] && from_cache=1
+		fetch_sdk_archive "$archive" "$sdk_url" "$cache_dir"
 	fi
 
 	# Integrity: pin the tarball to the official sha256sums. Runs for the
 	# freshly downloaded AND the cached archive alike (a poisoned cache must
-	# not slip through on a re-run).
-	verify_sdk_sha256 "${base_url}/targets/${target}/" "$sdk_file" "$archive"
+	# not slip through on a re-run). A poisoned cache entry is dropped and
+	# replaced by a fresh download instead of wedging every future run.
+	if check_sdk_sha256 "${base_url}/targets/${target}/" "$sdk_file" "$archive"; then
+		:
+	elif [ "$from_cache" = 1 ]; then
+		warn "shared cache entry failed sha256 verification - dropping it and re-downloading"
+		rm -f "$cache_dir/$(basename "$sdk_file")"
+		rm -f "$archive"
+		fetch_sdk_archive "$archive" "$sdk_url" ""
+		verify_sdk_sha256 "${base_url}/targets/${target}/" "$sdk_file" "$archive"
+	else
+		die "SHA256 MISMATCH for ${sdk_file} - refusing to use a corrupted SDK"
+	fi
+
+	# Keep the shared cache warm for the next run / sibling job - only with
+	# a VERIFIED archive, so a corrupt download can never poison the cache.
+	if [ -n "$cache_dir" ]; then
+		mkdir -p "$cache_dir"
+		cp -f "$archive" "$cache_dir/$(basename "$sdk_file")"
+	fi
 
 	rm -rf "$sdk_dir"
 	mkdir -p "$(dirname "$sdk_dir")"
@@ -555,6 +618,7 @@ sdk_main() {
 	github_out sdk_dir "$sdk_dir"
 	github_out sdk_url "$sdk_url"
 	github_out sdk_file "$sdk_file"
+	github_out tarball_sha256 "${tarball_sha:-}"
 	github_out openwrt_release "${release:-unknown}"
 	github_out openwrt_series "$version"
 	github_out openwrt_base_url "$base_url"
@@ -565,6 +629,7 @@ sdk_main() {
 	# Machine readable summary for build-package.sh / humans (stdout only).
 	printf 'sdk_dir=%s\n' "$sdk_dir"
 	printf 'sdk_url=%s\n' "$sdk_url"
+	printf 'tarball_sha256=%s\n' "${tarball_sha:-}"
 	printf 'openwrt_release=%s\n' "${release:-unknown}"
 	printf 'kernel_version=%s\n' "${kernel:-unknown}"
 	printf 'supports_apk=%s\n' "$s_apk"
