@@ -5,7 +5,7 @@
  *
  * Design tokens first, then layout, then LuCI component overrides.
  * Dark mode is driven by html[data-theme="dark"] (set by header.ut JS
- * from the mint-dark theme registration or prefers-color-scheme).
+ * from the sidebar toggle / prefers-color-scheme).
  */
 
 /* ---------------------------------------------------------------- */
@@ -328,20 +328,8 @@ a:hover {
 	gap: var(--mz-spacing-md);
 }
 
-.mz-breadcrumb {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--mz-spacing-xs);
-	font-size: .85rem;
-	color: var(--mz-color-text-muted);
-}
-
-.mz-breadcrumb a {
-	color: var(--mz-color-text-muted);
-}
+/* (Removed 2026-09-10: no DOM producer emits .mz-breadcrumb anywhere.
+   The desktop page title is the .mz-topbar-title element in header.ut.) */
 
 .mz-indicators {
 	display: flex;
@@ -926,7 +914,7 @@ th {
 }
 
 .mz-login-bg {
-	position: absolute;
+	position: fixed;
 	inset: 0;
 	background-image: var(--mz-wallpaper), linear-gradient(160deg, #10192e 0%, #1c2b4a 55%, #2b4470 100%);
 	background-size: cover;
@@ -935,6 +923,7 @@ th {
 	filter: blur(var(--mz-wallpaper-blur));
 	transform: scale(1.04); /* hide blurred edges */
 	transition: opacity 400ms ease;
+	pointer-events: none;
 }
 
 .mz-login-bg.is-loaded {
@@ -942,7 +931,7 @@ th {
 }
 
 .mz-login-overlay {
-	position: absolute;
+	position: fixed;
 	inset: 0;
 	background: linear-gradient(180deg, rgba(8, 12, 22, var(--mz-wallpaper-overlay)) 0%, rgba(8, 12, 22, calc(var(--mz-wallpaper-overlay) + 0.15)) 100%);
 }
@@ -1160,8 +1149,12 @@ body.mz-has-wallpaper .mz-mobilebar {
 		transform: translateX(0);
 	}
 
+	/* The hamburger only lives inside .mz-mobilebar (created by JS).
+	   Keep the base .mz-sidebar-toggle display:none on phones too, so a
+	   failed initMobileBar can never re-introduce the fixed floating
+	   button that covered the page title. */
 	.mz-sidebar-toggle {
-		display: inline-flex;
+		display: none;
 	}
 
 	.mz-main {
@@ -2153,15 +2146,10 @@ table.cbi-section-table tbody tr:hover td {
 }
 /* (Removed 2026-09-07: .mz-net-device is no longer emitted by overview.js.) */
 
-/* Responsive */
-@media (max-width: 640px) {
-	.mz-port-grid {
-		grid-template-columns: 1fr;
-	}
-	.mz-net-grid {
-		grid-template-columns: 1fr;
-	}
-}
+/* Responsive: the port / network / wifi grids keep the two-column
+   mobile track defined at the end of this file (the historical single
+   column rules below were fully overridden by later !important rules
+   and only confused the cascade). */
 /* ================================================================
  * Overview section cards: system / DHCP / WiFi / UPnP
  * ================================================================ */
@@ -2421,7 +2409,11 @@ table.cbi-section-table tbody tr:hover td {
 	text-align: left !important;
 }
 
-/* All grid containers: center cards, use auto-fit to collapse empty columns */
+/* START grid-override legacy block (2026-09-08/09). These rules are
+   deliberately kept read-only history and are NOT the source of truth:
+   the authoritative grid tracks for the overview are the "auto-fit +
+   1fr" blocks near the end of this file. Please do not add more
+   !important tweaks here - edit the final block instead. */
 .mz-info-cards,
 .mz-rings,
 .mz-port-grid,
@@ -4311,8 +4303,7 @@ html:not([data-theme="dark"]) {
 	letter-spacing: .02em;
 }
 
-/* Zone body: device icons as a tidy wrap row. The markup contains
-   literal "(" separator spans between devices - hide them. */
+/* Zone body: device icons as a tidy wrap row. */
 .ifacebox-body {
 	display: flex;
 	flex-wrap: wrap;
@@ -4320,8 +4311,24 @@ html:not([data-theme="dark"]) {
 	gap: 10px;
 }
 
-.ifacebox-body > span:not(.cbi-tooltip-container) {
-	display: none;
+/* The Interface overview wraps sub-device tooltips in a literal
+   "(" / ")" separator span. Hide only the punctuation (via a 0 font
+   size on the wrapper) while keeping the icon tooltips visible.
+   Previously this was globally hidden with display:none, which also
+   removed the sub-device icons on the homepage Network/Wireless cards. */
+#cbi-network-interface .ifacebox-body > span:not(.cbi-tooltip-container),
+#cbi-network-device .ifacebox-body > span:not(.cbi-tooltip-container) {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0;
+	line-height: 0;
+}
+
+#cbi-network-interface .ifacebox-body > span:not(.cbi-tooltip-container) .cbi-tooltip-container,
+#cbi-network-device .ifacebox-body > span:not(.cbi-tooltip-container) .cbi-tooltip-container {
+	font-size: .9rem;
+	line-height: 1.4;
 }
 
 .ifacebox-body .cbi-tooltip-container {
@@ -4498,17 +4505,12 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 /* ================================================================
- * Page title + sidebar hierarchy (2026-09-08, round 3)
+ * Page title + sidebar hierarchy (2026-09-08, round 3; topbar replaced
+ * by .mz-topbar-title on 2026-09-10)
  * ================================================================ */
-/* The topbar breadcrumb now carries ONLY the current page title
-   (renderBreadcrumb emits one entry) - style it as a real page
-   heading instead of a muted crumb. */
-.mz-breadcrumb {
-	font-size: 1.08rem;
-	font-weight: 700;
-	color: var(--mz-color-text);
-	letter-spacing: .01em;
-}
+/* The desktop page title is filled by menu-mint.js#initPageTopbar into
+   the server-rendered .mz-topbar-title. The old breadcrumb element is
+   no longer emitted, so its rules live only in the topbar section. */
 
 /* Sidebar top-level entries: heavier and larger than the sub items
    so the two menu levels read apart at a glance. */
@@ -5082,3 +5084,519 @@ body.mz-has-wallpaper .cbi-section-descr {
 	min-width: 300px;
 }
 
+
+/* ================================================================
+ * Homepage overview + network interface card layout (2026-09-10)
+ * Inspired by luci-theme-aurora.
+ *
+ * The stock LuCI overview renders "Port status" as a tiny 70-100px
+ * grid of ifaceboxes and "Network"/"Wireless" as a `.network-status-table`
+ * with no layout of its own, so those sections either stay cramped or
+ * stack full-width. luci-theme-aurora fixes this by giving the native
+ * grids a responsive track and making `.network-status-table` a
+ * horizontal card row on desktop (vertical on phones). The same idea is
+ * applied here, while keeping the mint glass/token look.
+ * ================================================================ */
+
+/* --- Homepage "Port status": native 29_ports.js grid ------------ */
+/* LuCI sets grid-template-columns: repeat(auto-fit, minmax(70px,1fr))
+   inline and each port has inline min-width:70px / max-width:100px.
+   Override that with a comfortable card track so ports read as cards
+   instead of squeezed columns. The `minmax(70px, 1fr)` attribute match
+   keeps this scoped to the native port grid (not every inline grid). */
+#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] {
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+	gap: var(--mz-spacing-sm) !important;
+	align-items: stretch;
+	margin-bottom: var(--mz-spacing-sm);
+}
+
+#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] > .ifacebox {
+	margin: 0 !important;
+	min-width: 0 !important;
+	max-width: none !important;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	text-align: center;
+}
+
+#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head {
+	padding: 8px 10px !important;
+	font-size: .82rem !important;
+}
+
+#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body {
+	padding: 8px 10px !important;
+	line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+	#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+}
+
+/* --- Homepage "Network" / "Wireless": native .network-status-table */
+/* luci-theme-aurora: flex card row on desktop, stacked on phones.  */
+#mz-view .network-status-table {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: var(--mz-spacing-md);
+	margin-bottom: var(--mz-spacing-md);
+}
+
+#mz-view .network-status-table > .ifacebox {
+	flex: 1 1 300px;
+	min-width: 0;
+	height: 100%;
+	overflow: visible;
+}
+
+/* Keep label/value lines and the device badge stacked inside the
+   upstream / wireless cards (aurora-style vertical body). */
+#mz-view .network-status-table .ifacebox-body {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+}
+
+#mz-view .network-status-table .ifacebox-body > span,
+#mz-view .network-status-table .ifacebox-body > div {
+	width: 100%;
+}
+
+@media (max-width: 767px) {
+	#mz-view .network-status-table {
+		flex-direction: column;
+	}
+
+	#mz-view .network-status-table > .ifacebox {
+		flex-basis: auto;
+		width: 100%;
+	}
+}
+
+/* --- Network interfaces overview (admin/network/network) --------- */
+/* Keep the zone/interface card as an equal-height card in the first
+   column and let its body fill the card, so the description column on
+   the right aligns across rows. */
+#cbi-network-interface .ifacebox,
+#cbi-network-device .ifacebox {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	height: 100%;
+	overflow: visible;
+}
+
+#cbi-network-interface .ifacebox-body,
+#cbi-network-device .ifacebox-body {
+	flex: 1;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+@media (max-width: 768px) {
+	#cbi-network-interface table.cbi-section-table td.cbi-value-field:first-child,
+	#cbi-network-device table.cbi-section-table td.cbi-value-field:first-child {
+		min-width: 0 !important;
+	}
+
+	/* luci-theme-aurora: on phones the interface card becomes a
+	   horizontal head + body card (head left, body right) so it does
+	   not consume the whole first cell. */
+	#cbi-network-interface .ifacebox,
+	#cbi-network-device .ifacebox {
+		flex-direction: row !important;
+		align-items: stretch;
+		min-height: 72px;
+	}
+
+	#cbi-network-interface .ifacebox-head,
+	#cbi-network-device .ifacebox-head {
+		flex: 0 0 auto;
+		min-width: 64px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 8px 12px;
+		border-radius: var(--mz-radius-lg) 0 0 var(--mz-radius-lg);
+		border-bottom: 0;
+	}
+
+	#cbi-network-interface .ifacebox-body,
+	#cbi-network-device .ifacebox-body {
+		flex: 1 1 auto;
+		min-width: 0;
+		justify-content: center;
+		padding: 8px 14px;
+		border-radius: 0 var(--mz-radius-lg) var(--mz-radius-lg) 0;
+	}
+}
+
+/* ================================================================
+ * cbi-dropdown / Save & Apply ComboButton fix (2026-09-10)
+ * ================================================================
+ * LuCI's ComboButton (Save & Apply) and every form Dropdown share the
+ * same DOM: div.cbi-dropdown > ul.dropdown + ul.preview + span.more +
+ * span.open. When the widget opens, LuCI JS:
+ *   - adds class "dropdown" to the real menu <ul> and positions it with
+ *     inline top/bottom/max-height;
+ *   - inserts a clone <ul class="preview"> to keep the selected caption
+ *     visible inside the button;
+ *   - sets the [open] attribute on div.cbi-dropdown.
+ * The old mint rules styled ".cbi-dropdown[open] > ul" as ONE floating
+ * panel, which applied to BOTH ul.dropdown and ul.preview, so the menu
+ * rendered twice/overlapped. The button also had overflow:hidden, which
+ * clipped the floating panel entirely on desktop. These final rules fix
+ * both: ul.dropdown is the real floating menu, ul.preview stays inside
+ * the button, and overflow is never allowed to clip an open menu.
+ * ================================================================ */
+
+/* Never clip an open dropdown menu. */
+.cbi-dropdown,
+.cbi-button,
+.cbi-page-actions .cbi-dropdown.cbi-button,
+.cbi-section-actions .cbi-dropdown.cbi-button,
+#modal_overlay .cbi-dropdown.cbi-button,
+#modal_overlay .cbi-dropdown.btn {
+	overflow: visible !important;
+}
+
+/* Closed state: show only the selected / displayed pill(s). */
+.cbi-dropdown > ul {
+	display: inline-flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 2px;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	overflow: hidden;
+}
+
+.cbi-dropdown > ul > li {
+	display: none;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	white-space: nowrap;
+}
+
+.cbi-dropdown > ul > li[display],
+.cbi-dropdown > ul > li[selected] {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
+}
+
+/* Open state: the real menu is ul.dropdown (positioned by JS). */
+.cbi-dropdown[open] > ul.dropdown {
+	position: absolute;
+	left: 0;
+	z-index: 120;
+	display: block;
+	min-width: 180px;
+	max-width: min(420px, 90vw);
+	margin: 0;
+	padding: 4px;
+	background: var(--mz-color-surface);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+/* The preview clone stays as the selected caption in the button;
+   it must NOT become another floating menu. */
+.cbi-dropdown > ul.preview,
+.cbi-dropdown > ul.preview > li {
+	display: none;
+}
+
+.cbi-dropdown[open] > ul.preview {
+	display: inline-flex !important;
+	position: static !important;
+	top: auto !important;
+	left: auto !important;
+	right: auto !important;
+	bottom: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.cbi-dropdown[open] > ul.preview > li,
+.cbi-dropdown[open] > ul.preview > li[selected],
+.cbi-dropdown[open] > ul.preview > li[display] {
+	display: inline-flex !important;
+	align-items: center;
+	gap: 4px;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	font-size: inherit;
+	line-height: inherit;
+	white-space: nowrap;
+}
+
+/* Menu entries. */
+.cbi-dropdown[open] > ul.dropdown > li {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	min-height: 32px;
+	padding: 8px 12px;
+	margin: 0;
+	border: 0;
+	border-radius: var(--mz-radius-sm);
+	color: var(--mz-color-text);
+	font-size: .9rem;
+	line-height: 1.4;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.cbi-dropdown[open] > ul.dropdown > li:hover,
+.cbi-dropdown[open] > ul.dropdown > li:focus-visible {
+	background: var(--mz-color-surface-2);
+	color: var(--mz-color-text);
+}
+
+.cbi-dropdown[open] > ul.dropdown > li[selected] {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+	font-weight: 600;
+}
+
+.cbi-dropdown[open] > ul.dropdown > li[unselectable],
+.cbi-dropdown[open] > ul.dropdown > li[placeholder] {
+	opacity: .55;
+	cursor: default;
+}
+
+/* Arrow / more affordances. */
+.cbi-dropdown > .open,
+.cbi-dropdown > .more {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	margin-left: 4px;
+	padding: 0 6px;
+	font-size: .8rem;
+	line-height: 1;
+	cursor: pointer;
+	user-select: none;
+	opacity: .8;
+}
+
+.cbi-dropdown > .open {
+	border-left: 1px solid var(--mz-color-border);
+}
+
+/* Combo button (Save & Apply) outer shell. */
+.cbi-dropdown.cbi-button,
+.cbi-dropdown.btn.cbi-button {
+	min-height: 34px;
+	width: auto;
+	min-width: 0;
+	padding: 0;
+	white-space: nowrap;
+}
+
+.cbi-dropdown.cbi-button > ul,
+.cbi-dropdown.btn.cbi-button > ul {
+	padding: 0;
+	margin: 0;
+	min-height: 34px;
+}
+
+.cbi-dropdown.cbi-button > ul > li,
+.cbi-dropdown.btn.cbi-button > ul > li {
+	min-height: 34px;
+	padding: 6px 12px;
+}
+
+.cbi-dropdown.cbi-button > .open,
+.cbi-dropdown.btn.cbi-button > .open {
+	min-height: 34px;
+	padding: 0 9px;
+	margin-left: 0;
+}
+
+/* Wallpaper / dark mode: keep the floating menu readable while staying
+   on the same glass layer as the rest of the chrome. Using the strong
+   panel token (instead of a hard-coded opaque color) keeps the theme
+   compatible with both light wallpapers and the pure-black dark glass. */
+body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown,
+html[data-theme="dark"] .cbi-dropdown[open] > ul.dropdown {
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(12px) saturate(1.15);
+	-webkit-backdrop-filter: blur(12px) saturate(1.15);
+	border-color: var(--mz-color-border);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
+}
+
+body.mz-has-wallpaper .cbi-dropdown:not(.btn):not(.cbi-button),
+html[data-theme="dark"] .cbi-dropdown:not(.btn):not(.cbi-button) {
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(12px) saturate(1.15);
+	-webkit-backdrop-filter: blur(12px) saturate(1.15);
+	border-color: rgba(148, 163, 184, .45);
+}
+
+body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li:hover,
+html[data-theme="dark"] .cbi-dropdown[open] > ul.dropdown > li:hover {
+	background: rgba(255, 255, 255, .1);
+}
+
+body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
+	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), .22);
+	color: var(--mz-color-primary);
+}
+
+/* ================================================================
+ * Login page short-viewport fix (2026-09-10)
+ * .mz-login is a fixed full-screen flex container; when the card is
+ * taller than the viewport (2FA / passkey / small landscape screens)
+ * the centered card used to be clipped with no way to scroll. Allow
+ * scrolling from the container and cap the card height instead.
+ * ================================================================ */
+.mz-login {
+	overflow-y: auto;
+}
+
+.mz-login-card {
+	/* Auto margins let the flex container center the card when it fits,
+	   but collapse to 0 when it overflows so the short-viewport scroll
+	   can reach both the top and the bottom of the card (a plain
+	   align-items:center + overflow clips the card's top). */
+	margin: auto;
+	max-height: calc(100dvh - 32px);
+	max-height: calc(100vh - 32px);
+	overflow-y: auto;
+}
+
+/* ================================================================
+ * Desktop page topbar title (2026-09-10)
+ * The topbar is server-rendered in header.ut and its title is filled
+ * by menu-mint.js#initPageTopbar. Phones use .mz-mobilebar instead.
+ * ================================================================ */
+.mz-topbar-title {
+	font-size: 1.08rem;
+	font-weight: 700;
+	color: var(--mz-color-text);
+	letter-spacing: .01em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+@media (max-width: 854px) {
+	.mz-topbar {
+		display: none;
+	}
+}
+
+/* Form dropdowns (non-button cbi-dropdown) should look like real input
+   controls, not bare text. */
+.cbi-dropdown:not(.btn):not(.cbi-button) {
+	border: 1px solid var(--mz-color-border);
+	background: var(--mz-color-surface);
+	border-radius: var(--mz-radius-sm);
+	min-height: 36px;
+	padding: 6px 10px;
+	box-sizing: border-box;
+}
+
+.cbi-dropdown:not(.btn):not(.cbi-button):focus-within {
+	border-color: var(--mz-color-primary);
+	box-shadow: 0 0 0 3px var(--mz-color-primary-soft);
+}
+
+.cbi-dropdown:not(.btn):not(.cbi-button) > ul > li[display],
+.cbi-dropdown:not(.btn):not(.cbi-button) > ul > li[selected] {
+	max-width: 100%;
+}
+
+.cbi-dropdown:not(.btn):not(.cbi-button) > ul > li[display] > span,
+.cbi-dropdown:not(.btn):not(.cbi-button) > ul > li[selected] > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Theme data tables on phones no longer force horizontal scrolling.
+   Every mobile-generated .mz-data-table td is emitted with a
+   data-label (overview-mobile.js#dataTableHtml) so rows can stack with
+   their column name on the left, matching the native table stacking
+   behaviour used everywhere else on small screens. */
+@media (max-width: 640px) {
+	.mz-table-card {
+		overflow-x: visible;
+	}
+
+	.mz-data-table {
+		display: block;
+		min-width: 0;
+		width: 100%;
+	}
+
+	.mz-data-table thead {
+		display: none;
+	}
+
+	.mz-data-table tbody {
+		display: block;
+	}
+
+	.mz-data-table tbody tr {
+		display: block;
+		padding: 8px 0;
+	}
+
+	.mz-data-table tbody td {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 14px;
+		padding: 6px 14px;
+		text-align: right;
+		border-bottom: 1px dashed var(--mz-color-border);
+	}
+
+	.mz-data-table tbody td:last-child {
+		border-bottom: none;
+	}
+
+	.mz-data-table tbody td[data-label]::before {
+		content: attr(data-label);
+		flex: 0 0 auto;
+		font-weight: 600;
+		color: var(--mz-color-text-muted);
+		text-align: left;
+	}
+
+	.mz-data-table tbody td[data-label]:empty::before {
+		content: attr(data-label);
+	}
+}

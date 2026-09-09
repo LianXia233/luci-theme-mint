@@ -114,83 +114,83 @@ msgstr "正在加载视图…"
 msgid "Logout failed, please try again."
 msgstr "退出登录失败，请重试。"
 
-#: htdocs/luci-static/mint/overview.js:283
+#: htdocs/luci-static/mint/overview-mobile.js:283
 msgid "no link"
 msgstr "无连接"
 
-#: htdocs/luci-static/mint/overview.js:374
+#: htdocs/luci-static/mint/overview-mobile.js:374
 msgid "No IPv4 leases yet"
 msgstr "暂无 IPv4 租约"
 
-#: htdocs/luci-static/mint/overview.js:374
+#: htdocs/luci-static/mint/overview-mobile.js:374
 msgid "No IPv6 leases yet"
 msgstr "暂无 IPv6 租约"
 
-#: htdocs/luci-static/mint/overview.js:476
+#: htdocs/luci-static/mint/overview-mobile.js:476
 msgid "Port status"
 msgstr "端口状态"
 
-#: htdocs/luci-static/mint/overview.js:499
+#: htdocs/luci-static/mint/overview-mobile.js:499
 msgid "Network"
 msgstr "网络"
 
-#: htdocs/luci-static/mint/overview.js:514
+#: htdocs/luci-static/mint/overview-mobile.js:514
 msgid "System information"
 msgstr "系统信息"
 
-#: htdocs/luci-static/mint/overview.js:523
+#: htdocs/luci-static/mint/overview-mobile.js:523
 msgid "DHCP leases"
 msgstr "DHCP 租约"
 
-#: htdocs/luci-static/mint/overview.js:535
+#: htdocs/luci-static/mint/overview-mobile.js:535
 msgid "Wireless"
 msgstr "无线"
 
-#: htdocs/luci-static/mint/overview.js:546
+#: htdocs/luci-static/mint/overview-mobile.js:546
 msgid "associated"
 msgstr "个关联"
 
-#: htdocs/luci-static/mint/overview.js:552
+#: htdocs/luci-static/mint/overview-mobile.js:552
 msgid "Associated stations"
 msgstr "关联站点"
 
-#: htdocs/luci-static/mint/overview.js:559
+#: htdocs/luci-static/mint/overview-mobile.js:559
 msgid "UPnP port mappings"
 msgstr "UPnP 端口映射"
 
-#: htdocs/luci-static/mint/overview.js:561
+#: htdocs/luci-static/mint/overview-mobile.js:561
 msgid "No active port mappings"
 msgstr "暂无活动的端口映射"
 
-#: htdocs/luci-static/mint/overview.js:604
+#: htdocs/luci-static/mint/overview-mobile.js:604
 msgid "Temperature"
 msgstr "温度"
 
-#: htdocs/luci-static/mint/overview.js:606
+#: htdocs/luci-static/mint/overview-mobile.js:606
 msgid "Memory"
 msgstr "内存"
 
-#: htdocs/luci-static/mint/overview.js:612
+#: htdocs/luci-static/mint/overview-mobile.js:612
 msgid "Storage"
 msgstr "存储"
 
-#: htdocs/luci-static/mint/overview.js:617
+#: htdocs/luci-static/mint/overview-mobile.js:617
 msgid "Temp"
 msgstr "温度"
 
-#: htdocs/luci-static/mint/overview.js:855
+#: htdocs/luci-static/mint/overview-mobile.js:855
 msgid "Configuration applied successfully."
 msgstr "配置已成功应用。"
 
-#: htdocs/luci-static/mint/overview.js:859
+#: htdocs/luci-static/mint/overview-mobile.js:859
 msgid "Reverted to the last saved configuration."
 msgstr "已恢复到上次保存的配置。"
 
-#: htdocs/luci-static/mint/overview.js:942
+#: htdocs/luci-static/mint/overview-mobile.js:942
 msgid "Edit"
 msgstr "编辑"
 
-#: htdocs/luci-static/mint/overview.js:953
+#: htdocs/luci-static/mint/overview-mobile.js:953
 msgid "Delete"
 msgstr "删除"
 

@@ -127,7 +127,8 @@ luci-theme-mint/
 ├── Makefile                  # luci.mk based package
 ├── htdocs/luci-static/mint/
 │   ├── cascade.css           # design system + layout + components
-│   ├── overview.js           # status overview enhancement (overview only)
+│   ├── overview-dashboard.js # PC status overview dashboard
+│   ├── overview-mobile.js    # mobile status overview panels
 │   ├── overview-banner.png   # topbar brand image
 │   ├── login-logo.png        # login page logo
 │   └── favicon/              # favicon.svg (vector) / -48.png / -180.png
@@ -183,8 +184,8 @@ make package/luci-theme-mint/compile V=s
   from third-party APIs; the gradient fallback is expected behavior when
   offline or when the APIs are unreachable. Upload a custom image for a fully
   offline setup.
-- Want to force a fixed scheme: pick `mint-light` or `mint-dark` in
-  System > System > Language and Style, or use the sidebar toggle.
+- To switch color scheme, use the sidebar toggle (Cycle: system -> light ->
+  dark -> system). Only one theme variant (`Mint`) is registered.
 
 ## License
 

@@ -10,15 +10,11 @@
 
 	const boardinfo = ubus.call('system', 'board') ?? {};
 
-	/* Theme variant handling: derive the basename of the configured
-	   mediaurlbase (mint | mint-light | mint-dark).
-	   NOTE: the `theme` variable IS guaranteed in this scope - luci-base's
-	   own header.ut locates this very template via
-	   include(`themes/${theme}/header`) - and it is the basename of
-	   mediaurlbase, so `theme` could be used directly. Deriving from
-	   `media` is kept because it also works when the template is included
-	   standalone; both are equivalent, do not "fix" this by switching
-	   back and forth. */
+	/* Theme variant handling: since 2026-09-10 only the single "mint"
+	   variant is shipped. The old mint-light / mint-dark / mintzero*
+	   registrations are gone; if a stale mediaurlbase is still present it
+	   is defensively mapped here so the page still opens until
+	   uci-defaults rewrites it to /luci-static/mint. */
 	const mediasegs = split(media ?? '', '/');
 	const mediabase = mediasegs[length(mediasegs) - 1] ?? 'mint';
 	const themepref = (mediabase == 'mint-dark' ? 'dark' : (mediabase == 'mint-light' ? 'light' : 'system'));
@@ -203,6 +199,11 @@
 				</div>
 			</noscript>
 
+			<header class="mz-topbar">
+				<span class="mz-topbar-title" id="mz-topbar-title" aria-live="polite"></span>
+				<div id="indicators" class="mz-indicators" aria-live="polite"></div>
+			</header>
+
 			<main id="mz-view" class="mz-view">
 				<div id="tabmenu" style="display:none"></div>
-		{% endif %}
+			{% endif %}

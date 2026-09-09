@@ -47,14 +47,28 @@ define Package/luci-theme-mint/postinst
 	# not read /usr/share/luci/acl.d for years); this only removes residue.
 	rm -f /usr/share/luci/acl.d/luci-theme-mint.json
 	rm -f /usr/share/luci/acl.d/luci-theme-mintzero.json
-	# Drop the menu / module caches so LuCI sees the theme without a reboot.
-	rm -f /tmp/luci-indexcache*
-	rm -rf /tmp/luci-modulecache/
+		# Drop the menu / module caches so LuCI sees the theme without a reboot.
+		rm -f /tmp/luci-indexcache*
+		rm -rf /tmp/luci-modulecache/
+		# Only the single "Mint" variant exists now. Drop the removed
+		# registrations and rewrite any stale variant mediaurlbase so CSS/JS
+		# never 404 immediately after install (uci-defaults does the same on
+		# the next boot).
+		uci -q delete luci.themes.MintLight
+		uci -q delete luci.themes.MintDark
+		uci -q delete luci.themes.MintzeroLight
+		uci -q delete luci.themes.MintzeroDark
+		_mzbase=$$(uci -q get luci.main.mediaurlbase 2>/dev/null)
+		case "$$_mzbase" in
+			*/mint-dark|*/mint-light|*/mintzero-dark|*/mintzero-light|*/mintzero) \
+				uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
+		esac
+		uci -q commit luci
 	# The LuCI build compiles po/zh_Hans/ as luci-theme-mint.zh-cn.lmo, but
 	# some firmwares set luci.main.lang to zh_cn / zh_CN. Provide symlinks
 	# so those language codes still load the Simplified Chinese catalog.
 	cd /usr/lib/lua/luci/i18n 2>/dev/null && {
-		for f in luci-theme-mint.zh-cn.lmo luci-theme-mintzero.zh-cn.lmo; do
+		for f in luci-theme-mint.zh-cn.lmo; do
 			[ -f "$$f" ] || continue
 			ln -sf "$$f" "$${f%.zh-cn.lmo}.zh_cn.lmo" 2>/dev/null || true
 			ln -sf "$$f" "$${f%.zh-cn.lmo}.zh_CN.lmo" 2>/dev/null || true
@@ -82,10 +96,12 @@ case "$$1" in
 esac
 
 [ -n "$${IPKG_INSTROOT}" ] || {
-	uci -q delete luci.themes.mint
-	uci -q delete luci.themes.MintLight
-	uci -q delete luci.themes.MintDark
-	uci commit luci
+		uci -q delete luci.themes.mint
+		uci -q delete luci.themes.MintLight
+		uci -q delete luci.themes.MintDark
+		uci -q delete luci.themes.MintzeroLight
+		uci -q delete luci.themes.MintzeroDark
+		uci commit luci
 	rm -f /usr/share/luci/acl.d/luci-theme-mint.json
 	rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
 	rm -f /www/luci-static/mint/custom-pc.jpg
@@ -95,8 +111,10 @@ esac
 	# Remove zh_cn / zh_CN aliases created by postinst.
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_cn.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_CN.lmo
+	# Remove leftovers from the long-removed mintzero variant.
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_cn.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_CN.lmo
+	rm -f /usr/share/luci/acl.d/luci-theme-mintzero.json
 	# Remove the wallpaper cache refresher cron line (marked) and the helper.
 	if [ -f /etc/crontabs/root ]; then
 		grep -v 'mz-wallpaper-fetch' /etc/crontabs/root > /tmp/mz-crontab.$$

@@ -112,83 +112,83 @@ msgstr ""
 msgid "Logout failed, please try again."
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:283
+#: htdocs/luci-static/mint/overview-mobile.js:283
 msgid "no link"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:374
+#: htdocs/luci-static/mint/overview-mobile.js:374
 msgid "No IPv4 leases yet"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:374
+#: htdocs/luci-static/mint/overview-mobile.js:374
 msgid "No IPv6 leases yet"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:476
+#: htdocs/luci-static/mint/overview-mobile.js:476
 msgid "Port status"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:499
+#: htdocs/luci-static/mint/overview-mobile.js:499
 msgid "Network"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:514
+#: htdocs/luci-static/mint/overview-mobile.js:514
 msgid "System information"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:523
+#: htdocs/luci-static/mint/overview-mobile.js:523
 msgid "DHCP leases"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:535
+#: htdocs/luci-static/mint/overview-mobile.js:535
 msgid "Wireless"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:546
+#: htdocs/luci-static/mint/overview-mobile.js:546
 msgid "associated"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:552
+#: htdocs/luci-static/mint/overview-mobile.js:552
 msgid "Associated stations"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:559
+#: htdocs/luci-static/mint/overview-mobile.js:559
 msgid "UPnP port mappings"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:561
+#: htdocs/luci-static/mint/overview-mobile.js:561
 msgid "No active port mappings"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:604
+#: htdocs/luci-static/mint/overview-mobile.js:604
 msgid "Temperature"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:606
+#: htdocs/luci-static/mint/overview-mobile.js:606
 msgid "Memory"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:612
+#: htdocs/luci-static/mint/overview-mobile.js:612
 msgid "Storage"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:617
+#: htdocs/luci-static/mint/overview-mobile.js:617
 msgid "Temp"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:855
+#: htdocs/luci-static/mint/overview-mobile.js:855
 msgid "Configuration applied successfully."
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:859
+#: htdocs/luci-static/mint/overview-mobile.js:859
 msgid "Reverted to the last saved configuration."
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:942
+#: htdocs/luci-static/mint/overview-mobile.js:942
 msgid "Edit"
 msgstr ""
 
-#: htdocs/luci-static/mint/overview.js:953
+#: htdocs/luci-static/mint/overview-mobile.js:953
 msgid "Delete"
 msgstr ""
 

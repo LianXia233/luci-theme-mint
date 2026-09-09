@@ -50,6 +50,7 @@ return baseclass.extend({
 
 		this.initSidebarToggle();
 		this.initMobileBar();
+		this.initPageTopbar();
 		this.initThemeToggle();
 		this.initLogout();
 		this.initGlobalWallpaper();
@@ -411,6 +412,31 @@ return baseclass.extend({
 			const target = document.getElementById('mz-view') || main;
 			new MutationObserver(sync).observe(target, { childList: true, subtree: true });
 		}
+	},
+
+	/* ----- Desktop page topbar (page title) ---------------------- */
+
+	/* The server-rendered .mz-topbar carries the current page title and
+	   the LuCI #indicators slot. Fill the title from the active view and
+	   keep it in sync on SPA navigation; the topbar is hidden by CSS on
+	   phones where .mz-mobilebar already shows the title. */
+	initPageTopbar() {
+		const title = document.getElementById('mz-topbar-title');
+		if (!title)
+			return;
+
+		const sync = () => {
+			const h2 = document.querySelector('#mz-view h2, .mz-view h2');
+			const t = (h2 && h2.textContent.trim()) ||
+				(String(document.title || '').split(' - ')[0] || '');
+			if (t && t !== title.textContent)
+				title.textContent = t;
+		};
+
+		sync();
+		const target = document.getElementById('mz-view') || document.querySelector('.mz-main');
+		if (target && window.MutationObserver)
+			new MutationObserver(sync).observe(target, { childList: true, subtree: true });
 	},
 
 	initSidebarToggle() {
