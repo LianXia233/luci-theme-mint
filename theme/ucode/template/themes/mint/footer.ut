@@ -37,6 +37,59 @@
 			(document.head || document.body).appendChild(s);
 		})();
 		</script>
+		<script>
+		(function () {
+			/* Dedup (CHANGELOG): the theme dashboard re-renders System / Memory /
+			   Storage on top of the stock LuCI overview. Hide the stock blocks so
+			   the summary is shown exactly once; the remaining stock sections
+			   (Ports / Network / DHCP / Wireless / UPnP) stay intact.
+			   The stock sections are injected client-side by LuCI and its collapse
+			   logic overwrites inline display, so hide via a CSS class with
+			   !important instead of inline style.display. */
+			function mintEnsureStyle() {
+				if (window.__mintDedupStyle) return true;
+				if (!document.head) return false;
+				var st = document.createElement('style');
+				st.textContent = '.mint-dedup-hidden{display:none!important}';
+				document.head.appendChild(st);
+				window.__mintDedupStyle = true;
+				return true;
+			}
+			function mintDedupOverview() {
+				if (window.__mintDedupDone) return false;
+				if (!mintEnsureStyle()) return false;
+				var hid = false;
+				document.querySelectorAll('.cbi-section').forEach(function (sec) {
+					var h = sec.querySelector('h3');
+					if (!h) return;
+					var t = (h.textContent || '').replace(/[\u200b\s]+/g, ' ').trim();
+					if (t.indexOf('系统') === 0 || t.indexOf('内存') === 0 || t.indexOf('存储') === 0 ||
+						t.indexOf('System') === 0 || t.indexOf('Memory') === 0 || t.indexOf('Storage') === 0) {
+						if (sec.className.indexOf('mint-dedup-hidden') < 0)
+							sec.className += ' mint-dedup-hidden';
+						hid = true;
+					}
+				});
+				if (hid) window.__mintDedupDone = true;
+				return hid && window.__mintDedupDone;
+			}
+			try {
+				if (window.MutationObserver) {
+					var mo = new MutationObserver(function () {
+						if (mintDedupOverview()) mo.disconnect();
+					});
+					mo.observe(document.documentElement, { childList: true, subtree: true });
+				}
+			} catch (e) { /* opt-in, never break the page */ }
+			var tries = 0;
+			var timer = setInterval(function () {
+				if (mintDedupOverview() || ++tries > 60) clearInterval(timer);
+			}, 300);
+			if (document.readyState !== 'loading') mintDedupOverview();
+			else document.addEventListener('DOMContentLoaded', mintDedupOverview);
+			window.addEventListener('load', mintDedupOverview);
+		})();
+		</script>
 		{% endif %}
 		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-nftables'): %}
 		<script src="{{ media }}/mz-nftables.js" defer></script>

@@ -287,6 +287,7 @@
 			sysItem('hostname', 'Hostname') +
 			sysItem('model', 'Model') +
 			sysItem('arch', 'Architecture') +
+			sysItem('temperature', 'Temperature') +
 			sysItem('target', 'Target Platform') +
 			sysItem('firmware', 'Firmware Version') +
 			sysItem('kernel', 'Kernel Version') +
@@ -365,6 +366,7 @@
 		var tPct = (t && isFinite(t.c)) ? Math.min(100, t.c / TEMP_RING_MAX * 100) : 0;
 		setRing('temperature', tPct);
 		setNum('temperature', t ? t.c.toFixed(1) : '--', '°C');
+		setText('sys', 'temperature', t ? t.c.toFixed(1) + ' °C' : '--');
 		if (refs.sub && refs.sub.temperature) setText('sub', 'temperature', t ? t.name : __('N/A'));
 
 		/* Throughput (needs previous sample) */
@@ -469,9 +471,11 @@
 		}
 		/* System info */
 		var s = d.system || {};
+		var tm = pickTemp(d.temperature);
 		setText('sys', 'hostname', na(s.hostname));
 		setText('sys', 'model', na(s.model));
 		setText('sys', 'arch', na(s.arch));
+		setText('sys', 'temperature', tm ? tm.c.toFixed(1) + ' °C' : '--');
 		setText('sys', 'target', na(s.target));
 		setText('sys', 'firmware', na(s.openwrt));
 		setText('sys', 'kernel', na(s.kernel));

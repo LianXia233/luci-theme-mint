@@ -96,8 +96,15 @@ return baseclass.extend({
 		}
 
 		const cfg = window.mintWallpaper;
-		if (!cfg || cfg.enabled === false || cfg.ui_random === false)
+		if (!cfg || cfg.enabled === false || cfg.ui_random === false) {
+			/* No wallpaper configured/enabled: still run the global
+			   frosted-glass layer. --mz-wallpaper stays "none", so the
+			   CSS ::after paints the soft gradient fallback and every
+			   admin page gets glass cards + soft shadow regardless
+			   (2026-09-09). */
+			document.body.classList.add('mz-has-wallpaper');
 			return;
+		}
 
 		const mobile = this.isMobileUA();
 		const grp = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
