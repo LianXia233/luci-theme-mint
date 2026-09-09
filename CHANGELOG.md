@@ -9,6 +9,12 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-09 第十轮 — PC 概览 `<h2>状态</h2>` 标题再度消失（回合制回归）)
+
+- **PC 端 Status > Overview 的 `<h2>状态</h2>` 标题再次消失**：第七轮已修复过一次，但 `8410db6`（第九轮前的 nftables 重构）重排 `footer.ut` 时把第七轮的两处改动一并回退——`overview-dashboard.js` / `overview-mobile.js` / `overview-dashboard.css` 的注入被删、`overview.js`（旧版）加载行被恢复。旧 `overview.js` 不渲染新版仪表盘 DOM（含 `<h2>状态</h2>` 的 header），标题随 DOM 一起缺失；根因是脚本未加载，非 CSS 选择器（`#mz-view > h2` 为直接子代选择器，仪表盘标题嵌套在 `#mint-overview-dashboard > header`，本就不命中）
+  - 修复：`footer.ut` 恢复第七轮形态——无条件加载 `mz-ui.js`；`admin-status-overview` 路径注入设备识别引导脚本（UA + `max-width:854px`），桌面端加载 `overview-dashboard.js` + `overview-dashboard.css`（完整 PC 总览仪表盘，含端口/DHCP/无线/UPnP 面板，标题随 DOM 挂载）、移动端加载 `overview-mobile.js`；移除对旧 `overview.js` 的引用
+  - 实测（192.168.88.1，Playwright）：桌面 1440px 出现可见 `h2.mint-ovd-title`（文本"状态"，无重复、无隐藏残留），完整仪表盘正常渲染（3 个 gauge canvas + 54 个面板区块）；手机 390px 顶栏 sticky 玻璃底、菜单按钮与标题"状态"并排无重叠，主标题不重复（桌面标题未注入）
+
 ### Fixed (2026-09-09 第九轮 — 移动端顶栏样式回归丢失 全局透明度/标题位置异常)
 
 - **移动端顶栏样式整体丢失（回归失败）**：`8410db6` nftables 重构重排 `cascade.css` 时，把第六轮新增的 `.mz-mobilebar` 样式块整体丢掉了，只剩 `menu-mint.js` 仍会创建该顶栏。结果：手机端菜单按钮退化为 `position:fixed; top:12px; left:12px` 浮在标题上方遮挡文字（标题无样式、位置异常）；桌面端因缺少 `.mz-mobilebar { display:none }` 基础规则，顶栏在桌面视口也渲染出来（电脑上位置异常）；wallpaper 模式下顶栏失去 `--mz-panel-bg-strong` 玻璃底，变成全透明（全局透明度不正常）
