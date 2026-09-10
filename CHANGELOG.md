@@ -7,8 +7,7 @@
 
 ---
 
-## [Unreleased]
-## [Unreleased]
+## [1.0.2] - 2026-09-11
 
 ### Fixed (2026-09-11 — 保存并应用泄漏未选中项、diagnostics 行布局、手机卡片对齐)
 
@@ -33,8 +32,6 @@
   （实测修复前 title x=15/w=360、sec x=28/w=334、内容 x=37/w=316）
 - 修复：≤854px 时取消负 margin，标题恢复为普通圆角条
   （实测 title 与内容均为 x=37 / w=316，完全对齐）
-## [Unreleased]
-
 ### Changed (2026-09-11 — 手机端概览与 PC 统一为完整仪表盘)
 
 - 根因：概览页此前是双渲染器 —— 手机加载 overview-mobile.js（紧凑面板），
@@ -49,8 +46,6 @@
 **验证（实证）**：Playwright 手机视口 390×844 实测 —— 4 个环形仪表 +
 负载 / 运行时间 / 连接 / 上行接口 / 地址 / 实时吞吐 + 3 个图表全部渲染，
 无横向溢出（scrollWidth == clientWidth == 390）
-## [Unreleased]
-
 ### Fixed (2026-09-11 — 组合按钮菜单异常 + 浏览器图标替换 + 移除轮询指示器)
 
 **一、组合按钮下拉异常（保存并应用 / diagnostics 工具选择器）**
@@ -820,6 +815,7 @@ ImmortalWrt SNAPSHOT 192.168.88.1 上以真实浏览器（Chromium）验证，�
 
 ---
 
-[Unreleased]: https://github.com/LianXia233/luci-theme-mint/compare/v0.2.0...HEAD
+[1.0.2]: https://github.com/LianXia233/luci-theme-mint/compare/v0.2.0...v1.0.2
+[Unreleased]: https://github.com/LianXia233/luci-theme-mint/compare/v1.0.2...HEAD
 [0.2.0]: https://github.com/LianXia233/luci-theme-mint/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/LianXia233/luci-theme-mint/releases/tag/v0.1.0
