@@ -9,6 +9,59 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-11 — 手机顶部空白、全站下拉无法选择、输入框边框不可见、按钮与裸表格排版)
+
+**一、手机端顶部大片空白（手机专属）**
+- 根因：上一轮把页面标题从 `.mz-mobilebar` 移到了 `.mz-mobilebar` 之外的
+  `.mz-topbar`，于是手机同时存在两条头部 —— mobilebar 65px + topbar 57px =
+  122px，其中一条几乎全空，正是截图里的空白带
+- 实测：`#mz-view` 起始位置由 **149px 降到 92px**
+- 修复：手机端移除 `.mz-mobilebar` 之外的 `.mz-topbar`，标题回归 mobilebar
+  （它同时拥有 sticky 槽位与汉堡按钮）
+
+**二、全站下拉"无法选择"（PC + 手机）—— 两个独立根因**
+
+1. **`.cbi-section-node { overflow-x: auto }`**：这一条把每个 section 节点变成
+   滚动容器，而 luci-base **按滚动容器**计算 dropdown 的可用空间，于是每个下拉
+   打开时都被写成 inline `max-height: 0px`，菜单被压成 10px 细条，根本点不到。
+   - 实测（修复前）：`max-height: 0px; height: 0px` 而 `scrollHeight: 200`
+     （选项高度正常 48 / 58 / 78）→ 内容在，只是被压没了
+   - 修复后：`max-height: 580px`、菜单高度 202px、点击 `2 -> 1` 生效
+   - 窄屏表格滚动由既有的 `@media (max-width: 768px)` 规则承担，去掉它没有副作用
+
+2. **毛玻璃的层叠副作用**：玻璃层给每张卡片加了 `backdrop-filter`，该属性会让
+   **每张卡片各自成为层叠上下文**。于是靠前卡片内的下拉菜单（自身 z-index 1000）
+   依然绘制在**靠后卡片**与 sticky 操作栏之下，点击落到邻居卡片的标题上
+   - 修复：用 `:has()` 提升"当前承载已展开下拉的卡片"的层级
+
+**三、下拉文本重复、按钮过高（PC + 手机）**
+- LuCI 把每个选项拆成短标签 `.hide-open` 与长描述 `.hide-close`；主题只在
+  **展开时**隐藏短标签，**从未在关闭时隐藏长描述** → 关闭态按钮渲染出完整描述
+  （51px 高、选项文本重复）
+- 另外 `.cbi-dropdown[open] > ul > li ...` 这类选择器会**同时命中菜单与按钮预览**，
+  把按钮里的标题也一起清空了 —— 共 **11 条**规则已限定到 `ul.dropdown`
+- 修复后：关闭态 43px 单行、标题为单个"硬件流量卸载"、展开时按钮仍保留标题
+
+**四、所有文本输入框不明显（PC + 手机）**
+- 根因：玻璃作用域把 `--mz-color-border` 覆盖成 `rgba(255,255,255,.55)`（近白），
+  而 input / select / textarea / 表单下拉都用它做边框 → 浅色页面上边框不可见
+- 修复：新增控件专用令牌 `--mz-input-bg / -input-border / -input-border-hover /
+  -input-placeholder`（light 与 dark 各一套），与卡片边框彻底解耦
+
+**五、按钮排版**
+- 「保存并应用」组合按钮是 `box-sizing: content-box`，比旁边的 Save 高 2px
+- 修复：操作栏内所有按钮统一 36px / border-box / 同一圆角；实测 apply 与 save
+  均为 `36px / border-box`
+
+**六、status/processes 与 status/channel_analysis 排版混乱**
+- 这两页的表格**没有 `.cbi-section` 包裹**，因此从未获得卡片样式，是贴着背景的裸表格
+- 修复：按 `body[data-page]` 为这些表格补卡片样式（圆角 14px / 1px 边框 / 表头 /
+  行悬停），并限制进程命令列宽度避免其独占约 70% 的行宽
+
+**验证（实证，非推断）**：Playwright **14/14** 通过（手机 390×844 + PC 1440×900），
+断言覆盖上述每一项的具体数值（元素高度、max-height、边框色、box-sizing、表格圆角）
+
+
 ### Changed (2026-09-11 — 概览卡片视觉重构 + 菜单归位「系统」+ 独立壁纸翻译包 + 登录页汉化)
 
 **一、概览页卡片视觉重构（纯 CSS，未改动任何插件 DOM）**

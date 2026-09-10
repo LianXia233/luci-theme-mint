@@ -76,6 +76,21 @@
 	--mz-z-toast: 3000;
 
 	/* ----------------------------------------------------------------
+	   FORM CONTROL tokens - deliberately separate from
+	   --mz-color-border. That token becomes a near-WHITE
+	   rgba(255,255,255,.55) once the glass layer is active (see the
+	   wallpaper scope further down): correct for card edges and
+	   hairlines, invisible for text boxes - which is exactly why every
+	   input, select and dropdown looked borderless ("input fields are
+	   not visible"). Controls get their own tokens that stay legible on
+	   the glass sheet AND on the flat page colour.
+	   ---------------------------------------------------------------- */
+	--mz-input-bg: rgba(255, 255, 255, .92);
+	--mz-input-border: rgba(100, 116, 139, .38);
+	--mz-input-border-hover: rgba(100, 116, 139, .58);
+	--mz-input-placeholder: #8a93a3;
+
+	/* ----------------------------------------------------------------
 	   Glass tokens - LIGHT ("white glassmorphism"): a white frosted
 	   sheet that lets the wallpaper show through just enough to be
 	   noticed without ever competing with the UI. Controls (input,
@@ -148,6 +163,11 @@ html[data-theme="dark"] {
 	--mz-glass-blur-strong: 18px;
 	--mz-glass-saturate: 120%;
 	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .24);
+
+	--mz-input-bg: rgba(20, 24, 30, .92);
+	--mz-input-border: rgba(255, 255, 255, .16);
+	--mz-input-border-hover: rgba(255, 255, 255, .26);
+	--mz-input-placeholder: #7f8794;
 
 	color-scheme: dark;
 }
@@ -1265,22 +1285,22 @@ body.mz-login-active #maincontent {
 		display: none !important;
 	}
 
-	/* The title strip is deliberately NOT sticky on phones: .mz-mobilebar
-	   already owns the sticky slot at the top edge, and two sticky
-	   siblings both pinned to top:0 would overlap. */
+	/* Phones show ONE header bar, not two. An earlier revision moved the
+	   title into .mz-topbar and hid it inside .mz-mobilebar, which stacked
+	   a 65px control strip and a 57px title strip - 122px of chrome, i.e.
+	   the big empty band at the top of the mobile screenshots. The title
+	   belongs to .mz-mobilebar (which already owns the sticky slot and the
+	   hamburger), so .mz-topbar is removed outright here. */
 	.mz-topbar {
-		position: static;
+		display: none;
 	}
 
-	/* Controls only (hamburger left, refresh right) - the title moved to
-	   .mz-topbar above. The node itself stays in the DOM because
-	   menu-mint.js#initMobileBar keeps mirroring the heading into it. */
 	.mz-mobilebar {
 		justify-content: space-between;
 	}
 
 	.mz-mobilebar .mz-mobilebar-title {
-		display: none;
+		display: block;
 	}
 }
 
@@ -1759,7 +1779,7 @@ table.cbi-section-table th {
 	margin-top: 4px;
 	display: block;
 }
-.cbi-dropdown[open] > ul > li {
+.cbi-dropdown[open] > ul.dropdown > li {
 	display: block;
 	padding: 8px 12px;
 	border-radius: var(--mz-radius-sm);
@@ -1767,7 +1787,7 @@ table.cbi-section-table th {
 	font-size: .9rem;
 	white-space: nowrap;
 }
-.cbi-dropdown[open] > ul > li:hover {
+.cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: var(--mz-color-surface-2);
 }
 .cbi-dropdown .more,
@@ -1855,7 +1875,7 @@ table.cbi-section-table th {
 	margin: 0;
 	display: block;
 }
-.cbi-dropdown[open] > ul > li {
+.cbi-dropdown[open] > ul.dropdown > li {
 	display: block;
 	padding: 8px 12px;
 	border-radius: 6px;
@@ -1864,7 +1884,7 @@ table.cbi-section-table th {
 	font-weight: 400;
 	white-space: nowrap;
 }
-.cbi-dropdown[open] > ul > li:hover {
+.cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: var(--mz-color-surface-2);
 }
 .cbi-dropdown .more,
@@ -4186,8 +4206,16 @@ table.table {
 	table-layout: auto;
 }
 
+/* NOTE (2026-09-11): `.cbi-section-node { overflow-x: auto }` used to live
+   here. That single declaration turned every section node into a SCROLL
+   CONTAINER, and luci-base measures a cbi-dropdown's available space against
+   its scroll container - so every form dropdown in the UI opened with an
+   inline `max-height: 0px` and rendered as a 10px sliver nobody could click
+   ("all dropdowns cannot be selected"). Table scrolling on narrow screens is
+   already provided by the `@media (max-width: 768px)` block further down, so
+   nothing else depended on it. */
 .cbi-section-node {
-	overflow-x: auto;
+	min-width: 0;
 }
 
 table.table th,
@@ -4381,7 +4409,7 @@ body.mz-has-wallpaper .btn + .dropdown-menu {
 	-webkit-backdrop-filter: none;
 }
 
-body.mz-has-wallpaper .cbi-dropdown[open] > ul > li:hover {
+body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: rgba(255, 255, 255, 0.1);
 }
 
@@ -4669,7 +4697,7 @@ ul.cbi-tabmenu {
  * ================================================================ */
 /* cbi-dropdown options inside the open panel: device icons keep their
    size and align with the text rows. */
-.cbi-dropdown[open] > ul > li img {
+.cbi-dropdown[open] > ul.dropdown > li img {
 	display: inline-block;
 	vertical-align: middle;
 	width: 20px;
@@ -4677,11 +4705,11 @@ ul.cbi-tabmenu {
 	margin-right: 6px;
 }
 
-.cbi-dropdown[open] > ul > li .hide-open {
+.cbi-dropdown[open] > ul.dropdown > li .hide-open {
 	display: none;
 }
 
-.cbi-dropdown[open] > ul > li[placeholder] {
+.cbi-dropdown[open] > ul.dropdown > li[placeholder] {
 	color: var(--mz-color-text-muted);
 	font-style: italic;
 }
@@ -4747,13 +4775,13 @@ body.mz-has-wallpaper .cbi-section-descr {
    rule above now uses [open] (attribute) instead of .open (class), so the
    two rules no longer overlap. Search-filtered items keep their own rule
    below instead of being excluded by an ever-growing :not() chain. */
-.cbi-dropdown[open] > ul > li {
+.cbi-dropdown[open] > ul.dropdown > li {
 	display: block;
 }
 
 /* Entries filtered out by the dropdown's search field stay hidden. */
-.cbi-dropdown[open] > ul > li.hidden,
-.cbi-dropdown[open] > ul > li[hidden] {
+.cbi-dropdown[open] > ul.dropdown > li.hidden,
+.cbi-dropdown[open] > ul.dropdown > li[hidden] {
 	display: none;
 }
 
@@ -5893,7 +5921,18 @@ body.mz-has-wallpaper .cbi-section-descr {
 	max-width: 100%;
 }
 
-.cbi-dropdown[open] > ul.preview > li,
+/* preview shows ONLY the current selection. An earlier rule made every
+   <li> in the preview visible, so an open dropdown rendered the whole option
+   list inside the button as well as in the floating menu - two overlapping
+   lists.
+   The selector keeps :not([display]):not([selected]) rather than a plain
+   `display: none !important`, because luci-base marks the current value with
+   a `display` ATTRIBUTE and a blanket !important would out-rank that rule
+   and blank the button caption. */
+.cbi-dropdown[open] > ul.preview > li:not([display]):not([selected]) {
+	display: none !important;
+}
+
 .cbi-dropdown[open] > ul.preview > li[selected],
 .cbi-dropdown[open] > ul.preview > li[display] {
 	display: inline-flex !important;
@@ -6161,4 +6200,293 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 	.mz-data-table tbody td[data-label]:empty::before {
 		content: attr(data-label);
 	}
+}
+
+/* ================================================================
+ * Form-control layer (2026-09-11)
+ *
+ * One definition for every input flavour, because the per-component rules
+ * scattered through this file had drifted apart:
+ *   - caption text of a closed dropdown showed the FULL option description
+ *     (LuCI ships each option as a short label + a long description)
+ *   - input / select / dropdown borders used --mz-color-border, which the
+ *     glass scope turns into near-white, so every text box looked borderless
+ *   - the Save & Apply combo button was content-box and 2px taller than the
+ *     buttons beside it
+ * Nothing here touches LuCI markup; it only re-states the presentation.
+ * ================================================================ */
+
+/* ---- 1. Dropdown option pairs: short label vs long description --------
+   luci-base renders every <li> as
+     <span class="hide-open">Short label</span>
+     <div  class="hide-close"><strong>Title</strong><br>Description</div>
+   The button must show the SHORT label and the open menu the DESCRIPTION.
+   The theme hid the short label while open but never hid the description
+   while closed, so a closed dropdown rendered both - a 51px tall button
+   with the option text duplicated. Both states are stated explicitly. */
+.cbi-dropdown:not([open]) > ul > li .hide-close {
+	display: none !important;
+}
+
+.cbi-dropdown[open] > ul.dropdown > li .hide-open {
+	display: none !important;
+}
+
+/* The preview clone inside an open button shows the short label only. */
+.cbi-dropdown[open] > ul.preview > li .hide-close {
+	display: none !important;
+}
+
+/* A closed dropdown is a one-line control, never a multi-line block. */
+#mz-view .cbi-dropdown:not([open]) {
+	min-height: 38px;
+	align-items: center;
+}
+
+#mz-view .cbi-dropdown:not([open]) > ul > li[selected],
+#mz-view .cbi-dropdown:not([open]) > ul > li[display] {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.5;
+}
+
+/* ---- 2. Visible form controls ---------------------------------------- */
+#mz-view input[type="text"],
+#mz-view input[type="password"],
+#mz-view input[type="number"],
+#mz-view input[type="email"],
+#mz-view input[type="url"],
+#mz-view input[type="search"],
+#mz-view input[type="tel"],
+#mz-view input.cbi-input,
+#mz-view select,
+#mz-view textarea,
+#mz-view .cbi-dropdown:not(.btn):not(.cbi-button) {
+	background: var(--mz-input-bg) !important;
+	border: 1px solid var(--mz-input-border) !important;
+	border-radius: var(--mz-radius-md);
+	color: var(--mz-color-text);
+	box-sizing: border-box;
+	transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+#mz-view input[type="text"]:hover,
+#mz-view input[type="password"]:hover,
+#mz-view input[type="number"]:hover,
+#mz-view input.cbi-input:hover,
+#mz-view select:hover,
+#mz-view textarea:hover,
+#mz-view .cbi-dropdown:not(.btn):not(.cbi-button):hover {
+	border-color: var(--mz-input-border-hover) !important;
+}
+
+#mz-view input[type="text"]:focus,
+#mz-view input[type="password"]:focus,
+#mz-view input[type="number"]:focus,
+#mz-view input[type="email"]:focus,
+#mz-view input[type="url"]:focus,
+#mz-view input[type="search"]:focus,
+#mz-view input[type="tel"]:focus,
+#mz-view input.cbi-input:focus,
+#mz-view select:focus,
+#mz-view textarea:focus,
+#mz-view .cbi-dropdown:not(.btn):not(.cbi-button):focus-within {
+	border-color: var(--mz-color-primary) !important;
+	box-shadow: 0 0 0 3px var(--mz-color-primary-soft);
+	outline: none;
+}
+
+#mz-view input::placeholder,
+#mz-view textarea::placeholder {
+	color: var(--mz-input-placeholder);
+	opacity: 1;
+}
+
+/* Native selects keep a readable option list in both modes. */
+#mz-view select option {
+	background: var(--mz-input-bg);
+	color: var(--mz-color-text);
+}
+
+/* ---- 3. Action bar: identical geometry for every button --------------- */
+#mz-view .cbi-page-actions,
+#mz-view .cbi-section-actions {
+	align-items: center;
+	gap: 8px;
+	border-top-color: var(--mz-input-border) !important;
+}
+
+#mz-view .cbi-page-actions .btn,
+#mz-view .cbi-page-actions .cbi-button,
+#mz-view .cbi-section-actions .btn,
+#mz-view .cbi-section-actions .cbi-button {
+	box-sizing: border-box;
+	height: 36px;
+	min-height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 14px;
+	line-height: 1;
+	font-size: .9rem;
+	border-radius: var(--mz-radius-md);
+}
+
+/* The Save & Apply combo button is a cbi-button wrapping a <ul>; it was
+   content-box, so its padding pushed it 2px taller than its neighbours. */
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button,
+#mz-view .cbi-page-actions .cbi-dropdown.btn,
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button {
+	box-sizing: border-box !important;
+	height: 36px !important;
+	padding: 0 !important;
+}
+
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul,
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > ul {
+	height: 34px;
+	min-height: 34px;
+	align-items: center;
+}
+
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul > li,
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > ul > li {
+	height: 34px;
+	line-height: 34px;
+	padding: 0 14px;
+}
+
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > .open,
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > .open {
+	border-left: 1px solid rgba(255, 255, 255, .35);
+	height: 34px;
+	line-height: 34px;
+}
+
+/* ---- 4. Pages whose tables are NOT wrapped in a section ---------------
+   status/processes and status/channel_analysis render a bare <table> as a
+   direct child of the view, so they never received the section card and
+   looked like raw HTML next to every other page. */
+body[data-page*="status-processes"] #mz-view table.table,
+body[data-page*="status-channel_analysis"] #mz-view table.table,
+body[data-page*="status-routes"] #mz-view table.table {
+	width: 100%;
+	background: var(--mz-panel-bg, var(--mz-glass-bg));
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-lg);
+	box-shadow: var(--mz-shadow-sm);
+	overflow: hidden;
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+body[data-page*="status-processes"] #mz-view table.table thead th,
+body[data-page*="status-channel_analysis"] #mz-view > table.table thead th,
+body[data-page*="status-routes"] #mz-view > table.table thead th {
+	background: var(--mz-color-surface-2);
+	font-weight: 650;
+	font-size: .84rem;
+	letter-spacing: .01em;
+	color: var(--mz-color-text-muted);
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--mz-color-border);
+}
+
+body[data-page*="status-processes"] #mz-view table.table td,
+body[data-page*="status-channel_analysis"] #mz-view > table.table td,
+body[data-page*="status-routes"] #mz-view > table.table td {
+	padding: 9px 14px;
+	border-bottom: 1px solid var(--mz-color-border);
+	vertical-align: middle;
+}
+
+body[data-page*="status-processes"] #mz-view table.table tbody tr:last-child td,
+body[data-page*="status-channel_analysis"] #mz-view > table.table tbody tr:last-child td,
+body[data-page*="status-routes"] #mz-view > table.table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+body[data-page*="status-processes"] #mz-view table.table tbody tr:hover td,
+body[data-page*="status-channel_analysis"] #mz-view > table.table tbody tr:hover td {
+	background: var(--mz-color-primary-soft);
+}
+
+/* The command column used to swallow ~70% of the row width and wrap. */
+body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
+	word-break: break-all;
+	max-width: 46ch;
+}
+
+/* ---- 5. Modal content: one card, not stacked cards --------------------
+   The dialog itself is the card; the .cbi-map / .cbi-section / .cbi-modal
+   inside it kept their own background, border and shadow, which produced the
+   "nested layers" look reported on phones. */
+#modal_overlay .modal .cbi-map,
+#modal_overlay .modal .cbi-section,
+#modal_overlay .modal .cbi-section-node,
+#modal_overlay .modal div.cbi-modal,
+#modal_overlay .modal .cbi-modal {
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
+#modal_overlay .modal .cbi-section > h3,
+#modal_overlay .modal .cbi-section-title {
+	border-bottom: 0;
+	padding-bottom: 0;
+	margin-bottom: 6px;
+	font-size: .95rem;
+}
+
+#modal_overlay .modal .cbi-value {
+	padding: 7px 0;
+}
+
+#modal_overlay .modal .cbi-value-title {
+	color: var(--mz-color-text-muted);
+	font-size: .86rem;
+	font-weight: 500;
+}
+
+@media (max-width: 640px) {
+	#modal_overlay .modal {
+		max-width: 100%;
+		padding: 16px 14px 18px;
+		border-radius: var(--mz-radius-lg);
+	}
+
+	#modal_overlay .modal .cbi-value-title {
+		flex: 0 0 auto;
+		width: 100%;
+		min-width: 0;
+		margin-bottom: 2px;
+	}
+}
+/* ---- 6. Lifting the card that hosts an open popup --------------------
+   The glass surface gives every card a `backdrop-filter`, and that property
+   creates a stacking context per card. Consequence: a dropdown opened inside
+   an EARLIER card painted BELOW the LATER cards (and below the sticky action
+   bar) even though its own z-index was 1000 - the menu was drawn correctly
+   but every click landed on the neighbouring card's heading, which is the
+   "no dropdown can be selected" report.
+   Raising the card that currently hosts an open popup restores the intended
+   order without giving up the frosted look. :has() degrades silently on
+   browsers without support (the behaviour is then simply unchanged). */
+.cbi-section:has(.cbi-dropdown[open]),
+.cbi-section-node:has(.cbi-dropdown[open]),
+.cbi-value:has(.cbi-dropdown[open]),
+.mz-table-card:has(.cbi-dropdown[open]),
+.mz-port-panel:has(.cbi-dropdown[open]),
+.mz-net-panel:has(.cbi-dropdown[open]),
+.mz-sys-panel:has(.cbi-dropdown[open]),
+.mz-overview-panel:has(.cbi-dropdown[open]) {
+	position: relative;
+	z-index: var(--mz-z-dropdown);
 }
