@@ -104,6 +104,12 @@ I18N_REQUIRED_FILES=(
 	"etc/uci-defaults/luci-i18n-mint-zh-cn"
 )
 
+# luci-app-mint-wallpaper has its own catalogue since the split (2026-09-11).
+I18N_WP_REQUIRED_FILES=(
+	"usr/lib/lua/luci/i18n/luci-app-mint-wallpaper.zh-cn.lmo"
+	"etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn"
+)
+
 # Payload entries that MUST carry the executable bit. luci.mk copies root/
 # with `cp -pR`, so a script committed as 0644 lands on the device as 0644:
 # cron then cannot run /usr/bin/mz-wallpaper-fetch.sh at all (R-01). This
@@ -127,12 +133,18 @@ for pkg in "${FILES[@]}"; do
 	# package (the official LuCI API keeps translations separate from the
 	# theme; the release ships both, so both must verify).
 	I18N=0
+	I18N_WP=0
 	WALLPAPER=0
+	# Order matters: the wallpaper catalogue matches both i18n patterns, so
+	# its (more specific) pattern has to be tested first.
 	case "$(basename "$pkg")" in
+	luci-i18n-mint-wallpaper-*) I18N_WP=1 ;;
 	luci-i18n-mint-*) I18N=1 ;;
 	luci-app-mint-wallpaper-*) WALLPAPER=1 ;;
 	esac
-	if [ "$I18N" = 1 ]; then
+	if [ "$I18N_WP" = 1 ]; then
+		EXPECT_NAME_PKG="luci-i18n-mint-wallpaper-zh-cn"
+	elif [ "$I18N" = 1 ]; then
 		EXPECT_NAME_PKG="luci-i18n-mint-zh-cn"
 	elif [ "$WALLPAPER" = 1 ]; then
 		EXPECT_NAME_PKG="luci-app-mint-wallpaper"
@@ -198,7 +210,13 @@ for pkg in "${FILES[@]}"; do
 			|| fail "architecture is '${arch}', expected '${EXPECT_ARCH}'"
 	fi
 
-	if [ "$I18N" = 1 ]; then
+	if [ "$I18N_WP" = 1 ]; then
+		# the wallpaper catalogue must depend on the app it translates
+		case " $depends " in
+		*luci-app-mint-wallpaper*) : ;;
+		*) fail "dependency luci-app-mint-wallpaper missing (got: ${depends:-<none>})" ;;
+		esac
+	elif [ "$I18N" = 1 ]; then
 		# translation: must depend on the theme it translates
 		case " $depends " in
 		*luci-theme-mint*) : ;;
@@ -244,7 +262,9 @@ for pkg in "${FILES[@]}"; do
 	log "  payload   : ${#payload[@]} entries"
 	[ "${#payload[@]}" -gt 0 ] || fail "$pkg payload is empty"
 
-	if [ "$I18N" = 1 ]; then
+	if [ "$I18N_WP" = 1 ]; then
+		REQ_FILES=("${I18N_WP_REQUIRED_FILES[@]}")
+	elif [ "$I18N" = 1 ]; then
 		REQ_FILES=("${I18N_REQUIRED_FILES[@]}")
 	elif [ "$WALLPAPER" = 1 ]; then
 		REQ_FILES=("${WALLPAPER_REQUIRED_FILES[@]}")
@@ -256,7 +276,7 @@ for pkg in "${FILES[@]}"; do
 			|| fail "$pkg is missing ${req}"
 	done
 
-	if [ "$I18N" = 0 ]; then
+	if [ "$I18N" = 0 ] && [ "$I18N_WP" = 0 ]; then
 		mapfile -t xpayload < <(get xfile | sed 's|^\./||' | sort -u)
 		if [ "$WALLPAPER" = 1 ]; then
 			EXEC_FILES=("${WALLPAPER_REQUIRED_EXEC[@]}")
@@ -270,7 +290,7 @@ for pkg in "${FILES[@]}"; do
 
 	fi
 
-	if [ "$I18N" = 0 ] && [ "$WALLPAPER" = 0 ]; then
+	if [ "$I18N" = 0 ] && [ "$I18N_WP" = 0 ] && [ "$WALLPAPER" = 0 ]; then
 		present_css="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/mint/.*\.css$' || true)"
 		present_js="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/.*\.js$' || true)"
 		[ "$present_css" -gt 0 ] || fail "$pkg ships no CSS"

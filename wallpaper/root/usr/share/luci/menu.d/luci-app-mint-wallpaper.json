@@ -1,7 +1,7 @@
 {
-	"admin/mint-wallpaper": {
+	"admin/system/mint-wallpaper": {
 		"title": "Mint Wallpaper",
-		"order": 45,
+		"order": 65,
 		"action": {
 			"type": "firstchild"
 		},
@@ -14,7 +14,7 @@
 			}
 		}
 	},
-	"admin/mint-wallpaper/settings": {
+	"admin/system/mint-wallpaper/settings": {
 		"title": "Wallpaper Settings",
 		"order": 1,
 		"action": {

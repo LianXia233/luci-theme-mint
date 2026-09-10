@@ -9,6 +9,49 @@
 
 ## [Unreleased]
 
+### Changed (2026-09-11 — 概览卡片视觉重构 + 菜单归位「系统」+ 独立壁纸翻译包 + 登录页汉化)
+
+**一、概览页卡片视觉重构（纯 CSS，未改动任何插件 DOM）**
+
+端口状态卡片：LuCI 为每个端口输出四个兄弟节点（端口名 / 图标+速率 / 3px 区域色条 /
+流量读数）。主题用 `grid` + `order` 把它们重排为「静默标签 → 图标+速率主标题 →
+流量页脚 → 底部 4px 强调色带」。
+- 原先那根「粗灰色横条」其实是区域色条被 LuCI 的 `padding: 8px 10px` 与
+  `rgba(--zone-color-rgb, .78)` 底色包成了 20px 高的块；现两处一并复位，
+  颜色以卡片底部 4px 色带保留
+- 端口名由居中的浅紫实底块改为左对齐的小号大写标签
+- 图标放大到 26px、速率升至 1.02rem/650 作为卡片主标题
+- 流量行加发丝分隔线，字号与行距收紧
+- 卡片改用 `--mz-radius-lg` 圆角 + 玻璃底，hover 轻微上浮
+
+网络/上游卡片：
+- 标题栏由整块 `rgba(--zone-color-rgb, .78)` 灰底改为透明 + 左侧 4px 区域色胶囊
+  （语义保留，观感与毛玻璃区块一致）
+- 字段「标签: 值」行距与字号收敛，`<strong>` 标签降为次要色，让数值读起来是内容
+
+**二、壁纸设置菜单归位「系统」分组**
+- `admin/mint-wallpaper` → `admin/system/mint-wallpaper`，侧栏显示「Mint 壁纸」
+
+**三、新增独立翻译包 `luci-i18n-mint-wallpaper-zh-cn`**
+- `wallpaper/po/zh_Hans/luci-app-mint-wallpaper.po`（35 条），依赖
+  `luci-app-mint-wallpaper`；发布产物由 6 个增至 8 个
+- 只装壁纸包（不装主题翻译包）也能得到中文设置页
+
+**四、修复：主题从未随包发布中文，登录页与后台全英文**
+- 根因：实机 `/usr/lib/lua/luci/i18n/` 里没有任何 mint 的 lmo（主题为源码部署，
+  `luci-i18n-mint-zh-cn` 包从未安装），所有 `_()` 回退到英文原文
+- 现提供主题 lmo 与 `zh_cn` / `zh_CN` 别名符号链接（固件把 `luci.main.lang`
+  写成下划线形式时同样命中）
+
+**验证（实证，非推断）**
+- 本地实跑 `build-direct.sh`：8 个包 + 8 份 buildinfo；`verify-package.sh` 与
+  `install-test.sh` 全部通过
+- 实机 7/7 断言通过：登录页显示中文（用户名 / 密码 / 登录 / 记住我）且无英文残留；
+  菜单位于 `admin/system/mint-wallpaper` 且标题为「Mint 壁纸」；
+  壁纸设置页全中文（壁纸 / 设置 / 启用 / 桌面端来源 / 移动端来源 / 遮罩不透明度）
+- 检测口径说明：LuCI 会把菜单 JSON（含原始 msgid）内嵌在 `<script>` 中，
+  因此本地化断言必须基于 `innerText` 而非原始 HTML，否则会误报未翻译
+
 ### Changed (2026-09-11 — 壁纸设置拆分为独立包 luci-app-mint-wallpaper)
 
 按「主题只负责 UI」的方向，把壁纸设置从主题包中拆出为可独立安装的

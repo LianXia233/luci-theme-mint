@@ -21,6 +21,7 @@
 #   luci-theme-mint-<rel>-all.ipk / luci-theme-mint-<rel>.apk
 #   luci-app-mint-wallpaper-<rel>-all.ipk / luci-app-mint-wallpaper-<rel>.apk
 #   luci-i18n-mint-zh-cn-<rel>-all.ipk / luci-i18n-mint-zh-cn-<rel>.apk
+#   luci-i18n-mint-wallpaper-zh-cn-<rel>-all.ipk / ...-<rel>.apk
 #
 # Usage:
 #   ./scripts/build-direct.sh --release-version nightly --out dist
@@ -200,6 +201,28 @@ try:
 except OSError:
     pass' "$IPAYLOAD/etc/uci-defaults/luci-i18n-mint-zh-cn"
 
+# luci-app-mint-wallpaper carries its OWN catalogue since the split
+# (2026-09-11): installing the wallpaper app without the theme's translation
+# package still yields a Chinese settings page.
+WPO_FILE="$WALLPAPER_SRC/po/zh_Hans/luci-app-mint-wallpaper.po"
+[ -f "$WPO_FILE" ] || die "wallpaper po catalog not found: $WPO_FILE"
+WIPAYLOAD="$STAGE/wi18npayload"
+mkdir -p "$WIPAYLOAD/usr/lib/lua/luci/i18n" "$WIPAYLOAD/etc/uci-defaults"
+WLMO_OUT="$WIPAYLOAD/usr/lib/lua/luci/i18n/luci-app-mint-wallpaper.zh-cn.lmo"
+python3 "$SCRIPT_DIR/po2lmo.py" "$WPO_FILE" "$WLMO_OUT" \
+	|| die "po2lmo failed for the wallpaper catalogue"
+[ -s "$WLMO_OUT" ] || die "po2lmo produced an empty wallpaper lmo"
+{
+	printf '%s\n' "uci set luci.languages.zh-cn='简体中文 (Simplified Chinese)'"
+	printf '%s\n' "uci commit luci"
+} > "$WIPAYLOAD/etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn"
+chmod 0755 "$WIPAYLOAD/etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn" 2>/dev/null || true
+python3 -c 'import os,sys
+try:
+    os.chmod(sys.argv[1], 0o755)
+except OSError:
+    pass' "$WIPAYLOAD/etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn"
+
 # ---------------------------------------------------------------------------
 # 3. build .ipk (OpenWrt scripts/ipkg-build container layout)
 # ---------------------------------------------------------------------------
@@ -226,6 +249,8 @@ build_ipk() {
 				printf 'Description: Mint Theme\n A modern LuCI theme.\n' ;;
 			luci-app-mint-wallpaper)
 				printf 'Description: Mint Wallpaper settings\n Wallpaper settings for the Mint LuCI theme.\n' ;;
+			luci-i18n-mint-wallpaper-zh-cn)
+				printf 'Description: Mint Wallpaper - zh-cn translation\n' ;;
 			*)
 				printf 'Description: Mint Theme - zh-cn translation\n' ;;
 		esac
@@ -381,9 +406,11 @@ mkdir -p "$OUT"
 THEME_IPK="$OUT/luci-theme-mint-${RELEASE_VERSION}-all.ipk"
 WALLPAPER_IPK="$OUT/luci-app-mint-wallpaper-${RELEASE_VERSION}-all.ipk"
 I18N_IPK="$OUT/luci-i18n-mint-zh-cn-${RELEASE_VERSION}-all.ipk"
+WALLPAPER_I18N_IPK="$OUT/luci-i18n-mint-wallpaper-zh-cn-${RELEASE_VERSION}-all.ipk"
 THEME_APK="$OUT/luci-theme-mint-${RELEASE_VERSION}.apk"
 WALLPAPER_APK="$OUT/luci-app-mint-wallpaper-${RELEASE_VERSION}.apk"
 I18N_APK="$OUT/luci-i18n-mint-zh-cn-${RELEASE_VERSION}.apk"
+WALLPAPER_I18N_APK="$OUT/luci-i18n-mint-wallpaper-zh-cn-${RELEASE_VERSION}.apk"
 
 log "packing ipk"
 # The theme no longer depends on curl and no longer owns /etc/config/mint
@@ -397,6 +424,9 @@ build_ipk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base, curl" \
 build_ipk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
 	"$IPAYLOAD" "-" "-" "-" \
 	"$I18N_IPK"
+build_ipk luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" "luci-app-mint-wallpaper" \
+	"$WIPAYLOAD" "-" "-" "-" \
+	"$WALLPAPER_I18N_IPK"
 
 log "packing apk"
 build_apk luci-theme-mint "$THEME_PKG_VERSION" "luci-base" \
@@ -410,9 +440,12 @@ build_apk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base,curl" \
 build_apk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
 	"Mint Theme - zh-cn translation" "$IPAYLOAD" "$I18N_APK" \
 	--exec etc/uci-defaults/luci-i18n-mint-zh-cn
+build_apk luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" "luci-app-mint-wallpaper" \
+	"Mint Wallpaper - zh-cn translation" "$WIPAYLOAD" "$WALLPAPER_I18N_APK" \
+	--exec etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn
 
-for f in "$THEME_IPK" "$WALLPAPER_IPK" "$I18N_IPK" \
-	"$THEME_APK" "$WALLPAPER_APK" "$I18N_APK"; do
+for f in "$THEME_IPK" "$WALLPAPER_IPK" "$I18N_IPK" "$WALLPAPER_I18N_IPK" \
+	"$THEME_APK" "$WALLPAPER_APK" "$I18N_APK" "$WALLPAPER_I18N_APK"; do
 	[ -s "$f" ] || die "package not produced: $f"
 	log "package: $f"
 done
@@ -440,9 +473,11 @@ emit_buildinfo() {
 }
 
 emit_buildinfo "$(basename "$THEME_IPK")" luci-theme-mint "$THEME_PKG_VERSION" ipk all
+emit_buildinfo "$(basename "$WALLPAPER_I18N_IPK")" luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" ipk all
 emit_buildinfo "$(basename "$WALLPAPER_IPK")" luci-app-mint-wallpaper "$THEME_PKG_VERSION" ipk all
 emit_buildinfo "$(basename "$I18N_IPK")" luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" ipk all
 emit_buildinfo "$(basename "$THEME_APK")" luci-theme-mint "$THEME_PKG_VERSION" apk noarch
+emit_buildinfo "$(basename "$WALLPAPER_I18N_APK")" luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" apk noarch
 emit_buildinfo "$(basename "$WALLPAPER_APK")" luci-app-mint-wallpaper "$THEME_PKG_VERSION" apk noarch
 emit_buildinfo "$(basename "$I18N_APK")" luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" apk noarch
 

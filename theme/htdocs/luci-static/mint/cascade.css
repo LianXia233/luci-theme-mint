@@ -5375,86 +5375,182 @@ body.mz-has-wallpaper .cbi-section-descr {
 	margin-bottom: var(--mz-spacing-md);
 }
 
-/* Port cards: compact solid cards with a real border and subtle
-   shadow, so they no longer blend into the faint wallpaper/glass. */
+/* Port cards. LuCI emits FOUR sibling blocks per port and the theme is not
+   allowed to touch that markup, so the visual order is produced with
+   grid + `order`:
+     (1) .ifacebox-head                      port name  (carries --zone-color-rgb)
+     (2) .ifacebox-body                      port icon + speed line
+     (3) .ifacebox-head.cbi-tooltip-container a 3px zone colour strip
+     (4) .ifacebox-body                      the traffic readout
+   On screen that becomes: quiet label, icon + speed headline, traffic
+   footer, and finally the colour strip as a 4px accent along the bottom
+   edge. Every block that LuCI paints with a solid zone colour is reset to
+   transparent here - the colour survives as that accent instead of a grey
+   slab. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox,
 #mz-view div[style*="minmax(70px,1fr)"] > .ifacebox,
 #mz-view div[style*="minmax(100px,1fr)"] > .ifacebox {
 	margin: 0 !important;
 	min-width: 0 !important;
-	/* No width ceiling: the old `max-width: 210px` pinned every port card
-	   to a narrow column, so a two-port router left ~560px of dead space
-	   at the end of the row. The track sizing above keeps cards sane. */
+	/* No width ceiling: an earlier `max-width: 210px` pinned every port card
+	   to a narrow column, so a two-port router left ~560px of dead space at
+	   the end of the row. The track sizing above keeps cards sane. */
 	max-width: none !important;
 	width: 100% !important;
 	height: auto;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	text-align: center;
-	/* Global glass surface (was --mz-color-surface-2, a near-opaque sheet
-	   that made port cards read as solid boxes next to the frosted
-	   sections). */
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	text-align: left;
+	/* Global glass surface, shared with every other card. */
 	background: var(--mz-panel-bg, var(--mz-glass-bg));
 	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-md);
-	box-shadow: var(--mz-shadow-sm), 0 0 0 1px rgba(16, 24, 40, .05);
+	border-radius: var(--mz-radius-lg);
+	box-shadow: var(--mz-shadow-sm);
 	overflow: hidden;
-	transition: border-color .15s ease, box-shadow .15s ease;
+	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox:hover,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox:hover,
 #mz-view div[style*="minmax(70px,1fr)"] > .ifacebox:hover,
 #mz-view div[style*="minmax(100px,1fr)"] > .ifacebox:hover {
-	border-color: rgba(var(--mz-color-primary-rgb), .55);
-	box-shadow: 0 4px 14px rgba(var(--mz-color-primary-rgb), .12);
+	border-color: rgba(var(--mz-color-primary-rgb), .5);
+	box-shadow: 0 6px 20px rgba(var(--mz-color-primary-rgb), .14);
+	transform: translateY(-1px);
 }
 
-/* Port name row: tinted accent header so each port reads at a glance. */
-#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head,
-#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-head {
-	padding: 8px 10px !important;
-	font-size: .82rem !important;
-	line-height: 1.3;
+/* Visual order (DOM order is fixed by LuCI). */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head:first-child,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head:first-child {
+	order: 1;
+}
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type {
+	order: 2;
+}
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type {
+	order: 3;
+}
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container {
+	order: 4;
 }
 
-#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head:first-child,
-#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-head:first-child {
-	background: rgba(var(--mz-color-primary-rgb), .14) !important;
-	color: var(--mz-color-text);
-	font-weight: 650;
-	border-bottom: 1px solid var(--mz-color-border);
+/* (1) Port name: a quiet uppercase label, not a coloured slab. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head:first-child,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head:first-child,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-head:first-child,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox > .ifacebox-head:first-child {
+	padding: 12px 14px 0 !important;
+	background: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	font-size: .72rem !important;
+	font-weight: 650 !important;
+	letter-spacing: .07em;
+	text-transform: uppercase;
+	line-height: 1.4;
+	color: var(--mz-color-text-muted) !important;
+	text-align: left;
 }
 
-/* Speed line: primary, slightly bolder, noticeable on the card. */
-#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body > span[title],
-#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body > span[title] {
-	font-weight: 600;
-	color: var(--mz-color-primary-strong, var(--mz-color-primary));
+/* (2) Icon + speed: the headline of the card. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-body:first-of-type,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox > .ifacebox-body:first-of-type {
+	display: flex !important;
+	flex-direction: row;
+	align-items: center;
+	gap: 11px;
+	padding: 7px 14px 14px !important;
+	margin: 0 !important;
+	border: 0 !important;
+	background: transparent !important;
+	line-height: 1.25;
 }
 
-/* Zone strip: slim 4px bar flush with the card edges. */
-#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .zonebadge,
-#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .zonebadge {
-	height: 4px;
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type img,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type img {
+	width: 26px;
+	height: 26px;
+	flex: 0 0 auto;
+	opacity: .92;
 }
 
-/* Traffic readout: hairline-separated footer, no longer floating. */
-#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body .cbi-tooltip-container,
-#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body .cbi-tooltip-container {
-	margin-top: 6px;
-	padding-top: 6px;
-	border-top: 1px dashed var(--mz-color-border);
-	line-height: 1.55;
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type > span,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type > span {
+	font-size: 1.02rem !important;
+	font-weight: 650 !important;
+	color: var(--mz-color-text) !important;
 }
 
-#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body,
-#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body {
-	padding: 8px 10px !important;
-	line-height: 1.5;
-	color: var(--mz-color-text-muted);
+/* LuCI puts a <br> between the icon and the speed; in a flex row it is a
+   stray line box, so drop it. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type br,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type br {
+	display: none;
+}
+
+/* (3) Traffic readout: hairline-separated footer, tight and secondary. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox > .ifacebox-body:last-of-type {
+	padding: 10px 14px 12px !important;
+	margin: 0 !important;
+	border: 0 !important;
+	border-top: 1px solid var(--mz-color-border) !important;
+	background: transparent !important;
+	font-size: .84rem !important;
+	line-height: 1.7;
+	text-align: left;
+	color: var(--mz-color-text-muted) !important;
+}
+
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type .cbi-tooltip-container,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type .cbi-tooltip-container {
+	display: block !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	background: transparent !important;
+}
+
+/* (4) Zone colour: a 4px accent along the bottom edge. LuCI paints the
+   whole strip block with rgba(--zone-color-rgb, .78) and gives it
+   `padding: 8px 10px`, which is what turned a 3px colour bar into a 20px
+   grey slab sitting in the middle of the card. Both are reset here; the
+   colour itself is kept. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container {
+	display: block !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	background: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	min-height: 0 !important;
+	height: auto !important;
+	line-height: 0;
+}
+
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container > .zonebadge,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container > .zonebadge,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container > .zonebadge,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container > .zonebadge {
+	display: block;
+	width: 100%;
+	height: 4px !important;
+	border-radius: 0 !important;
 }
 
 @media (max-width: 640px) {
@@ -5475,18 +5571,69 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 #mz-view .network-status-table > .ifacebox {
-	flex: 1 1 300px;
+	flex: 1 1 320px;
 	min-width: 0;
 	height: 100%;
+	/* NOT `hidden`: the device badge inside the body opens an absolutely
+	   positioned tooltip that must be allowed to leave the card. */
 	overflow: visible;
+	border-radius: var(--mz-radius-lg);
 }
 
-/* Keep label/value lines and the device badge stacked inside the
-   upstream / wireless cards (aurora-style vertical body). */
+/* Upstream / wireless card titles. LuCI paints `.ifacebox-head` with
+   rgba(--zone-color-rgb, .78) - a solid grey slab on a default zone, which
+   is what made these cards look unfinished next to the frosted sections.
+   The zone colour is kept, but as a slim pill on the left instead of a
+   full-width fill. */
+#mz-view .network-status-table > .ifacebox > .ifacebox-head {
+	position: relative;
+	padding: 13px 16px 11px 23px !important;
+	background: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	border: 0 !important;
+	border-bottom: 1px solid var(--mz-color-border) !important;
+	border-radius: 0 !important;
+	font-size: .92rem !important;
+	font-weight: 650 !important;
+	line-height: 1.4;
+	color: var(--mz-color-text) !important;
+	text-align: left;
+}
+
+#mz-view .network-status-table > .ifacebox > .ifacebox-head::before {
+	content: "";
+	position: absolute;
+	left: 11px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 4px;
+	height: 15px;
+	border-radius: 999px;
+	background: rgb(var(--zone-color-rgb, 128 128 128));
+}
+
+/* Label/value lines and the device badge stack inside the card. */
 #mz-view .network-status-table .ifacebox-body {
+	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	gap: 6px;
+	gap: 3px;
+	padding: 12px 16px 14px !important;
+	font-size: .86rem !important;
+	line-height: 1.72;
+	color: var(--mz-color-text-muted) !important;
+}
+
+/* `<strong>` carries the field LABEL (协议 / 地址 / 网关 ...). Keep it
+   quiet so the values read as the content. */
+#mz-view .network-status-table .ifacebox-body strong {
+	font-weight: 600;
+	color: var(--mz-color-text-muted);
+}
+
+#mz-view .network-status-table .ifacebox-body .ifacebadge {
+	margin-top: 7px;
 }
 
 #mz-view .network-status-table .ifacebox-body > span,

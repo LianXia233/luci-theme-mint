@@ -27,7 +27,7 @@
 - 全站 8px 半透明细滚动条（webkit + Firefox），color-scheme 跟随深色模式
 - 接口页定制：区域头降饱和色条、设备悬停详情面板、接口详情玻璃卡片
 - 第三方应用设计变量桥接（--brand/--surface/--text 等，兼容 taygedo 等应用）；h5000m_netmode 网络出口页对比度适配
-- **壁纸设置已拆分为独立包 `luci-app-mint-wallpaper`**（2026-09-11）：主题包只提供 UI 与模板，壁纸设置页、rpcd 后端、缓存 cron 与 UCI 配置归该包所有，可单独安装/升级/卸载。侧栏提供独立的顶级入口「Mint Wallpaper」（不再折叠在「系统」分组内）
+- **壁纸设置已拆分为独立包 `luci-app-mint-wallpaper`**（2026-09-11）：主题包只提供 UI 与模板，壁纸设置页、rpcd 后端、缓存 cron 与 UCI 配置归该包所有，可单独安装/升级/卸载。侧栏入口位于「系统」分组下的「Mint 壁纸」；并自带独立翻译包 `luci-i18n-mint-wallpaper-zh-cn`
 
 ## 目录结构
 
@@ -60,6 +60,7 @@ theme/                          # 主题包源码（luci-theme-mint，纯 UI）
 
 wallpaper/                      # 壁纸设置包源码（luci-app-mint-wallpaper，可独立安装）
 ├── Makefile                    # 基于 luci.mk 的包定义（Depends: luci-base +curl）
+├── po/zh_Hans/                 # 独立翻译目录（生成 luci-i18n-mint-wallpaper-zh-cn）
 ├── htdocs/luci-static/resources/view/mint/
 │   └── wallpaper.js            # 壁纸设置表单
 └── root/
@@ -188,7 +189,7 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 
 ## 壁纸设置
 
-设置页位于侧栏顶级入口 `Mint Wallpaper` > `Wallpaper Settings`（`/cgi-bin/luci/admin/mint-wallpaper/settings`），由独立包 `luci-app-mint-wallpaper` 提供；配置文件 `/etc/config/mint`：
+设置页位于 `系统` > `Mint 壁纸`（`/cgi-bin/luci/admin/system/mint-wallpaper/settings`），由独立包 `luci-app-mint-wallpaper` 提供；配置文件 `/etc/config/mint`：
 
 | 选项 | 类型 | 默认值 | 说明 |
 |---|---|---|---|

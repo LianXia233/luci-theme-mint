@@ -4,9 +4,10 @@
 # that the theme really lands where LuCI expects it.
 #
 # Works for both packages of the release:
-#   luci-theme-mint          - the theme (UI only)
-#   luci-app-mint-wallpaper  - the wallpaper settings app (split out 2026-09-11)
-#   luci-i18n-mint-zh-cn     - the translation (auto-detected by file name)
+#   luci-theme-mint               - the theme (UI only)
+#   luci-app-mint-wallpaper       - the wallpaper settings app (split 2026-09-11)
+#   luci-i18n-mint-zh-cn          - the theme translation
+#   luci-i18n-mint-wallpaper-zh-cn - the wallpaper translation (auto-detected)
 #
 # Copyright (C) 2026 LianXia233
 # SPDX-License-Identifier: Apache-2.0
@@ -47,10 +48,13 @@ done
 [ -s "$FILE" ] || { log "$FILE not found"; exit 2; }
 [ -n "$ROOT" ] || ROOT="$(mktemp -d)/rootfs"
 
-# The release ships three packages; each has its own expected payload.
+# The release ships four packages; each has its own expected payload.
+# Order matters: the wallpaper catalogue matches both i18n patterns.
 I18N=0
+I18N_WP=0
 WALLPAPER=0
 case "$(basename "$FILE")" in
+luci-i18n-mint-wallpaper-*) I18N_WP=1 ;;
 luci-i18n-mint-*) I18N=1 ;;
 luci-app-mint-wallpaper-*) WALLPAPER=1 ;;
 esac
@@ -139,7 +143,15 @@ I18N_REQUIRED=(
 	"etc/uci-defaults/luci-i18n-mint-zh-cn"
 )
 
-if [ "$I18N" = 1 ]; then
+# luci-app-mint-wallpaper has its own catalogue since the split (2026-09-11).
+I18N_WP_REQUIRED=(
+	"usr/lib/lua/luci/i18n/luci-app-mint-wallpaper.zh-cn.lmo"
+	"etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn"
+)
+
+if [ "$I18N_WP" = 1 ]; then
+	CHECK_LIST=("${I18N_WP_REQUIRED[@]}")
+elif [ "$I18N" = 1 ]; then
 	CHECK_LIST=("${I18N_REQUIRED[@]}")
 elif [ "$WALLPAPER" = 1 ]; then
 	CHECK_LIST=("${WALLPAPER_REQUIRED[@]}")
@@ -151,7 +163,7 @@ for f in "${CHECK_LIST[@]}"; do
 	[ -e "$ROOT/$f" ] || fail "missing after install: $f"
 done
 
-if [ "$I18N" = 0 ]; then
+if [ "$I18N" = 0 ] && [ "$I18N_WP" = 0 ]; then
 	# Executable bits must survive packaging (R-01): cron executes
 	# /usr/bin/mz-wallpaper-fetch.sh directly and rpcd execs the backend, so a
 	# 0644 payload silently kills the server-side wallpaper cache feature.

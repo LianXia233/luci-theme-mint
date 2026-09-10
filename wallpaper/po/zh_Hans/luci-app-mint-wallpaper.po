@@ -1,0 +1,159 @@
+# Translation of luci-app-mint-wallpaper to Simplified Chinese
+# Copyright (C) 2026 LianXia233
+#
+# The wallpaper settings page lives in its own package since 2026-09-11, so
+# it carries its own catalogue: installing luci-app-mint-wallpaper without
+# the theme still gets a Chinese settings page.
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-mint-wallpaper\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-11 00:00+0000\n"
+"PO-Revision-Date: 2026-09-11 00:00+0800\n"
+"Last-Translator: LianXia233\n"
+"Language-Team: Chinese (Simplified)\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: root/usr/share/luci/menu.d/luci-app-mint-wallpaper.json
+msgid "Mint Wallpaper"
+msgstr "Mint 壁纸"
+
+#: root/usr/share/luci/menu.d/luci-app-mint-wallpaper.json
+msgid "Wallpaper Settings"
+msgstr "壁纸设置"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Login page background image. Configure separate sources for desktop and mobile visitors."
+msgstr "登录页背景图片。可为桌面端与移动端访客分别配置来源。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Settings"
+msgstr "设置"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Enabled"
+msgstr "启用"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "When disabled, the login page uses the built-in gradient fallback."
+msgstr "禁用后，登录页使用内置渐变背景。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random wallpaper on admin pages"
+msgstr "管理页面随机壁纸"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "When enabled, every login page load and every admin page refresh automatically picks a fresh random image for the current device type."
+msgstr "启用后，每次加载登录页、每次刷新管理页面都会为当前设备类型自动挑选一张新的随机图片。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Desktop source"
+msgstr "桌面端来源"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Desktop custom image URL"
+msgstr "桌面端自定义图片地址"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Direct http(s) link to an image. Used when no desktop image has been uploaded."
+msgstr "图片的 http(s) 直链。仅在未上传桌面端图片时使用。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Desktop random sources"
+msgstr "桌面随机源"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Mobile source"
+msgstr "移动端来源"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Mobile custom image URL"
+msgstr "移动端自定义图片地址"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Direct http(s) link to an image. Used when no mobile image has been uploaded."
+msgstr "图片的 http(s) 直链。仅在未上传移动端图片时使用。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Mobile random sources"
+msgstr "移动随机源"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "One URL per entry. Sources are picked at random and the next one is tried when a source fails. Leave empty to use the built-in defaults."
+msgstr "每行一个 URL。随机选取，失败自动尝试下一个源。留空使用内置默认源。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random (multi-source)"
+msgstr "随机（多源）"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random ACG (multi-source)"
+msgstr "随机二次元（多源）"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Custom image"
+msgstr "自定义图片"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Overlay opacity"
+msgstr "遮罩不透明度"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Dark overlay strength over the wallpaper (0.0 - 1.0)."
+msgstr "壁纸上的暗色遮罩强度（0.0 - 1.0）。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Must be a number between 0.0 and 1.0."
+msgstr "必须是 0.0 到 1.0 之间的数字。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Blur (px)"
+msgstr "模糊（px）"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Background blur in pixels; 0 disables."
+msgstr "背景模糊像素；0 表示禁用。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Must be an integer between 0 and 40."
+msgstr "必须是 0 到 40 之间的整数。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Upload desktop image…"
+msgstr "上传桌面端图片…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Upload mobile image…"
+msgstr "上传移动端图片…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Image is too large (max 3 MB)."
+msgstr "图片过大（最大 3 MB）。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Image uploaded. Set the matching source to \"Custom image\" to use it."
+msgstr "图片已上传。请将对应来源设为“自定义图片”以使用。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Upload failed: %s"
+msgstr "上传失败：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Image source: %s"
+msgstr "图片来源：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random wallpaper · %s"
+msgstr "随机壁纸 · %s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random wallpaper"
+msgstr "随机壁纸"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Cached random wallpaper"
+msgstr "缓存随机壁纸"

@@ -10,11 +10,12 @@ name: Build packages
 # instead of 10-20 minutes.
 #
 # Artifacts (arch-independent, one set covers every target):
-#   luci-theme-mint-* + luci-app-mint-wallpaper-* + luci-i18n-mint-zh-cn-*
+#   luci-theme-mint-* + luci-app-mint-wallpaper-*
+#   + luci-i18n-mint-zh-cn-* + luci-i18n-mint-wallpaper-zh-cn-*
 #
 # Two independently installable packages come out of one run: the theme
 # (UI only) and luci-app-mint-wallpaper (wallpaper settings, split out on
-# 2026-09-11), plus the theme's translation package.
+# 2026-09-11), plus ONE translation package per app.
 #   *.ipk  (opkg / OpenWrt 24.10 and older)
 #   *.apk  (apk-tools v3 / OpenWrt 25.12+)
 
