@@ -26,13 +26,15 @@
 		<link rel="stylesheet" href="{{ media }}/overview-dashboard.css" />
 		<script>
 		(function () {
-			/* device-aware overview boot (CHANGELOG round 7): desktop loads
-			   the full dashboard (renders the <h2> header), mobile loads
-			   the compact panel view. */
-			var isMobile = /Mobi|Android|iPhone|iPad|Windows Phone/i.test(navigator.userAgent)
-				|| (window.matchMedia && window.matchMedia('(max-width: 854px)').matches);
+			/* One dashboard for every device (2026-09-11): phones previously
+			   got the compact overview-mobile.js renderer, which never showed
+			   the gauges / charts / upstream cards the desktop dashboard has.
+			   overview-dashboard.css already ships 1199px / 767px / 420px
+			   breakpoints (2- and 1-column grids), so the full dashboard is
+			   used everywhere and the layout reflows per viewport.
+			   overview-mobile.js stays in the package but is no longer booted. */
 			var s = document.createElement('script');
-			s.src = '{{ media }}/' + (isMobile ? 'overview-mobile.js' : 'overview-dashboard.js');
+			s.src = '{{ media }}/overview-dashboard.js';
 			s.defer = true;
 			(document.head || document.body).appendChild(s);
 		})();

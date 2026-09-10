@@ -286,3 +286,35 @@ body.mz-has-wallpaper .mint-ovd-sys {
 	border-color: var(--mz-glass-border);
 	box-shadow: var(--mz-glass-shadow);
 }
+/* ----------------------------------------------------------------
+ * Phone typography polish (2026-09-11)
+ * The dashboard is now the single renderer for every viewport. On a
+ * 390px phone the chart head (title + current values) is wider than
+ * the card, which used to break the Chinese title mid-word and leave
+ * a lone "钟）" on the second line. The title takes its own line and
+ * the live values sit right-aligned underneath.
+ * ---------------------------------------------------------------- */
+@media (max-width: 767px) {
+	.mint-ovd-chart-head {
+		flex-wrap: wrap;
+		row-gap: 2px;
+	}
+
+	.mint-ovd-chart-title {
+		flex: 1 1 100%;
+	}
+
+	.mint-ovd-chart-now {
+		flex: 0 0 auto;
+		margin-left: auto;
+		white-space: nowrap;
+	}
+
+	.mint-ovd-gauges {
+		gap: 10px;
+	}
+
+	.mint-ovd-chart {
+		min-width: 0;
+	}
+}
