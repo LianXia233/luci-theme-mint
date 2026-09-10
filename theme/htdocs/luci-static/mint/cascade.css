@@ -6343,15 +6343,15 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 	padding: 0 !important;
 }
 
-#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul,
-#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > ul {
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) {
 	height: 34px;
 	min-height: 34px;
 	align-items: center;
 }
 
-#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul > li,
-#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > ul > li {
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li,
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 	height: 34px;
 	line-height: 34px;
 	padding: 0 14px;
@@ -6489,4 +6489,98 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 .mz-overview-panel:has(.cbi-dropdown[open]) {
 	position: relative;
 	z-index: var(--mz-z-dropdown);
+}
+/* ---- 7. Remove the poll-status indicator ------------------------------
+   luci-base mounts a clickable <span data-indicator="poll-status"> into
+   #indicators; in this theme it rendered as a lone floating refresh pill
+   at the top of the page. The admin asked for its removal - hiding the
+   label does NOT stop the XHR polling itself. */
+#indicators [data-indicator="poll-status"] {
+	display: none !important;
+}
+/* ---- 8. Combo buttons: one box model, one row height ------------------
+   Applies to EVERY combo button (.cbi-dropdown.btn / .cbi-dropdown.cbi-button) —
+   the Save & Apply split button, the diagnostics tool selectors, etc. — not
+   only to the ones inside .cbi-page-actions (that narrower scope is why the
+   diagnostics buttons stayed broken).
+   Measured before: the wrapper was content-box with height 50px while its
+   inner <ul> and <li> each carried min-height 34px + padding, so the parts
+   stacked into a 50px box; the "···" affordance was only 13px tall next to a
+   34px "▾", which is the broken two-little-boxes look. */
+#mz-view .cbi-dropdown.btn,
+#mz-view .cbi-dropdown.cbi-button {
+	box-sizing: border-box !important;
+	height: 38px !important;
+	min-height: 38px !important;
+	align-items: center;
+	padding: 0 !important;
+	overflow: visible;
+}
+
+#mz-view .cbi-dropdown.btn > ul:not(.dropdown),
+#mz-view .cbi-dropdown.cbi-button > ul:not(.dropdown) {
+	display: flex;
+	align-items: center;
+	height: 36px !important;
+	min-height: 36px !important;
+	padding: 0 0 0 14px !important;
+	margin: 0 !important;
+	overflow: hidden;
+}
+
+#mz-view .cbi-dropdown.btn > ul:not(.dropdown) > li,
+#mz-view .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+	display: flex;
+	align-items: center;
+	height: 36px !important;
+	line-height: 1.4 !important;
+	padding: 0 12px !important;
+	margin: 0 !important;
+	white-space: nowrap;
+}
+
+/* the ··· and ▾ affordances: full height, equal size, hairline-separated */
+#mz-view .cbi-dropdown.btn > .more,
+#mz-view .cbi-dropdown.btn > .open,
+#mz-view .cbi-dropdown.cbi-button > .more,
+#mz-view .cbi-dropdown.cbi-button > .open {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 26px;
+	height: 36px !important;
+	min-height: 36px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	line-height: 1;
+	font-size: .82rem;
+	opacity: .8;
+	border-left: 1px solid rgba(127, 127, 127, .35);
+}
+
+#mz-view .cbi-dropdown.btn > .more,
+#mz-view .cbi-dropdown.cbi-button > .more {
+	margin-left: 2px !important;
+}
+/* The action bar itself can host an open combo menu (Save & Apply). It is
+   sticky with z-index 100, which walls the menu off from the rest of the
+   page; raise the bar while its menu is open so the options render above
+   everything else. */
+.cbi-page-actions:has(.cbi-dropdown[open]),
+.cbi-section-actions:has(.cbi-dropdown[open]) {
+	z-index: var(--mz-z-dropdown);
+}
+/* Combo-button menus ALWAYS open upwards.
+   The Save & Apply combo lives in a bottom-sticky action bar, so the space
+   below it is constant ~40px no matter where the user scrolls; luci-base
+   still chooses to open downwards there and writes inline top/bottom, which
+   put the menu under (or behind) the sticky bar and made every option
+   unclickable. !important legitimately overrides those inline styles. */
+.cbi-dropdown.btn[open] > ul.dropdown,
+.cbi-dropdown.cbi-button[open] > ul.dropdown {
+	top: auto !important;
+	bottom: 100% !important;
+	margin-bottom: 6px !important;
+	max-height: min(60vh, 420px) !important;
 }

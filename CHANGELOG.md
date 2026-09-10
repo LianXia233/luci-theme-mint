@@ -8,6 +8,31 @@
 ---
 
 ## [Unreleased]
+## [Unreleased]
+
+### Fixed (2026-09-11 — 组合按钮菜单异常 + 浏览器图标替换 + 移除轮询指示器)
+
+**一、组合按钮下拉异常（保存并应用 / diagnostics 工具选择器）**
+- 根因 1：combo wrapper 是 `box-sizing: content-box`，内部 ul/li/.open 各自带
+  min-height 34px + padding，叠加成 50px 高的按钮；`···` 指示只有 13px 高，
+  与 34px 的 `▾` 并排 —— 即截图里两个破碎小方块的样子。且旧修复只作用于
+  `.cbi-page-actions` 作用域，diagnostics 的下拉（在 .diag-action 里）没被覆盖
+- 根因 2：`.cbi-dropdown.btn > ul` 规则同时命中了**展开态的 ul.dropdown**，
+  把菜单也压成 36px —— 现已全部用 `:not(.dropdown)` 豁免
+- 根因 3：combo 位于底部 sticky 操作栏内，下方空间恒为 ~40px，而 luci-base
+  仍向下展开并写入 inline top/bottom，菜单落进/落到 sticky 栏之后不可点。
+  用 `!important` 强制 combo 菜单**总是向上展开**（合法覆盖 inline 样式）
+- 实测：firewall 选择 `0 -> 2`、diagnostics 选择 `ping -> ping6`，菜单均完整
+  落在视口内
+
+**二、浏览器标签页图标替换为像素猫娘 logo**
+- 由 192x192 原图生成 favicon-48.png（LANCZOS 缩放）、favicon-180.png
+  （apple-touch）与 favicon.svg（内嵌原图 base64，现代浏览器优先采用）
+
+**三、移除轮询指示器**
+- 隐藏 luci-base 挂载在 #indicators 里的
+  `<span data-indicator="poll-status">`（此前显示为一个孤立的「刷新」文本块）。
+  仅隐藏标签，XHR 轮询本身不受影响
 
 ### Fixed (2026-09-11 — 手机顶部空白、全站下拉无法选择、输入框边框不可见、按钮与裸表格排版)
 
