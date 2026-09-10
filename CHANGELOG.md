@@ -9,6 +9,26 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-10 — 实机：总览端口状态卡片塌缩 + 接口页设备 tooltip 常显叠层）
+
+在 ImmortalWrt SNAPSHOT（LuCI Master）192.168.88.1 上截图定位并修复：
+
+- **总览「端口状态」端口挤成 100px 窄条、大片空白**：当前 LuCI 端口网格内联样式为
+  `minmax(100px, 1fr)`（旧版为 `minmax(70px, 1fr)`），且网格父级是裸 `div` 而非
+  `.cbi-section`；旧选择器两项都匹配不到，端口卡仍被内联 `width:100px` 钉死。
+  现同时匹配两种 minmax 写法、不再强制 `.cbi-section` 父级，并用
+  `width:auto !important` 覆盖内联宽度。实测 eth0/eth1 由 102px 展开为约 549px
+  等宽卡片，后续网络/DHCP/无线/UPnP 区块排版恢复正常
+- **接口页设备详情面板常显、叠层导致排版混乱**：LuCI 设备弹层节点是
+  `span.cbi-tooltip.ifacebadge.large`。`#mz-view .ifacebadge`（ID 选择器，
+  特异性 1,1,0）把 `display:inline-flex` 顶掉了
+  `.cbi-tooltip-container .cbi-tooltip { display:none }`（0,2,0），每个
+  eth/wifi 图标下方的类型/MAC/流量面板全部永久展开并压住说明列。
+  修复：`#mz-view .ifacebadge:not(.cbi-tooltip)` 只样式真正的角标；
+  tooltip 隐藏规则加 `!important`，仅 hover/focus-within 时 `display:flex`。
+  实测接口卡、设备表、操作按钮列恢复整洁，悬停才弹出详情
+- 桌面 1440 与接口页窄屏均已用无头浏览器截图复验
+
 ### Changed (2026-09-10 — 云编译直出：去掉 OpenWrt SDK，单流水线产出 IPK+APK)
 
 - **删除 SDK 全量编译路径**：主题是纯数据包（无 `src/`），旧 CI 仍下载约 300MB 官方 SDK 并编译 luci-base 依赖链（rpcd、ucode、lucihttp、curl…），单次 10–20 分钟。现改为 `scripts/build-direct.sh` 按 `luci.mk` 安装布局装配载荷，再直接写出与官方后端一致的容器：

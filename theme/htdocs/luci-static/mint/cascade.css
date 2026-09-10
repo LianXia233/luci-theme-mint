@@ -4260,13 +4260,17 @@ html:not([data-theme="dark"]) {
 /* Restore stock tooltip semantics: hidden until hover. The previous
    rule styled .cbi-tooltip as a permanent inline card, which dumped
    every device detail (type/MAC/traffic) into the flow and produced
-   the mangled icon-over-text rows on the interfaces page. */
+   the mangled icon-over-text rows on the interfaces page.
+   !important: LuCI also stamps .ifacebadge on the same node; without
+   it the #mz-view .ifacebadge ID rule re-opens the popup. */
 .cbi-tooltip-container {
 	position: relative;
+	display: inline-flex;
+	align-items: center;
 }
 
-.cbi-tooltip-container .cbi-tooltip {
-	display: none;
+.cbi-tooltip-container > .cbi-tooltip {
+	display: none !important;
 	position: absolute;
 	left: 0;
 	top: 100%;
@@ -4275,7 +4279,7 @@ html:not([data-theme="dark"]) {
 	width: max-content;
 	max-width: 360px;
 	padding: 10px 14px;
-	background: #1c2736;
+	background: var(--mz-color-surface-strong, #1c2736);
 	border: 1px solid var(--mz-color-border);
 	border-radius: var(--mz-radius-md);
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -4283,11 +4287,12 @@ html:not([data-theme="dark"]) {
 	font-size: .85rem;
 	line-height: 1.7;
 	white-space: normal;
+	text-align: left;
 }
 
 .cbi-tooltip-container:hover > .cbi-tooltip,
 .cbi-tooltip-container:focus-within > .cbi-tooltip {
-	display: block;
+	display: flex !important;
 }
 
 /* --- Interfaces page (admin/network/network, 接口 tab) ----------- */
@@ -4841,7 +4846,12 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 /* --- Badges inside the rule cells --- */
-#mz-view .ifacebadge {
+/* :not(.cbi-tooltip): LuCI device popups are
+   span.cbi-tooltip.ifacebadge.large. The #mz-view ID selector used to
+   force display:inline-flex on them, defeating the hide-until-hover
+   rule below (specificity (1,1,0) > (0,2,0)) and permanently dumping
+   every device detail panel into the interfaces page layout. */
+#mz-view .ifacebadge:not(.cbi-tooltip) {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
@@ -5098,23 +5108,32 @@ body.mz-has-wallpaper .cbi-section-descr {
  * applied here, while keeping the mint glass/token look.
  * ================================================================ */
 
-/* --- Homepage "Port status": native 29_ports.js grid ------------ */
+/* Homepage "Port status": native 29_ports.js grid ------------ */
 /* LuCI sets grid-template-columns: repeat(auto-fit, minmax(70px,1fr))
-   inline and each port has inline min-width:70px / max-width:100px.
-   Override that with a comfortable card track so ports read as cards
-   instead of squeezed columns. The `minmax(70px, 1fr)` attribute match
-   keeps this scoped to the native port grid (not every inline grid). */
-#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] {
+   (older) or minmax(100px,1fr) (ImmortalWrt / current master) inline,
+   and each port has inline min-width/max-width or width:100px.
+   The grid is NOT always a direct child of .cbi-section (current
+   master wraps it in a bare div), so do not require that parent.
+   Override with a comfortable card track so ports read as cards. */
+#mz-view div[style*="display:grid"][style*="minmax(70px, 1fr)"],
+#mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"],
+#mz-view div[style*="display:grid"][style*="minmax(70px,1fr)"],
+#mz-view div[style*="display:grid"][style*="minmax(100px,1fr)"] {
 	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
 	gap: var(--mz-spacing-sm) !important;
-	align-items: stretch;
+	align-items: stretch !important;
+	justify-items: stretch !important;
 	margin-bottom: var(--mz-spacing-sm);
 }
 
-#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] > .ifacebox {
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox {
 	margin: 0 !important;
 	min-width: 0 !important;
 	max-width: none !important;
+	width: auto !important;
 	height: 100%;
 	display: flex;
 	flex-direction: column;
@@ -5122,18 +5141,21 @@ body.mz-has-wallpaper .cbi-section-descr {
 	text-align: center;
 }
 
-#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head {
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-head {
 	padding: 8px 10px !important;
 	font-size: .82rem !important;
 }
 
-#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body {
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body {
 	padding: 8px 10px !important;
 	line-height: 1.5;
 }
 
 @media (max-width: 640px) {
-	#mz-view .cbi-section > div[style*="display:grid"][style*="minmax(70px, 1fr)"] {
+	#mz-view div[style*="display:grid"][style*="minmax(70px, 1fr)"],
+	#mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"] {
 		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 	}
 }
