@@ -27,41 +27,48 @@
 - 全站 8px 半透明细滚动条（webkit + Firefox），color-scheme 跟随深色模式
 - 接口页定制：区域头降饱和色条、设备悬停详情面板、接口详情玻璃卡片
 - 第三方应用设计变量桥接（--brand/--surface/--text 等，兼容 taygedo 等应用）；h5000m_netmode 网络出口页对比度适配
+- **壁纸设置已拆分为独立包 `luci-app-mint-wallpaper`**（2026-09-11）：主题包只提供 UI 与模板，壁纸设置页、rpcd 后端、缓存 cron 与 UCI 配置归该包所有，可单独安装/升级/卸载。侧栏提供独立的顶级入口「Mint Wallpaper」（不再折叠在「系统」分组内）
 
 ## 目录结构
 
 ```
 .github/workflows/build.yml     # GitHub Actions 云编译：直出 .ipk + .apk（all/noarch）
 .github/workflows/release.yml   # 汇总构建产物并发布到 GitHub Release
-theme/                        # 主题源码（放入 buildroot 的 feeds/luci/themes/ 下编译）
-├── Makefile                  # 基于 luci.mk 的包定义
+theme/                          # 主题包源码（luci-theme-mint，纯 UI）
+├── Makefile                    # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
-│   ├── cascade.css           # 设计系统 + 布局 + 组件
-│   ├── overview-dashboard.js # PC 端总览仪表盘（仅桌面端 Status > Overview 加载）
-│   ├── overview-mobile.js    # 移动端总览增强（仅手机/平板 Status > Overview 加载）
-│   ├── mz-ui.js              # 设备无关通用 UI 辅助（全后台页面加载）
-│   ├── overview-banner.png   # 顶栏品牌图
-│   ├── login-logo.png        # 登录页 Logo
-│   └── favicon/              # favicon.svg（矢量）/ -48.png / -180.png
+│   ├── cascade.css             # 设计系统 + 布局 + 组件
+│   ├── overview-dashboard.js   # PC 端总览仪表盘（仅桌面端 Status > Overview 加载）
+│   ├── overview-mobile.js      # 移动端总览增强（仅手机/平板 Status > Overview 加载）
+│   ├── mz-ui.js                # 设备无关通用 UI 辅助（全后台页面加载）
+│   ├── overview-banner.png     # 顶栏品牌图
+│   ├── login-logo.png          # 登录页 Logo
+│   └── favicon/                # favicon.svg（矢量）/ -48.png / -180.png
 ├── htdocs/luci-static/resources/
-│   ├── menu-mint.js      # 侧栏/菜单渲染器（LuCI JS API）
+│   ├── menu-mint.js            # 侧栏/菜单渲染器（LuCI JS API）
 │   └── view/mint/
-│       ├── sysauth.js        # 登录页前端
-│       └── wallpaper.js      # 壁纸设置表单
+│       └── sysauth.js          # 登录页前端
 ├── ucode/template/themes/mint/
-│   ├── header.ut             # 页面骨架、侧栏、顶栏
-│   ├── footer.ut             # 页脚、L.require('menu-mint')
-│   └── sysauth.ut            # 登录页（保留原生认证表单）
+│   ├── header.ut               # 页面骨架、侧栏、顶栏
+│   ├── footer.ut               # 页脚、L.require('menu-mint')
+│   └── sysauth.ut              # 登录页（保留原生认证表单）
 ├── ucode/mint/
-│   └── wallpaper.uc          # UCI 配置读取 + 服务端钳制（无外部请求、无缓存）
+│   └── wallpaper.uc            # 渲染期配置解析（只读 UCI；被 header.ut 静态 import，故随主题发布）
 ├── root/
-│   ├── etc/config/mint           # UCI 配置
-│   ├── etc/uci-defaults/30_luci-theme-mint
-│   ├── usr/libexec/rpcd/mint     # ubus 兼容桩（refresh 方法，无实际缓存）
-│   ├── usr/share/luci/menu.d/luci-theme-mint.json
-│   ├── usr/share/luci/acl.d/luci-theme-mint.json
-│   └── usr/share/rpcd/acl.d/luci-theme-mint.json  # rpcd 授权组（菜单 ACL 必需）
-└── po/                       # templates + zh_Hans
+│   └── etc/uci-defaults/30_luci-theme-mint   # 主题注册 + 迁移清理
+└── po/                         # templates + zh_Hans
+
+wallpaper/                      # 壁纸设置包源码（luci-app-mint-wallpaper，可独立安装）
+├── Makefile                    # 基于 luci.mk 的包定义（Depends: luci-base +curl）
+├── htdocs/luci-static/resources/view/mint/
+│   └── wallpaper.js            # 壁纸设置表单
+└── root/
+    ├── etc/config/mint                 # UCI 配置（本包 conffile）
+    ├── etc/uci-defaults/30_luci-app-mint-wallpaper
+    ├── lib/upgrade/keep.d/luci-app-mint-wallpaper
+    ├── usr/bin/mz-wallpaper-fetch.sh   # 服务端壁纸缓存刷新（cron 每 5 分钟）
+    ├── usr/libexec/rpcd/mint           # ubus 后端（save / refresh / dashboard）
+    └── usr/share/luci/menu.d/luci-app-mint-wallpaper.json  # 独立顶级菜单入口
 ```
 
 ## 云编译（GitHub Actions）
@@ -181,7 +188,7 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 
 ## 壁纸设置
 
-设置页位于 `系统` > `Mint Wallpaper` > `Wallpaper Settings`（`/cgi-bin/luci/admin/system/mintwallpaper/settings`），配置文件 `/etc/config/mint`：
+设置页位于侧栏顶级入口 `Mint Wallpaper` > `Wallpaper Settings`（`/cgi-bin/luci/admin/mint-wallpaper/settings`），由独立包 `luci-app-mint-wallpaper` 提供；配置文件 `/etc/config/mint`：
 
 | 选项 | 类型 | 默认值 | 说明 |
 |---|---|---|---|

@@ -1,9 +1,15 @@
 #!/bin/sh
 # uci-defaults script for luci-theme-mint
-# Registers the theme variants in luci.themes and activates the theme on
-# fresh installs. The theme keys are package-owned and rewritten on every
-# install/upgrade; the user's active theme (luci.main.mediaurlbase) is
-# only touched on fresh installs.
+# Registers the theme variant in luci.themes and activates the theme on fresh
+# installs. The theme keys are package-owned and rewritten on every
+# install/upgrade; the user's active theme (luci.main.mediaurlbase) is only
+# touched on fresh installs.
+#
+# 2026-09-11: everything that WRITES the wallpaper configuration (uci
+# defaults, /etc/config/mint, the cache cron) moved to
+# luci-app-mint-wallpaper. What stays here is theme registration plus the
+# cleanup of the files that moved, so an upgrade cannot leave a duplicate
+# menu entry or a stale ACL grant behind.
 
 # The theme ships a single "Mint" variant. Light/dark is handled by the
 # sidebar toggle (data-theme) inside that variant, so no extra
@@ -31,76 +37,29 @@ uci -q delete luci.themes.MintzeroLight
 uci -q delete luci.themes.MintzeroDark
 
 # Remove stale ACL files left in the legacy luci acl.d directory by older
-# builds. The theme now ships ACLs in /usr/share/rpcd/acl.d/; a leftover
-# file here can override rpcd grants and break wallpaper settings.
+# builds. The theme now ships ACLs in /usr/share/rpcd/acl.d/; a leftover file
+# here can override rpcd grants and break wallpaper settings.
 rm -f /usr/share/luci/acl.d/luci-theme-mint.json
 rm -f /usr/share/luci/acl.d/luci-theme-mintzero.json
 
-# Migrate the pre-rename (luci-theme-mintzero) wallpaper configuration so
-# upgrades keep their custom images/URLs. The old section is only moved
-# when no new 'mint' section exists yet, so a fresh config is never
-# overwritten. Uploaded images are moved along (if still present).
-if uci -q get mintzero.wallpaper >/dev/null 2>&1 && ! uci -q get mint.wallpaper >/dev/null 2>&1; then
-	for _opt in enabled ui_random pc_mode pc_url mobile_mode mobile_url overlay blur; do
-		_val=$(uci -q get mintzero.wallpaper.$_opt 2>/dev/null)
-		[ -n "$_val" ] && uci -q set mint.wallpaper.$_opt="$_val"
-	done
-	uci -q delete mintzero.wallpaper
-	rm -f /etc/config/mintzero
-	for _img in custom-pc.jpg custom-mobile.jpg; do
-		[ -f "/www/luci-static/mintzero/$_img" ] && mv -f "/www/luci-static/mintzero/$_img" "/www/luci-static/mint/$_img"
-	done
-fi
-
-# Wallpaper defaults for the mint UCI section. Only written when the
-# section does not exist yet, so user config survives upgrades.
-if ! uci -q get mint.wallpaper 2>/dev/null; then
-	uci -q set mint.wallpaper=mint 2>/dev/null || {
-		[ -f /etc/config/mint ] || touch /etc/config/mint
-		uci set mint.wallpaper=mint
-	}
-	uci -q set mint.wallpaper.enabled=1
-	uci -q set mint.wallpaper.ui_random=0
-	uci -q set mint.wallpaper.pc_mode=random
-	uci -q set mint.wallpaper.mobile_mode=random
-	uci -q set mint.wallpaper.overlay=0.45
-	uci -q set mint.wallpaper.blur=0
-	# Random multi-source defaults (empty list -> backend built-ins)
-	uci -q add_list mint.wallpaper.pc_sources='https://api.paugram.com/wallpaper/'
-	uci -q add_list mint.wallpaper.pc_sources='https://t.alcy.cc/bd'
-	uci -q add_list mint.wallpaper.mobile_sources='https://api.seaya.link/wap'
-	uci -q add_list mint.wallpaper.mobile_sources='https://t.alcy.cc/mp'
-fi
-
-# Drop obsolete pre-2026-09-07 keys (Bing era) so upgrades don't accumulate
-# dead options (review TZ-17 / OT-29).
-for _opt in market cache_ttl random mode count; do
-	uci -q delete mint.wallpaper.$_opt
-done
-
-# OT-35: install the server-side wallpaper cache refresher (cron, every 5
-# minutes). Idempotent: the marker comment keeps us from adding a second
-# line on upgrades; user cron entries are preserved.
-if [ -f /etc/crontabs/root ] && grep -q 'mz-wallpaper-fetch' /etc/crontabs/root; then
-	: # already installed
-else
-	echo '*/5 * * * * /usr/bin/mz-wallpaper-fetch.sh #mz-wallpaper' >> /etc/crontabs/root
-	/etc/init.d/cron restart >/dev/null 2>&1 || true
-fi
+# The wallpaper registrations now belong to luci-app-mint-wallpaper. Delete
+# the ones this package used to ship, so a plain theme upgrade cannot leave
+# BOTH a stale "Mint Wallpaper" entry under System AND the app's new
+# top-level one.
+rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
+rm -f /usr/share/luci/menu.d/luci-theme-mint.json
 
 if [ "$PKG_UPGRADE" != 1 ] && [ "$changed" = 1 ]; then
 	uci -q set luci.main.mediaurlbase=/luci-static/mint
 fi
 
-# Stale variant mediaurlbases no longer exist. Rewrite them all to the
-# single Mint variant so CSS/JS never 404 and the theme still loads.
+# Stale variant mediaurlbases no longer exist. Rewrite them all to the single
+# Mint variant so CSS/JS never 404 and the theme still loads.
 _mzbase=$(uci -q get luci.main.mediaurlbase 2>/dev/null)
 case "$_mzbase" in
-	*/mint-dark|*/mint-light|*/mintzero-dark|*/mintzero-light|*/mintzero) \
-		uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
+	*/mint-dark|*/mint-light|*/mintzero-dark|*/mintzero-light|*/mintzero) 		uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
 esac
 
 uci commit luci
-uci commit mint
 
 exit 0

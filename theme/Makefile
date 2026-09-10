@@ -16,10 +16,10 @@ LUCI_PKGARCH:=all
 
 LUCI_TITLE:=Mint Theme
 # ucode-mod-fs / ucode-mod-uci / rpcd-mod-file are all pulled in by
-# luci-base already. curl is NOT: mz-wallpaper-fetch.sh shells out to it and
-# default images ship uclient-fetch only, so without this the cron job can
-# only ever fail.
-LUCI_DEPENDS:=+luci-base +curl
+# luci-base already. The wallpaper side (settings page, rpcd backend, cache
+# cron) moved to luci-app-mint-wallpaper on 2026-09-11 - that app is the one
+# that needs curl, so this package no longer drags it in.
+LUCI_DEPENDS:=+luci-base
 # Ship the ucode templates as source: header.ut imports the theme's own
 # backend module (luci.mint.wallpaper), which the build host cannot
 # resolve, so precompilation with ucode/host must be disabled.
@@ -45,16 +45,10 @@ PKG_VERSION ?=
 # theme it belongs to.
 PKG_PO_VERSION ?=
 
-# /etc/config/mint is SHIPPED as defaults and WRITTEN AT RUNTIME by the
-# wallpaper settings page. Without this define the package manager owns it as
-# an ordinary file and REPLACES it on upgrade, so an upgrade silently wipes
-# the admin's sources / overlay / blur - and because uci-defaults only writes
-# defaults when the section is absent, they never come back.
-# Honoured by both formats (include/package-pack.mk: KEEP_$(1) -> apk
-# .conffiles / ipk CONTROL/conffiles).
-define Package/luci-theme-mint/conffiles
-/etc/config/mint
-endef
+# NOTE: /etc/config/mint is NOT a conffile of this package any more. It moved
+# to luci-app-mint-wallpaper together with the settings page that writes it
+# (2026-09-11), and is declared as a conffile there. Listing it here as well
+# would make two packages own the same path.
 
 define Package/luci-theme-mint/postinst
 #!/bin/sh
@@ -75,6 +69,12 @@ define Package/luci-theme-mint/postinst
 		uci -q delete luci.themes.MintDark
 		uci -q delete luci.themes.MintzeroLight
 		uci -q delete luci.themes.MintzeroDark
+		# 2026-09-11: the wallpaper settings moved to
+		# luci-app-mint-wallpaper. Remove the registrations this package
+		# used to ship, otherwise an upgrade leaves a duplicate
+		# "Mint Wallpaper" entry next to the app's own one.
+		rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
+		rm -f /usr/share/luci/menu.d/luci-theme-mint.json
 		_mzbase=$$(uci -q get luci.main.mediaurlbase 2>/dev/null)
 		case "$$_mzbase" in
 			*/mint-dark|*/mint-light|*/mintzero-dark|*/mintzero-light|*/mintzero) \
@@ -121,10 +121,11 @@ esac
 		uci commit luci
 	rm -f /usr/share/luci/acl.d/luci-theme-mint.json
 	rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
-	rm -f /www/luci-static/mint/custom-pc.jpg
-	rm -f /www/luci-static/mint/custom-mobile.jpg
-	rm -f /www/luci-static/mint/wallpaper-pc.img
-	rm -f /www/luci-static/mint/wallpaper-mobile.img
+	rm -f /usr/share/luci/menu.d/luci-theme-mint.json
+	# NOTE (2026-09-11): the uploaded wallpapers (custom-*.jpg), the cache
+	# images (wallpaper-*.img) and the cron helper belong to
+	# luci-app-mint-wallpaper and are NOT removed here - removing the theme
+	# must not delete user data it no longer owns.
 	# Remove zh_cn / zh_CN aliases created by postinst.
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_cn.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_CN.lmo
@@ -132,13 +133,9 @@ esac
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_cn.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_CN.lmo
 	rm -f /usr/share/luci/acl.d/luci-theme-mintzero.json
-	# Remove the wallpaper cache refresher cron line (marked) and the helper.
-	if [ -f /etc/crontabs/root ]; then
-		grep -v 'mz-wallpaper-fetch' /etc/crontabs/root > /tmp/mz-crontab.$$
-		mv /tmp/mz-crontab.$$ /etc/crontabs/root
-		/etc/init.d/cron restart >/dev/null 2>&1 || true
-	fi
-	rm -f /usr/bin/mz-wallpaper-fetch.sh
+	# The wallpaper cache refresher cron line, the helper and the rpcd
+	# backend moved to luci-app-mint-wallpaper (2026-09-11); that package's
+	# postrm removes them.
 	/etc/init.d/rpcd reload >/dev/null 2>&1 || true
 }
 exit 0

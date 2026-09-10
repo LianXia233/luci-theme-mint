@@ -1,6 +1,6 @@
 {
-	"luci-theme-mint": {
-		"description": "Grant access to the mint theme wallpaper settings and dashboard",
+	"luci-app-mint-wallpaper": {
+		"description": "Grant access to the Mint wallpaper settings (uci mint, rpcd mint save/refresh/dashboard)",
 		"read": {
 			"ubus": {
 				"mint": [

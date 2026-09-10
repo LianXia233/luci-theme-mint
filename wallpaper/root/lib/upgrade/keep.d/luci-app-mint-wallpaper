@@ -1,0 +1,13 @@
+# Written at RUNTIME, never by the package: these are the wallpapers the
+# admin uploaded on the Mint Wallpaper settings page. sysupgrade only
+# preserves conffiles, /etc/sysupgrade.conf and the paths listed in a
+# package's /lib/upgrade/keep.d/*, so without this file every firmware
+# upgrade silently discards them.
+#
+# /etc/config/mint is a conffile of this package, so it is preserved
+# without being listed here.
+#
+# The wallpaper-*.img cache files are deliberately NOT listed - the
+# mz-wallpaper-fetch cron regenerates them within one period.
+/www/luci-static/mint/custom-pc.jpg
+/www/luci-static/mint/custom-mobile.jpg

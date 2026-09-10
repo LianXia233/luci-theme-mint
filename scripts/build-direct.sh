@@ -19,6 +19,7 @@
 #
 # Artifacts (arch-independent, installable on any target):
 #   luci-theme-mint-<rel>-all.ipk / luci-theme-mint-<rel>.apk
+#   luci-app-mint-wallpaper-<rel>-all.ipk / luci-app-mint-wallpaper-<rel>.apk
 #   luci-i18n-mint-zh-cn-<rel>-all.ipk / luci-i18n-mint-zh-cn-<rel>.apk
 #
 # Usage:
@@ -46,6 +47,7 @@ github_out() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 THEME_SRC="$REPO_ROOT/theme"
+WALLPAPER_SRC="$REPO_ROOT/wallpaper"
 
 RELEASE_VERSION="nightly"
 OUT="dist"
@@ -63,6 +65,8 @@ done
 
 [ -d "$THEME_SRC" ] || die "theme sources not found at $THEME_SRC"
 [ -f "$THEME_SRC/Makefile" ] || die "theme Makefile missing"
+[ -d "$WALLPAPER_SRC" ] || die "wallpaper app sources not found at $WALLPAPER_SRC"
+[ -f "$WALLPAPER_SRC/Makefile" ] || die "wallpaper app Makefile missing"
 [ -f "$SCRIPT_DIR/mkadbpkg.py" ] || die "scripts/mkadbpkg.py missing"
 [ -f "$SCRIPT_DIR/po2lmo.py" ] || die "scripts/po2lmo.py missing"
 
@@ -73,8 +77,12 @@ done
 THEME_COMMIT="unknown"
 PKG_VERSION="0.0.0"
 if command -v git >/dev/null 2>&1 && git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
-	trev="$(git -C "$REPO_ROOT" log -1 --format='%ct' -- theme 2>/dev/null || true)"
-	thash="$(git -C "$REPO_ROOT" log -1 --format='%h' --abbrev=7 -- theme 2>/dev/null || true)"
+	# Both packages are versioned from the repository HEAD: the repo now
+	# carries two loosely coupled packages (theme + wallpaper app), so
+	# scoping the revision to one subdirectory would make the pair report
+	# different versions for the same commit.
+	trev="$(git -C "$REPO_ROOT" log -1 --format='%ct' 2>/dev/null || true)"
+	thash="$(git -C "$REPO_ROOT" log -1 --format='%h' --abbrev=7 2>/dev/null || true)"
 	THEME_COMMIT="${thash:-unknown}"
 	if [ -n "$trev" ] && [ -n "$thash" ]; then
 		tsecs=$((trev % 86400))
@@ -100,8 +108,9 @@ log "package_version : ${THEME_PKG_VERSION}"
 STAGE="$WORKDIR/direct"
 rm -rf "$STAGE"
 PAYLOAD="$STAGE/payload"
+WPAYLOAD="$STAGE/wpayload"
 IPAYLOAD="$STAGE/i18npayload"
-mkdir -p "$PAYLOAD" "$IPAYLOAD"
+mkdir -p "$PAYLOAD" "$WPAYLOAD" "$IPAYLOAD"
 
 log "assembling theme payload"
 cp -a "$THEME_SRC/htdocs/." "$PAYLOAD/www"
@@ -109,14 +118,24 @@ mkdir -p "$PAYLOAD/usr/share/ucode/luci"
 cp -a "$THEME_SRC/ucode/." "$PAYLOAD/usr/share/ucode/luci/"
 cp -a "$THEME_SRC/root/." "$PAYLOAD/"
 
+# luci-app-mint-wallpaper: pure data package (htdocs + root), no ucode.
+# Its template-side helper (ucode/mint/wallpaper.uc) deliberately stays in
+# the theme: header.ut imports it statically, so a missing module would
+# break the login page itself.
+log "assembling wallpaper app payload"
+cp -a "$WALLPAPER_SRC/htdocs/." "$WPAYLOAD/www"
+cp -a "$WALLPAPER_SRC/root/." "$WPAYLOAD/"
+
 # Preserve executable bits on scripts that luci.mk would install via cp -pR.
 # verify-package.sh rejects packages that ship these as non-executable.
 # Shell chmod: helps Git Bash tar. Python chmod: best-effort on hosts that
 # can represent Unix modes. mkadbpkg.py also gets --exec overrides below
 # because NTFS cannot store 0755 for Python's os.lstat.
+#
+# The wallpaper helper, rpcd backend and uci-defaults moved to
+# luci-app-mint-wallpaper (2026-09-11), so each payload is chmod'ed from its
+# own root - a rename can no longer silently drop the executable bit.
 for rel in \
-	usr/bin/mz-wallpaper-fetch.sh \
-	usr/libexec/rpcd/mint \
 	etc/uci-defaults/30_luci-theme-mint
 do
 	if [ -f "$PAYLOAD/$rel" ]; then
@@ -125,20 +144,35 @@ do
 		warn "missing exec payload: $rel"
 	fi
 done
-python3 - "$PAYLOAD" <<'PY'
+for rel in \
+	usr/bin/mz-wallpaper-fetch.sh \
+	usr/libexec/rpcd/mint \
+	etc/uci-defaults/30_luci-app-mint-wallpaper
+do
+	if [ -f "$WPAYLOAD/$rel" ]; then
+		chmod 0755 "$WPAYLOAD/$rel" 2>/dev/null || true
+	else
+		warn "missing exec payload: $rel"
+	fi
+done
+python3 - "$PAYLOAD" "$WPAYLOAD" <<'PY'
 import os, sys
-root = sys.argv[1]
-for rel in (
-    "usr/bin/mz-wallpaper-fetch.sh",
-    "usr/libexec/rpcd/mint",
-    "etc/uci-defaults/30_luci-theme-mint",
+theme_root, app_root = sys.argv[1], sys.argv[2]
+for root, rels in (
+    (theme_root, ("etc/uci-defaults/30_luci-theme-mint",)),
+    (app_root, (
+        "usr/bin/mz-wallpaper-fetch.sh",
+        "usr/libexec/rpcd/mint",
+        "etc/uci-defaults/30_luci-app-mint-wallpaper",
+    )),
 ):
-    path = os.path.join(root, rel)
-    if os.path.isfile(path):
-        try:
-            os.chmod(path, 0o755)
-        except OSError:
-            pass
+    for rel in rels:
+        path = os.path.join(root, rel)
+        if os.path.isfile(path):
+            try:
+                os.chmod(path, 0o755)
+            except OSError:
+                pass
 PY
 
 # ---------------------------------------------------------------------------
@@ -187,11 +221,14 @@ build_ipk() {
 		printf 'Filename: %s_%s_all.ipk\n' "$name" "$ver"
 		printf 'Section: luci\n'
 		printf 'License: Apache-2.0\n'
-		if [ "$name" = luci-theme-mint ]; then
-			printf 'Description: Mint Theme\n A modern LuCI theme.\n'
-		else
-			printf 'Description: Mint Theme - zh-cn translation\n'
-		fi
+		case "$name" in
+			luci-theme-mint)
+				printf 'Description: Mint Theme\n A modern LuCI theme.\n' ;;
+			luci-app-mint-wallpaper)
+				printf 'Description: Mint Wallpaper settings\n Wallpaper settings for the Mint LuCI theme.\n' ;;
+			*)
+				printf 'Description: Mint Theme - zh-cn translation\n' ;;
+		esac
 	} > "$dir/CONTROL/control"
 
 	if [ "$conffiles" != "-" ]; then
@@ -235,6 +272,12 @@ THEME_POSTINST='#!/bin/sh
 			uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
 	esac
 	uci -q commit luci
+	# The wallpaper registrations moved to luci-app-mint-wallpaper
+	# (2026-09-11). This is the copy that matters on a version upgrade:
+	# opkg runs postrm with "upgrade" and it returns early, so ONLY postinst
+	# removes the stale "Mint Wallpaper" entry.
+	rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
+	rm -f /usr/share/luci/menu.d/luci-theme-mint.json
 	cd /usr/lib/lua/luci/i18n 2>/dev/null && {
 		for f in luci-theme-mint.zh-cn.lmo; do
 			[ -f "$f" ] || continue
@@ -258,22 +301,50 @@ esac
 	uci -q delete luci.themes.MintzeroDark
 	uci commit luci
 	rm -f /usr/share/luci/acl.d/luci-theme-mint.json
+	# The wallpaper registrations moved to luci-app-mint-wallpaper
+	# (2026-09-11); drop the stale ones so an upgrade cannot end up showing
+	# the "Mint Wallpaper" entry twice.
 	rm -f /usr/share/rpcd/acl.d/luci-theme-mint.json
-	rm -f /www/luci-static/mint/custom-pc.jpg
-	rm -f /www/luci-static/mint/custom-mobile.jpg
-	rm -f /www/luci-static/mint/wallpaper-pc.img
-	rm -f /www/luci-static/mint/wallpaper-mobile.img
+	rm -f /usr/share/luci/menu.d/luci-theme-mint.json
+	# The uploaded wallpapers (custom-*.jpg), cache images (wallpaper-*.img)
+	# and the cron helper now belong to luci-app-mint-wallpaper; removing
+	# the theme must not touch user data it no longer owns.
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_cn.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mint.zh_CN.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_cn.lmo
 	rm -f /usr/lib/lua/luci/i18n/luci-theme-mintzero.zh_CN.lmo
 	rm -f /usr/share/luci/acl.d/luci-theme-mintzero.json
+	# The wallpaper cache cron line and its helper moved to
+	# luci-app-mint-wallpaper (2026-09-11); the postrm of that package
+	# removes them.
+	/etc/init.d/rpcd reload >/dev/null 2>&1 || true
+}
+exit 0'
+
+# luci-app-mint-wallpaper postinst/postrm. Same conventions as the theme:
+# reload rpcd instead of restarting it (a restart would log the admin out),
+# and change nothing on an upgrade.
+WALLPAPER_POSTINST='#!/bin/sh
+[ -n "${IPKG_INSTROOT}" ] || {
+	rm -f /tmp/luci-indexcache*
+	rm -rf /tmp/luci-modulecache/
+	/etc/init.d/rpcd reload >/dev/null 2>&1 || true
+}
+exit 0'
+
+WALLPAPER_POSTRM='#!/bin/sh
+case "$1" in
+	upgrade|deconfigure) exit 0 ;;
+esac
+
+[ -n "${IPKG_INSTROOT}" ] || {
 	if [ -f /etc/crontabs/root ]; then
 		grep -v "mz-wallpaper-fetch" /etc/crontabs/root > /tmp/mz-crontab.$$
 		mv /tmp/mz-crontab.$$ /etc/crontabs/root
 		/etc/init.d/cron restart >/dev/null 2>&1 || true
 	fi
 	rm -f /usr/bin/mz-wallpaper-fetch.sh
+	rm -f /tmp/luci-indexcache*
 	/etc/init.d/rpcd reload >/dev/null 2>&1 || true
 }
 exit 0'
@@ -308,29 +379,40 @@ build_apk() {
 mkdir -p "$OUT"
 
 THEME_IPK="$OUT/luci-theme-mint-${RELEASE_VERSION}-all.ipk"
+WALLPAPER_IPK="$OUT/luci-app-mint-wallpaper-${RELEASE_VERSION}-all.ipk"
 I18N_IPK="$OUT/luci-i18n-mint-zh-cn-${RELEASE_VERSION}-all.ipk"
 THEME_APK="$OUT/luci-theme-mint-${RELEASE_VERSION}.apk"
+WALLPAPER_APK="$OUT/luci-app-mint-wallpaper-${RELEASE_VERSION}.apk"
 I18N_APK="$OUT/luci-i18n-mint-zh-cn-${RELEASE_VERSION}.apk"
 
 log "packing ipk"
-build_ipk luci-theme-mint "$THEME_PKG_VERSION" "luci-base, curl" \
-	"$PAYLOAD" "/etc/config/mint" "$THEME_POSTINST" "$THEME_POSTRM" \
+# The theme no longer depends on curl and no longer owns /etc/config/mint
+# (both moved to the wallpaper app on 2026-09-11), so its conffiles are "-".
+build_ipk luci-theme-mint "$THEME_PKG_VERSION" "luci-base" \
+	"$PAYLOAD" "-" "$THEME_POSTINST" "$THEME_POSTRM" \
 	"$THEME_IPK"
+build_ipk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base, curl" \
+	"$WPAYLOAD" "/etc/config/mint" "$WALLPAPER_POSTINST" "$WALLPAPER_POSTRM" \
+	"$WALLPAPER_IPK"
 build_ipk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
 	"$IPAYLOAD" "-" "-" "-" \
 	"$I18N_IPK"
 
 log "packing apk"
-build_apk luci-theme-mint "$THEME_PKG_VERSION" "luci-base,curl" \
+build_apk luci-theme-mint "$THEME_PKG_VERSION" "luci-base" \
 	"Mint Theme" "$PAYLOAD" "$THEME_APK" \
+	--exec etc/uci-defaults/30_luci-theme-mint
+build_apk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base,curl" \
+	"Mint Wallpaper settings" "$WPAYLOAD" "$WALLPAPER_APK" \
 	--exec usr/bin/mz-wallpaper-fetch.sh \
 	--exec usr/libexec/rpcd/mint \
-	--exec etc/uci-defaults/30_luci-theme-mint
+	--exec etc/uci-defaults/30_luci-app-mint-wallpaper
 build_apk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
 	"Mint Theme - zh-cn translation" "$IPAYLOAD" "$I18N_APK" \
 	--exec etc/uci-defaults/luci-i18n-mint-zh-cn
 
-for f in "$THEME_IPK" "$I18N_IPK" "$THEME_APK" "$I18N_APK"; do
+for f in "$THEME_IPK" "$WALLPAPER_IPK" "$I18N_IPK" \
+	"$THEME_APK" "$WALLPAPER_APK" "$I18N_APK"; do
 	[ -s "$f" ] || die "package not produced: $f"
 	log "package: $f"
 done
@@ -358,8 +440,10 @@ emit_buildinfo() {
 }
 
 emit_buildinfo "$(basename "$THEME_IPK")" luci-theme-mint "$THEME_PKG_VERSION" ipk all
+emit_buildinfo "$(basename "$WALLPAPER_IPK")" luci-app-mint-wallpaper "$THEME_PKG_VERSION" ipk all
 emit_buildinfo "$(basename "$I18N_IPK")" luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" ipk all
 emit_buildinfo "$(basename "$THEME_APK")" luci-theme-mint "$THEME_PKG_VERSION" apk noarch
+emit_buildinfo "$(basename "$WALLPAPER_APK")" luci-app-mint-wallpaper "$THEME_PKG_VERSION" apk noarch
 emit_buildinfo "$(basename "$I18N_APK")" luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" apk noarch
 
 # ---------------------------------------------------------------------------

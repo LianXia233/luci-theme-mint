@@ -1,0 +1,60 @@
+#!/bin/sh
+# uci-defaults for luci-app-mint-wallpaper
+# Seeds /etc/config/mint and installs the server-side wallpaper cache cron.
+# Split out of luci-theme-mint's 30_luci-theme-mint on 2026-09-11, when the
+# wallpaper settings moved to their own package.
+
+# Migrate the pre-rename (luci-theme-mintzero) wallpaper configuration so
+# upgrades keep their custom images/URLs. The old section is only moved when
+# no new 'mint' section exists yet, so a fresh config is never overwritten.
+if uci -q get mintzero.wallpaper >/dev/null 2>&1 && ! uci -q get mint.wallpaper >/dev/null 2>&1; then
+	for _opt in enabled ui_random pc_mode pc_url mobile_mode mobile_url overlay blur; do
+		_val=$(uci -q get mintzero.wallpaper.$_opt 2>/dev/null)
+		[ -n "$_val" ] && uci -q set mint.wallpaper.$_opt="$_val"
+	done
+	uci -q delete mintzero.wallpaper
+	rm -f /etc/config/mintzero
+	for _img in custom-pc.jpg custom-mobile.jpg; do
+		[ -f "/www/luci-static/mintzero/$_img" ] && mv -f "/www/luci-static/mintzero/$_img" "/www/luci-static/mint/$_img"
+	done
+fi
+
+# Wallpaper defaults. Only written when the section does not exist yet, so
+# user config survives upgrades.
+if ! uci -q get mint.wallpaper 2>/dev/null; then
+	uci -q set mint.wallpaper=mint 2>/dev/null || {
+		[ -f /etc/config/mint ] || touch /etc/config/mint
+		uci set mint.wallpaper=mint
+	}
+	uci -q set mint.wallpaper.enabled=1
+	uci -q set mint.wallpaper.ui_random=0
+	uci -q set mint.wallpaper.pc_mode=random
+	uci -q set mint.wallpaper.mobile_mode=random
+	uci -q set mint.wallpaper.overlay=0.45
+	uci -q set mint.wallpaper.blur=0
+	# Random multi-source defaults (empty list -> backend built-ins)
+	uci -q add_list mint.wallpaper.pc_sources='https://api.paugram.com/wallpaper/'
+	uci -q add_list mint.wallpaper.pc_sources='https://t.alcy.cc/bd'
+	uci -q add_list mint.wallpaper.mobile_sources='https://api.seaya.link/wap'
+	uci -q add_list mint.wallpaper.mobile_sources='https://t.alcy.cc/mp'
+fi
+
+# Drop obsolete pre-2026-09-07 keys (Bing era) so upgrades don't accumulate
+# dead options (review TZ-17 / OT-29).
+for _opt in market cache_ttl random mode count; do
+	uci -q delete mint.wallpaper.$_opt
+done
+
+# Server-side wallpaper cache refresher (cron, every 5 minutes). Idempotent:
+# the marker comment keeps us from adding a second line on upgrades; user
+# cron entries are preserved.
+if [ -f /etc/crontabs/root ] && grep -q 'mz-wallpaper-fetch' /etc/crontabs/root; then
+	: # already installed
+else
+	echo '*/5 * * * * /usr/bin/mz-wallpaper-fetch.sh #mz-wallpaper' >> /etc/crontabs/root
+	/etc/init.d/cron restart >/dev/null 2>&1 || true
+fi
+
+uci commit mint
+
+exit 0

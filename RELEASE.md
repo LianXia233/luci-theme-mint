@@ -30,8 +30,10 @@
 ```
 nightly
 ├── luci-theme-mint-nightly.apk              # OpenWrt 25.12+
+├── luci-app-mint-wallpaper-nightly.apk
 ├── luci-i18n-mint-zh-cn-nightly.apk
 ├── luci-theme-mint-nightly-all.ipk          # OpenWrt 24.10 / 23.05（opkg）
+├── luci-app-mint-wallpaper-nightly-all.ipk
 ├── luci-i18n-mint-zh-cn-nightly-all.ipk
 └── *.buildinfo.txt / RELEASE-NOTES.md
 ```
@@ -40,21 +42,28 @@ Release 说明中会明确写出：**APK 与 IPK 不能互换**——APK 包无�
 
 ### 产物说明
 
-每次发布提供**四个**架构无关文件（官方 LuCI 规范将 `po/` 编译为独立翻译包；
-只装主题时界面为英文，主题与翻译须成对安装）：
+每次发布提供**六个**架构无关文件。`luci-app-mint-wallpaper` 自 2026-09-11 起
+从主题中拆出，可单独安装、升级与卸载（不装它时主题只提供 UI，壁纸设置页面
+与后台缓存任务缺席，主题本身不受影响）：
 
 ```
 luci-theme-mint-<release>-all.ipk
 luci-theme-mint-<release>.apk
+luci-app-mint-wallpaper-<release>-all.ipk
+luci-app-mint-wallpaper-<release>.apk
 luci-i18n-mint-zh-cn-<release>-all.ipk
 luci-i18n-mint-zh-cn-<release>.apk
 ```
+
+官方 LuCI 规范将 `po/` 编译为独立翻译包；只装主题时界面为英文，
+主题与翻译须成对安装。壁纸设置页面的中文复用主题的翻译包。
 
 包内架构字段：ipk 为 `all`，apk 为 `noarch`（均为「架构无关」，内容相同，可装于任意目标）。
 
 例如：
 
 - `luci-theme-mint-v1.0.0.apk` / `luci-theme-mint-v1.0.0-all.ipk`
+- `luci-app-mint-wallpaper-v1.0.0.apk` / `luci-app-mint-wallpaper-v1.0.0-all.ipk`
 - `luci-i18n-mint-zh-cn-v1.0.0.apk` / `luci-i18n-mint-zh-cn-v1.0.0-all.ipk`
 
 每个产物附带同名 `.buildinfo.txt`，记录主题 commit、包版本、包格式/架构、构建方式（direct / no SDK）。
@@ -166,13 +175,17 @@ git push origin --tags
 按设备的包管理器选择对应格式（**APK 与 IPK 不能互换**；主题与简中翻译**成对安装**）：
 
 ```sh
+# 壁纸设置包为可选；不安装它时主题只提供 UI。安装顺序无关。
+
 # OpenWrt 25.12+（apk）
-scp luci-theme-mint-v1.0.0.apk luci-i18n-mint-zh-cn-v1.0.0.apk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "apk add --allow-untrusted /tmp/luci-theme-mint-*.apk /tmp/luci-i18n-mint-zh-cn-*.apk"
+scp luci-theme-mint-v1.0.0.apk luci-app-mint-wallpaper-v1.0.0.apk \
+    luci-i18n-mint-zh-cn-v1.0.0.apk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "apk add --allow-untrusted /tmp/luci-theme-mint-*.apk /tmp/luci-app-mint-wallpaper-*.apk /tmp/luci-i18n-mint-zh-cn-*.apk"
 
 # 仍使用 opkg 的系统（24.10 / 23.05）
-scp luci-theme-mint-v1.0.0-all.ipk luci-i18n-mint-zh-cn-v1.0.0-all.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-*.ipk /tmp/luci-i18n-mint-zh-cn-*.ipk"
+scp luci-theme-mint-v1.0.0-all.ipk luci-app-mint-wallpaper-v1.0.0-all.ipk \
+    luci-i18n-mint-zh-cn-v1.0.0-all.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-*.ipk /tmp/luci-app-mint-wallpaper-*.ipk /tmp/luci-i18n-mint-zh-cn-*.ipk"
 ```
 
 # 致谢

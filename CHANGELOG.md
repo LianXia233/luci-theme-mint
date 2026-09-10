@@ -9,6 +9,43 @@
 
 ## [Unreleased]
 
+### Changed (2026-09-11 — 壁纸设置拆分为独立包 luci-app-mint-wallpaper)
+
+按「主题只负责 UI」的方向，把壁纸设置从主题包中拆出为可独立安装的
+`luci-app-mint-wallpaper`，并把入口从「系统」分组提升为侧栏独立顶级菜单。
+
+- **新增包 `luci-app-mint-wallpaper`**（仓库 `wallpaper/` 目录）：壁纸设置页
+  （`view/mint/wallpaper.js`）、rpcd 后端（`usr/libexec/rpcd/mint`）、服务端缓存
+  刷新脚本与 cron、UCI 配置 `/etc/config/mint`（本包 conffile）、菜单与 ACL、
+  `/lib/upgrade/keep.d` 上传图片保护
+- **主题包精简为纯 UI**：`Depends` 由 `luci-base +curl` 收敛为 `luci-base`，
+  且不再声明 `/etc/config/mint` 为 conffile（两个包不能拥有同一路径）
+- **`ucode/mint/wallpaper.uc` 有意保留在主题包内**：header.ut 以**静态 import**
+  引用该模块，把它拆走会让未安装壁纸包时的登录页模板直接加载失败。该模块只
+  **读** UCI 并在渲染期解析壁纸地址；所有**写**的部分（设置页、rpcd save、
+  默认值、cron）都在新包里
+- **独立顶级菜单入口**：`admin/system/mintwallpaper` → `admin/mint-wallpaper`。
+  侧栏直接可见，不再折叠在「系统」分组内；同时 settings 由第 4 层移到第 3 层，
+  菜单渲染器（三层上限）现在能够正常列出该项
+- **升级路径清理**：主题的 postinst（版本升级时唯一会执行的那个，postrm 在
+  upgrade 分支提前返回）与 postrm 都会删除旧的
+  `usr/share/luci/menu.d/luci-theme-mint.json` 与
+  `usr/share/rpcd/acl.d/luci-theme-mint.json`，否则升级后会出现两个
+  「Mint Wallpaper」入口
+- **主题 postrm 不再删除用户数据**：`custom-*.jpg`（上传壁纸）、
+  `wallpaper-*.img`（缓存图）与 cron 助手已归壁纸包所有，卸载主题不再触碰它们
+- **CI 单次产出 6 个包**：新增 `luci-app-mint-wallpaper` 的 ipk/apk。
+  `scripts/build-direct.sh` 参数化装配两套载荷并分别设置可执行位；
+  `scripts/verify-package.sh` 按包名分派校验规则（主题禁止再依赖 curl、
+  壁纸包必须有 curl 与 conffiles）
+- **版本口径统一**：两个包都取仓库 HEAD 的提交时间与短哈希，避免同一 commit
+  下两个包报出不同版本号
+- **验证（实证，非推断）**：本地实跑 `build-direct.sh` 产出 6 个包 + 6 份
+  buildinfo，`verify-package.sh` 全部通过（含可执行位、conffile、依赖断言）；
+  实机部署后侧栏出现 `/cgi-bin/luci/admin/mint-wallpaper/settings` 独立入口、
+  旧入口消失、设置页返回 HTTP 200，6/6 断言通过
+
+
 ### Fixed (2026-09-11 — 端口状态卡片排版、卡片玻璃统一、随机壁纸失效)
 
 实机截图定位（ImmortalWrt SNAPSHOT 192.168.88.1，Chromium 实测取值）：

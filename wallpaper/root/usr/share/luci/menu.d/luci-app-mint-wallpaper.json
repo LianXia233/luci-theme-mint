@@ -1,20 +1,20 @@
 {
-	"admin/system/mintwallpaper": {
+	"admin/mint-wallpaper": {
 		"title": "Mint Wallpaper",
-		"order": 60,
+		"order": 45,
 		"action": {
 			"type": "firstchild"
 		},
 		"depends": {
 			"acl": [
-				"luci-theme-mint"
+				"luci-app-mint-wallpaper"
 			],
 			"uci": {
 				"mint": true
 			}
 		}
 	},
-	"admin/system/mintwallpaper/settings": {
+	"admin/mint-wallpaper/settings": {
 		"title": "Wallpaper Settings",
 		"order": 1,
 		"action": {

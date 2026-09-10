@@ -72,18 +72,29 @@ read_pkg_py() {
 # segment - the LuCI template runtime (modules/luci-base/ucode/runtime.uc)
 # reads /usr/share/ucode/luci/template and resolves modules like
 # luci.mint.wallpaper against /usr/share/ucode/luci.
+# luci-theme-mint: the theme's own UI. ucode/mint/wallpaper.uc STAYS here
+# even though the wallpaper settings moved out (2026-09-11): header.ut
+# imports it statically, so a missing module would break the login template.
 REQUIRED_FILES=(
 	"usr/share/ucode/luci/template/themes/mint/header.ut"
 	"usr/share/ucode/luci/template/themes/mint/footer.ut"
 	"usr/share/ucode/luci/template/themes/mint/sysauth.ut"
 	"usr/share/ucode/luci/mint/wallpaper.uc"
 	"www/luci-static/mint/cascade.css"
-	"usr/share/luci/menu.d/luci-theme-mint.json"
-	"usr/share/rpcd/acl.d/luci-theme-mint.json"
-	"etc/config/mint"
 	"etc/uci-defaults/30_luci-theme-mint"
+)
+
+# luci-app-mint-wallpaper: everything that WRITES the wallpaper
+# configuration, split out of the theme on 2026-09-11.
+WALLPAPER_REQUIRED_FILES=(
+	"www/luci-static/resources/view/mint/wallpaper.js"
+	"etc/config/mint"
+	"etc/uci-defaults/30_luci-app-mint-wallpaper"
 	"usr/libexec/rpcd/mint"
 	"usr/bin/mz-wallpaper-fetch.sh"
+	"usr/share/luci/menu.d/luci-app-mint-wallpaper.json"
+	"usr/share/rpcd/acl.d/luci-app-mint-wallpaper.json"
+	"lib/upgrade/keep.d/luci-app-mint-wallpaper"
 )
 
 # Payload of the translation package (luci.mk LuciTranslation): the compiled
@@ -98,9 +109,13 @@ I18N_REQUIRED_FILES=(
 # cron then cannot run /usr/bin/mz-wallpaper-fetch.sh at all (R-01). This
 # assertion exists so that class of mistake can never ship silently again.
 REQUIRED_EXEC=(
+	"etc/uci-defaults/30_luci-theme-mint"
+)
+
+WALLPAPER_REQUIRED_EXEC=(
 	"usr/bin/mz-wallpaper-fetch.sh"
 	"usr/libexec/rpcd/mint"
-	"etc/uci-defaults/30_luci-theme-mint"
+	"etc/uci-defaults/30_luci-app-mint-wallpaper"
 )
 
 for pkg in "${FILES[@]}"; do
@@ -112,11 +127,15 @@ for pkg in "${FILES[@]}"; do
 	# package (the official LuCI API keeps translations separate from the
 	# theme; the release ships both, so both must verify).
 	I18N=0
+	WALLPAPER=0
 	case "$(basename "$pkg")" in
 	luci-i18n-mint-*) I18N=1 ;;
+	luci-app-mint-wallpaper-*) WALLPAPER=1 ;;
 	esac
 	if [ "$I18N" = 1 ]; then
 		EXPECT_NAME_PKG="luci-i18n-mint-zh-cn"
+	elif [ "$WALLPAPER" = 1 ]; then
+		EXPECT_NAME_PKG="luci-app-mint-wallpaper"
 	else
 		EXPECT_NAME_PKG="$EXPECT_NAME"
 	fi
@@ -185,10 +204,10 @@ for pkg in "${FILES[@]}"; do
 		*luci-theme-mint*) : ;;
 		*) fail "dependency luci-theme-mint missing (got: ${depends:-<none>})" ;;
 		esac
-	else
-		# Dependencies: the theme needs luci-base (ucode + rpcd come with it)
-		# and curl for the wallpaper fetcher - and nothing kernel/target
-		# specific.
+	elif [ "$WALLPAPER" = 1 ]; then
+		# The wallpaper app needs luci-base, and curl for the cache fetcher
+		# (default images ship uclient-fetch only) - and nothing
+		# kernel/target specific.
 		case " $depends " in
 		*"luci-base"*) : ;;
 		*) fail "dependency luci-base missing (got: ${depends:-<none>})" ;;
@@ -199,9 +218,25 @@ for pkg in "${FILES[@]}"; do
 		esac
 		for bad in kmod- kernel; do
 			case " $depends " in
+			*" $bad"*) fail "unexpected kernel-bound dependency '${bad}' in a data-only app" ;;
+			esac
+		done
+	else
+		# The theme itself needs luci-base only: curl and the wallpaper
+		# backend moved to luci-app-mint-wallpaper on 2026-09-11.
+		case " $depends " in
+		*"luci-base"*) : ;;
+		*) fail "dependency luci-base missing (got: ${depends:-<none>})" ;;
+		esac
+		for bad in kmod- kernel; do
+			case " $depends " in
 			*" $bad"*) fail "unexpected kernel-bound dependency '${bad}' in a data-only theme" ;;
 			esac
 		done
+		# Pulling curl back in would mean the split regressed.
+		case " $depends " in
+		*curl*) fail "luci-theme-mint must not depend on curl any more (moved to luci-app-mint-wallpaper)" ;;
+		esac
 	fi
 
 	# Payload sanity: every file the package needs must be inside it.
@@ -211,6 +246,8 @@ for pkg in "${FILES[@]}"; do
 
 	if [ "$I18N" = 1 ]; then
 		REQ_FILES=("${I18N_REQUIRED_FILES[@]}")
+	elif [ "$WALLPAPER" = 1 ]; then
+		REQ_FILES=("${WALLPAPER_REQUIRED_FILES[@]}")
 	else
 		REQ_FILES=("${REQUIRED_FILES[@]}")
 	fi
@@ -221,11 +258,19 @@ for pkg in "${FILES[@]}"; do
 
 	if [ "$I18N" = 0 ]; then
 		mapfile -t xpayload < <(get xfile | sed 's|^\./||' | sort -u)
-		for req in "${REQUIRED_EXEC[@]}"; do
+		if [ "$WALLPAPER" = 1 ]; then
+			EXEC_FILES=("${WALLPAPER_REQUIRED_EXEC[@]}")
+		else
+			EXEC_FILES=("${REQUIRED_EXEC[@]}")
+		fi
+		for req in "${EXEC_FILES[@]}"; do
 			printf '%s\n' "${xpayload[@]}" | grep -qx "$req" \
 				|| fail "$pkg ships ${req} WITHOUT the executable bit"
 		done
 
+	fi
+
+	if [ "$I18N" = 0 ] && [ "$WALLPAPER" = 0 ]; then
 		present_css="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/mint/.*\.css$' || true)"
 		present_js="$(printf '%s\n' "${payload[@]}" | grep -c '^www/luci-static/.*\.js$' || true)"
 		[ "$present_css" -gt 0 ] || fail "$pkg ships no CSS"
