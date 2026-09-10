@@ -58,20 +58,20 @@ jobs:
       - name: Build IPK + APK packages
         id: build
         run: |
-          ./scripts/build-direct.sh \
+          bash scripts/build-direct.sh \
             --release-version "$RELEASE_VERSION" \
             --out dist \
             --workdir build
 
       - name: Verify package metadata and payload
-        run: ./scripts/verify-package.sh --dir dist --expect-arch all
+        run: bash scripts/verify-package.sh --dir dist --expect-arch all
 
       - name: Install test
         run: |
           fail=0
           for f in dist/*.ipk dist/*.apk; do
             [ -f "$f" ] || continue
-            ./scripts/install-test.sh --file "$f" || fail=1
+            bash scripts/install-test.sh --file "$f" || fail=1
           done
           exit "$fail"
 

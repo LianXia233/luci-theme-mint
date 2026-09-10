@@ -97,12 +97,12 @@ jobs:
         if: steps.resolve.outputs.skip == 'false'
         run: |
           ls -l release-assets
-          ./scripts/verify-package.sh --dir release-assets --expect-arch all
+          bash scripts/verify-package.sh --dir release-assets --expect-arch all
 
       - name: Build release notes
         if: steps.resolve.outputs.skip == 'false'
         run: |
-          ./scripts/make-release-notes.sh \
+          bash scripts/make-release-notes.sh \
             --assets release-assets \
             --tag "${{ steps.resolve.outputs.tag }}" \
             --out release-assets/RELEASE-NOTES.md
