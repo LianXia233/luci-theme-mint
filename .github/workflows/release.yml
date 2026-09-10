@@ -1,19 +1,17 @@
 name: Release
 
-# Collects the artifacts of both build workflows and publishes one release.
-# Runs once per completed build workflow; the first one to finish sees that
-# its sibling is still missing and exits without publishing, so the release
-# is always assembled from a complete APK + IPK set.
+# Collects the artifacts of the Build packages workflow and publishes one
+# release. Runs once per completed build; if the build failed or was for a
+# non-publishable event the job exits without publishing.
 #
-# Only runs of the build workflows on the default branch (-> nightly) or on
+# Only runs of the build workflow on the default branch (-> nightly) or on
 # tags (-> version releases) are publishable. Runs for any other event -
 # pull_request builds, manual dispatches on feature branches - are validated
-# here and skipped: they would otherwise be published as a release tagged
-# with the branch name.
+# here and skipped.
 
 on:
   workflow_run:
-    workflows: ["Build APK packages", "Build IPK packages"]
+    workflows: ["Build packages"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -42,7 +40,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve tag and build runs
+      - name: Resolve tag and build run
         id: resolve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,43 +67,29 @@ jobs:
             fi
           fi
 
-          runs="$(gh api "repos/${repo}/actions/runs?head_sha=${sha}&per_page=100" \
+          run="$(gh api "repos/${repo}/actions/runs?head_sha=${sha}&per_page=100" \
             --jq '.workflow_runs[]
-                  | select(.status=="completed" and .conclusion=="success")
-                  | "\(.name)=\(.id)"' | sort -u || true)"
+                  | select(.name=="Build packages" and .status=="completed" and .conclusion=="success")
+                  | .id' | head -n1)"
 
-          apk_run="$(printf '%s\n' "$runs" | sed -n 's/^Build APK packages=//p' | tail -n1)"
-          ipk_run="$(printf '%s\n' "$runs" | sed -n 's/^Build IPK packages=//p' | tail -n1)"
-
-          if [ -z "$apk_run" ] || [ -z "$ipk_run" ]; then
-            echo "waiting for the other build workflow (apk=${apk_run:-none} ipk=${ipk_run:-none})"
+          if [ -z "$run" ]; then
+            echo "no successful Build packages run found for ${sha}"
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "tag=${tag}"          >> "$GITHUB_OUTPUT"
-          echo "sha=${sha}"          >> "$GITHUB_OUTPUT"
-          echo "apk_run=${apk_run}"  >> "$GITHUB_OUTPUT"
-          echo "ipk_run=${ipk_run}"  >> "$GITHUB_OUTPUT"
-          echo "skip=false"          >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "run=${run}" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
-      - name: Download APK artifacts
+      - name: Download build artifacts
         if: steps.resolve.outputs.skip == 'false'
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.resolve.outputs.apk_run }}
+          run-id: ${{ steps.resolve.outputs.run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: luci-theme-mint-apk-*
-          path: release-assets
-          merge-multiple: true
-
-      - name: Download IPK artifacts
-        if: steps.resolve.outputs.skip == 'false'
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ steps.resolve.outputs.ipk_run }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: luci-theme-mint-ipk-*
+          pattern: luci-theme-mint-packages
           path: release-assets
           merge-multiple: true
 

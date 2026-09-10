@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # make-release-notes.sh - turn the *.buildinfo.txt files produced by
-# build-package.sh into release notes that state, per artifact, which
-# OpenWrt SDK / kernel / LuCI branch it was built against.
+# build-direct.sh into release notes that state, per artifact, which
+# theme revision and package version it was built from.
 #
 # Copyright (C) 2026 LianXia233
 # SPDX-License-Identifier: Apache-2.0
@@ -36,32 +36,27 @@ emit_table() {
 
 	printf '### %s\n\n' "$title"
 	printf '%s\n\n' "$note"
-	printf '| 文件 | OpenWrt | Kernel | LuCI 分支 | SDK 系列 | 兼容性 |\n'
-	printf '| --- | --- | --- | --- | --- | --- |\n'
+	printf '| 文件 | 包版本 | 主题提交 | 架构 | 构建方式 |\n'
+	printf '| --- | --- | --- | --- | --- |\n'
 
 	local f
 	for f in "$ASSETS"/*.buildinfo.txt; do
 		[ -f "$f" ] || continue
-		local pkg fmt rel kern luci legacy series
+		local pkg fmt ver commit arch builder
 		pkg="$(info "$f" package)"
 		fmt="$(info "$f" package_format)"
 		[ "$fmt" = "$pattern" ] || continue
 		found=1
-		rel="$(info "$f" openwrt_release)"
-		kern="$(info "$f" kernel_version)"
-		luci="$(info "$f" luci_branch)"
-		series="$(info "$f" openwrt_series)"
-		legacy="$(info "$f" legacy_compat_sdk)"
-		if [ "$legacy" = 1 ]; then
-			printf '| `%s` | %s | %s | %s | %s | 兼容构建（非原生） |\n' \
-				"$pkg" "$rel" "$kern" "$luci" "$series"
-		else
-			printf '| `%s` | %s | %s | %s | %s | 原生 |\n' \
-				"$pkg" "$rel" "$kern" "$luci" "$series"
-		fi
+		ver="$(info "$f" package_version)"
+		commit="$(info "$f" theme_commit)"
+		arch="$(info "$f" package_arch)"
+		builder="$(info "$f" builder)"
+		[ -n "$builder" ] || builder="direct"
+		printf '| `%s` | %s | `%s` | %s | %s |\n' \
+			"$pkg" "$ver" "$commit" "$arch" "$builder"
 	done
 
-	[ "$found" = 1 ] || printf '| _(本次未构建)_ | | | | | |\n'
+	[ "$found" = 1 ] || printf '| _(本次未构建)_ | | | | |\n'
 	printf '\n'
 }
 
@@ -72,17 +67,17 @@ emit_table() {
 	printf -- '- **APK**：推荐用于 **OpenWrt 25.12+**（默认 apk 包管理器）。\n'
 	printf -- '- **IPK**：用于仍使用 **opkg/ipkg** 的系统（OpenWrt 24.10 / 23.05）。\n'
 	printf -- '- 两种格式**不可互换**：APK 包无法被 opkg 安装，IPK 包无法被 apk 安装。\n'
-	printf -- '- 每个 OpenWrt 系列提供两个包：主题 `luci-theme-mint` 与简中翻译\n'
-	printf -- '  `luci-i18n-mint-zh-cn`（官方 LuCI 规范将翻译独立成包；只装主题时\n'
-	printf -- '  界面为英文）。两者必须成对安装。\n'
+	printf -- '- 主题 `luci-theme-mint` 与简中翻译 `luci-i18n-mint-zh-cn` 成对发布、成对安装。\n'
 	printf -- '- 所有包均为架构无关（纯数据：CSS / JS / ucode 模板 / menu / ACL）：\n'
-	printf -- '  ipk 记录为 `all`，apk 记录为 `noarch`，内容相同、可装于任意目标平台。\n\n'
+	printf -- '  ipk 记录为 `all`，apk 记录为 `noarch`，内容相同、可装于任意目标平台。\n'
+	printf -- '- 主题为纯数据包，CI 直接按 OpenWrt 官方容器格式打包（ipk = gzip-tar，\n'
+	printf -- '  apk = ADB v3），无需 SDK 交叉编译，产物与官方后端生成的包结构一致。\n\n'
 
 	printf '## 构建产物\n\n'
-	emit_table apk "APK（推荐用于 OpenWrt 25.12+）" \
-		"由对应 OpenWrt 官方 SDK 的 apk 后端（\`CONFIG_USE_APK=y\`）真实构建。"
-	emit_table ipk "IPK（用于仍使用 opkg 的系统）" \
-		"由 OpenWrt 官方 SDK 的 ipk 后端真实构建；若目标系列已不提供 ipk 后端，则回退到仍提供该后端的官方 SDK，并在表中标注为兼容构建。"
+	emit_table apk "APK（OpenWrt 25.12+）" \
+		"apk-tools v3 ADB 容器（\`ADBd\` magic），与 \`apk mkpkg\` 字节布局一致。"
+	emit_table ipk "IPK（OpenWrt 24.10 / 23.05）" \
+		"OpenWrt \`scripts/ipkg-build\` 容器布局：\`gzip(tar(debian-binary, data.tar.gz, control.tar.gz))\`。"
 
 	printf '## 安装\n\n'
 	printf '```sh\n'
@@ -92,7 +87,7 @@ emit_table() {
 	printf 'opkg install ./luci-theme-mint-*.ipk ./luci-i18n-mint-zh-cn-*.ipk\n'
 	printf '```\n\n'
 	printf '安装后执行 `/etc/init.d/rpcd reload` 或重新登录即可在'
-	printf '「系统 → 系统 → 语言和界面」中选择 Mint / Mint Light / Mint Dark，\n'
+	printf '「系统 → 系统 → 语言和界面」中选择 Mint，\n'
 	printf '并将语言设为简体中文（`luci-i18n-mint-zh-cn` 会自动注册 `zh-cn`）。\n'
 } > "$OUT"
 

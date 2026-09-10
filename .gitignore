@@ -1,3 +1,7 @@
 # Python build artifacts
 __pycache__/
 *.pyc
+
+# Local packaging scratch / output
+build/
+dist/

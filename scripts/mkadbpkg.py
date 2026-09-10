@@ -183,19 +183,25 @@ class Arr:
 
 
 def scan_dirs(root):
-    """Return ['', subdir1, ...] - root first, then subdirs sorted (mkpkg)."""
+    """Return ['', subdir1, ...] - root first, then subdirs sorted (mkpkg).
+
+    Paths are normalized to forward slashes so the same package is produced
+    on Windows (os.walk/relpath emit backslashes) and Unix.
+    """
     subdirs = set()
     for dp, dn, _ in os.walk(root):
         rel = os.path.relpath(dp, root)
         if rel == '.':
             rel = ''
+        else:
+            rel = rel.replace('\\', '/')
         for d in dn:
             subdirs.add((rel + '/' + d) if rel else d)
     return [''] + sorted(subdirs)
 
 
 def build_package(name, version, arch, origin, url, license_, maintainer,
-                  description, depends, files_dir, out):
+                  description, depends, files_dir, out, exec_paths=None):
     db = DB()
     # struct adb_hdr: u8 compat_ver, u8 ver, u16 reserved, u32 root
     db.raw(b'\x00\x00\x00\x00' + struct.pack('<I', 0), 8)
@@ -227,6 +233,13 @@ def build_package(name, version, arch, origin, url, license_, maintainer,
     paths = Arr(db)
     installed_size = 0
     data_blocks = []
+    # Force 0755 on these relative paths. Filesystem mode bits are unreliable
+    # on Windows (NTFS has no Unix modes; Git Bash chmod is a no-op for
+    # Python's os.lstat), and verify-package.sh rejects non-exec scripts.
+    exec_set = set(exec_paths or [])
+
+    def rel_posix(dirname, entry):
+        return (dirname + '/' + entry) if dirname else entry
 
     for dirname in dirs:
         base = os.path.join(files_dir, dirname) if dirname else files_dir
@@ -259,7 +272,12 @@ def build_package(name, version, arch, origin, url, license_, maintainer,
                 if content:
                     data_blocks.append((len(paths.items) + 1, file_idx, content))
             acl = Obj(db, ADBI_ACL_MAX)
-            acl.integer(ACL_MODE, st.st_mode & 0o7777)
+            mode = st.st_mode & 0o7777
+            if rel_posix(dirname, e) in exec_set:
+                # Force a sane executable mode. Host FS modes are unreliable
+                # (NTFS has no Unix bits; a 0666 file must still become 0755).
+                mode = 0o755
+            acl.integer(ACL_MODE, mode)
             acl.blob(ACL_USER, b'root')
             acl.blob(ACL_GROUP, b'root')
             fobj.obj(FI_ACL, acl)
@@ -337,11 +355,16 @@ def main():
     ap.add_argument('--depends', default='')
     ap.add_argument('--files', required=True)
     ap.add_argument('--out', required=True)
+    ap.add_argument('--exec', dest='exec_paths', action='append', default=[],
+                    help='relative payload path that must carry the exec bit '
+                         '(repeatable; forces 0755 even when the host FS '
+                         'cannot represent Unix modes)')
     args = ap.parse_args()
 
     build_package(args.name, args.version, args.arch, args.origin, args.url,
                   args.license_, args.maintainer, args.description,
-                  split_depends(args.depends), args.files, args.out)
+                  split_depends(args.depends), args.files, args.out,
+                  exec_paths=args.exec_paths)
 
 
 if __name__ == '__main__':

@@ -28,9 +28,8 @@
 ## 目录结构
 
 ```
-.github/workflows/build-apk.yml # GitHub Actions 云编译：OpenWrt 25.12/snapshot → .apk
-.github/workflows/build-ipk.yml # ipk 构建：OpenWrt 24.10 / 23.05（原生 ipk 后端）
-.github/workflows/release.yml   # 汇总两条流水线并发布到 GitHub Release
+.github/workflows/build.yml     # GitHub Actions 云编译：直出 .ipk + .apk（all/noarch）
+.github/workflows/release.yml   # 汇总构建产物并发布到 GitHub Release
 theme/                        # 主题源码（放入 buildroot 的 feeds/luci/themes/ 下编译）
 ├── Makefile                  # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
@@ -64,22 +63,22 @@ theme/                        # 主题源码（放入 buildroot 的 feeds/luci/t
 
 ## 云编译（GitHub Actions）
 
-推送到 `main` 分支或打 `v*` 标签自动触发，也可在 Actions 页面手动触发（workflow_dispatch）。两条构建流水线 + 一条汇总发布：
+推送到 `main` 分支或打 `v*` 标签自动触发，也可在 Actions 页面手动触发（workflow_dispatch）。单条构建流水线 + 一条汇总发布：
 
 | Workflow | 说明 |
 | --- | --- |
-| `build-apk.yml` | OpenWrt 25.12 + snapshot（各 1 个目标），apk 后端（`CONFIG_USE_APK=y`）原生构建，产出 `.apk`（`noarch`） |
-| `build-ipk.yml` | OpenWrt 24.10 + 23.05（各 1 个目标），ipk 后端原生构建，产出 `.ipk`（`all`）；23.05 仍走独立的 `package-ipkg.mk` 代码路径，值得保留覆盖 |
-| `release.yml` | 两条流水线都成功后汇总全部产物，发布 `nightly`（推 main）或正式版本（打 `v*` 标签） |
+| `build.yml` | 一次产出全部 4 个包：主题 + 简中翻译 × `.ipk`（`all`）+ `.apk`（`noarch`）。纯数据直出，无需 SDK，数十秒完成 |
+| `release.yml` | 构建成功后汇总产物，发布 `nightly`（推 main）或正式版本（打 `v*` 标签） |
 
-每个 OpenWrt 系列产出**两个包**：主题 `luci-theme-mint` 与简中翻译 `luci-i18n-mint-zh-cn`
-（官方 LuCI 规范将 `po/` 编译为独立翻译包，只装主题时界面为英文），两者成对发布、成对安装。
+产出**四个文件**：主题 `luci-theme-mint` 与简中翻译 `luci-i18n-mint-zh-cn`
+（官方 LuCI 规范将 `po/` 编译为独立翻译包，只装主题时界面为英文），各两种格式，成对发布、成对安装。
 
-- 主题是纯数据包（无 `src/`），包与目标平台无关：每个 OpenWrt 系列只构建 1 个目标（x86/64），产物可装于任意平台
-- 基于官方**预编译 SDK**：不编工具链，但会真实编译主题的完整依赖链（rpcd、ucode、lucihttp、curl 等），单次构建约 10-20 分钟
-- SDK tarball 按官方 sha256 缓存（GitHub Actions cache），重复构建/重试秒级复用；每次仍按官方 `sha256sums` 重新校验
-- 每个产物先过 `scripts/verify-package.sh`（结构 + 元数据 + 载荷清单 + 可执行位），再进 `scripts/install-test.sh`（真实包管理器安装到临时 root）
-- 每个 `.apk`/`.ipk` 旁附 `.buildinfo.txt`（SDK 来源、LuCI 分支与 commit、内核版本等构建证据）
+- 主题是纯数据包（无 `src/`），包与目标平台无关：一份 `all`/`noarch` 包可装于任意目标
+- **不再拉取 OpenWrt SDK**：`scripts/build-direct.sh` 按 `luci.mk` 的安装布局装配载荷，再用与官方后端一致的容器格式打包
+  - ipk = `gzip(tar(debian-binary, data.tar.gz, control.tar.gz))`（OpenWrt `scripts/ipkg-build`）
+  - apk = apk-tools v3 ADB 容器（`ADBd` + raw deflate，与 `apk mkpkg` 一致）
+- 每个产物先过 `scripts/verify-package.sh`（结构 + 元数据 + 载荷清单 + 可执行位），再进 `scripts/install-test.sh`（安装到临时 root）
+- 每个 `.apk`/`.ipk` 旁附 `.buildinfo.txt`（主题 commit、包版本、构建方式等证据）
 
 ## 本地编译
 

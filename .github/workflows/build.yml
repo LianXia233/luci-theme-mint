@@ -1,0 +1,97 @@
+name: Build packages
+
+# Single cloud-build pipeline for luci-theme-mint.
+#
+# The theme is a pure data package (no src/), so the previous CI that
+# downloaded a ~300 MB OpenWrt SDK and compiled the whole luci-base
+# dependency chain was pure overhead. This workflow assembles the payload
+# exactly as luci.mk does and packs real .ipk / .apk containers directly
+# (scripts/build-direct.sh + scripts/mkadbpkg.py). Builds finish in seconds
+# instead of 10-20 minutes.
+#
+# Artifacts (arch-independent, one set covers every target):
+#   luci-theme-mint-*            + luci-i18n-mint-zh-cn-*
+#   *.ipk  (opkg / OpenWrt 24.10 and older)
+#   *.apk  (apk-tools v3 / OpenWrt 25.12+)
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version tag (default: nightly)'
+        required: false
+        default: nightly
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+env:
+  RELEASE_VERSION: ${{ inputs.release_version || 'nightly' }}
+
+jobs:
+  build:
+    name: ipk + apk · all
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout theme sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # theme git revision drives package version
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3 tar gzip || true
+          # opkg is best effort: the install test falls back to a
+          # structural payload check when it is missing.
+          sudo apt-get install -y -qq opkg || echo "opkg not in apt - structural install test will be used"
+
+      - name: Build IPK + APK packages
+        id: build
+        run: |
+          ./scripts/build-direct.sh \
+            --release-version "$RELEASE_VERSION" \
+            --out dist \
+            --workdir build
+
+      - name: Verify package metadata and payload
+        run: ./scripts/verify-package.sh --dir dist --expect-arch all
+
+      - name: Install test
+        run: |
+          fail=0
+          for f in dist/*.ipk dist/*.apk; do
+            [ -f "$f" ] || continue
+            ./scripts/install-test.sh --file "$f" || fail=1
+          done
+          exit "$fail"
+
+      - name: Show build info
+        if: always()
+        run: |
+          for f in dist/*.buildinfo.txt; do
+            [ -f "$f" ] || continue
+            echo "=== $f ==="
+            cat "$f"
+          done
+          ls -l dist/
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-theme-mint-packages
+          path: |
+            dist/*
+            !dist/README.txt
+          retention-days: 14
+          if-no-files-found: error
