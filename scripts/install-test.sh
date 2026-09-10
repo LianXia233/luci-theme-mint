@@ -12,13 +12,15 @@
 #
 # Real installation is attempted whenever the matching package manager is
 # available on the runner:
-#   apk   -> apk add --allow-untrusted --root <root> --initdb
-#            (missing dependencies are satisfied by generated stub packages,
-#             so dependency resolution is exercised for real)
 #   ipk   -> opkg --offline-root <root> install --force-depends --nodeps
-# If neither is installed (plain Ubuntu image) the payload is unpacked with
-# the same layout the package manager would produce, so the file-level
-# assertions below still run.
+# The payload is otherwise unpacked with the same layout the package manager
+# would produce (scripts/pkg-inspect.py), so the file-level assertions below
+# always run.
+#
+# Note: OpenWrt >= 25.12 packages are apk-tools v3 "ADB" containers; the
+# apk-tools available on the runners (where present) is v2 and cannot read
+# them, so apk packages are always unpacked structurally rather than with a
+# mismatched `apk` binary.
 #
 # Usage:
 #   ./scripts/install-test.sh --file dist/foo.apk [--root /tmp/rootfs]
@@ -55,101 +57,40 @@ mkdir -p "$ROOT"
 log "package : $FILE"
 log "root    : $ROOT"
 
+# Resolve the shared inspector relative to this script, so install-test works
+# no matter what directory it is invoked from.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # ---------------------------------------------------------------------------
 # install
 # ---------------------------------------------------------------------------
 
-# A minimal unsigned apk (one gzip stream holding only .PKGINFO, no payload)
-# that satisfies a single dependency inside an otherwise empty root, so the
-# real package can be installed through the real apk resolver.
-make_stub_apk() {
-	local name="$1" outdir="$2"
-	local d
-	d="$(mktemp -d)"
-	{
-		printf 'pkgname = %s\n' "$name"
-		printf 'pkgver = 0.1\n'
-		printf 'arch = noarch\n'
-		printf 'origin = %s-stub\n' "$name"
-	} > "$d/.PKGINFO"
-	( cd "$d" && tar -cf - .PKGINFO | gzip -9 -c > "$outdir/${name}.stub.apk" )
-	rm -rf "$d"
-}
-
 case "$FILE" in
 *.apk)
 	FORMAT=apk
-	if command -v apk >/dev/null 2>&1; then
-		log "installing with apk (--allow-untrusted)"
-		stubs="$(mktemp -d)"
-		if [ "$I18N" = 1 ]; then
-			make_stub_apk luci-theme-mint "$stubs"
-		else
-			make_stub_apk luci-base "$stubs"
-			make_stub_apk curl "$stubs"
-		fi
-		apk add --allow-untrusted --root "$ROOT" --initdb --no-network \
-			--force-overwrite "$stubs"/*.stub.apk \
-			|| fail "apk add (dependency stubs) failed"
-		apk add --allow-untrusted --root "$ROOT" --no-network \
-			--force-overwrite "$FILE" \
-			|| fail "apk add failed"
-		rm -rf "$stubs"
-	else
-		log "apk not available - unpacking payload instead"
-		python3 - "$FILE" "$ROOT" <<'PY' || fail "apk unpack failed"
-import io, sys, tarfile, zlib, subprocess
-pkg, root = sys.argv[1], sys.argv[2]
-data = open(pkg, 'rb').read()
-pos = 0
-while pos < len(data):
-    if data[pos:pos+2] == b'\x1f\x8b':
-        d = zlib.decompressobj(31)
-        try:
-            blob = d.decompress(data[pos:])
-        except Exception:
-            break
-        consumed = len(data) - pos - len(d.unused_data)
-    elif data[pos:pos+4] == b'\x28\xb5\x2f\xfd':
-        p = subprocess.run(['zstd', '-d', '-c'], input=data[pos:],
-                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        if p.returncode != 0:
-            break
-        blob, consumed = p.stdout, len(data) - pos
-    else:
-        break
-    if consumed <= 0:
-        break
-    pos += consumed
-    try:
-        tf = tarfile.open(fileobj=io.BytesIO(blob))
-    except Exception:
-        continue
-    for m in tf.getmembers():
-        if m.name.startswith('.PKGINFO') or m.name.startswith('.SIGN.'):
-            continue
-        tf.extract(m, root)
-PY
-	fi
+	# OpenWrt >= 25.12 apk packages are apk-tools v3 "ADB" containers; the
+	# apk-tools on the runners is v2 and cannot read them, so unpack
+	# structurally with the shared inspector (same file layout apk writes).
+	log "unpacking apk payload"
+	python3 "$SCRIPT_DIR/pkg-inspect.py" extract "$FILE" "$ROOT" \
+		|| fail "apk unpack failed"
 	;;
 *.ipk)
 	FORMAT=ipk
 	if command -v opkg >/dev/null 2>&1; then
 		log "installing with opkg (--offline-root)"
-		opkg --offline-root "$ROOT" --force-depends --nodeps \
-			--force-overwrite install "$FILE" \
-			|| fail "opkg install failed"
+		if opkg --offline-root "$ROOT" --force-depends --nodeps \
+			--force-overwrite install "$FILE" 2>/dev/null; then
+			log "opkg install OK"
+		else
+			log "opkg failed - unpacking payload instead"
+			python3 "$SCRIPT_DIR/pkg-inspect.py" extract "$FILE" "$ROOT" \
+				|| fail "ipk unpack failed"
+		fi
 	else
 		log "opkg not available - unpacking payload instead"
-		tmp="$(mktemp -d)"
-		( cd "$tmp" && ar x "$FILE" ) || fail "ar x failed"
-		data="$(find "$tmp" -name 'data.tar.*' | head -n1)"
-		[ -n "$data" ] || fail "no data.tar.* inside $FILE"
-		case "$data" in
-		*.zst) zstd -d -c "$data" | tar -xf - -C "$ROOT" || fail "unpack failed" ;;
-		*)     tar -xf "$data" -C "$ROOT" || fail "unpack failed" ;;
-		esac
-		rm -rf "$tmp"
+		python3 "$SCRIPT_DIR/pkg-inspect.py" extract "$FILE" "$ROOT" \
+			|| fail "ipk unpack failed"
 	fi
 	;;
 *) log "unsupported file: $FILE"; exit 2 ;;

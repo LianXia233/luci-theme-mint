@@ -8,12 +8,17 @@
 # The point of this check is to prove that a package was really produced by
 # the OpenWrt package build system:
 #
-#   apk - gzip stream(s) containing .PKGINFO (apk metadata) + payload
-#   ipk - ar archive containing debian-binary, control.tar.* and data.tar.*
+#   apk - apk-tools v3 ADB container ("ADBd"/"ADB." magic; OpenWrt >= 25.12)
+#         or, for completeness, apk-tools v2 gzip streams (.PKGINFO + payload)
+#   ipk - gzip( tar( debian-binary, data.tar.gz, control.tar.gz ) )
+#         (this is what OpenWrt's scripts/ipkg-build has always emitted)
 #
-# A renamed apk fails immediately: it has neither .PKGINFO nor an ar member
-# layout, so the "not a renamed package" requirement is enforced, not
-# assumed.
+# A renamed apk fails immediately: it carries neither the ipk's
+# debian-binary/data.tar members nor an ipk control file, so the "not a
+# renamed package" requirement is enforced, not assumed.
+#
+# Parsing lives in scripts/pkg-inspect.py (the one implementation shared
+# with install-test.sh), so both scripts always agree on the container.
 #
 # Usage:
 #   ./scripts/verify-package.sh --file dist/foo.apk [--expect-arch all]
@@ -46,171 +51,16 @@ done
 
 [ "${#FILES[@]}" -gt 0 ] || { log "no package files given"; exit 2; }
 
+# Resolve the shared inspector relative to this script, so verify works no
+# matter what directory it is invoked from.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # ---------------------------------------------------------------------------
-# python helper: dump metadata + payload listing for both formats
+# helper: dump metadata + payload listing for both formats
 # ---------------------------------------------------------------------------
 
 read_pkg_py() {
-	python3 - "$1" <<'PY'
-import gzip, io, os, sys, tarfile, subprocess, zlib
-
-path = sys.argv[1]
-data = open(path, 'rb').read()
-
-def members_from_tar_bytes(blob):
-    names, meta = [], {}
-    try:
-        tf = tarfile.open(fileobj=io.BytesIO(blob))
-    except Exception as e:
-        return names, meta, [], 'tar-error: %s' % e
-    xfiles = []
-    for m in tf.getmembers():
-        names.append(m.name)
-        if m.mode & 0o111:
-            xfiles.append(m.name)
-        if os.path.basename(m.name) in ('.PKGINFO', 'control'):
-            try:
-                meta = parse_control(tf.extractfile(m).read().decode('utf-8', 'replace'))
-            except Exception:
-                pass
-    return names, meta, xfiles, None
-
-def parse_control(text):
-    out = {}
-    def add(k, v):
-        if k in ('depend', 'control_depends'):
-            out[k] = (out[k] + ' ' if out.get(k) else '') + v
-        else:
-            out.setdefault(k, v)
-    for line in text.splitlines():
-        if not line.strip() or line.startswith('#'):
-            continue
-        if ':' in line:                      # ipk control (RFC822)
-            k, v = line.split(':', 1)
-            add('control_' + k.strip().lower(), v.strip())
-        elif ' = ' in line:                  # apk .PKGINFO
-            k, v = line.split(' = ', 1)
-            add(k.strip().lower(), v.strip())
-    return out
-
-def decompress(blob, kind):
-    if kind == 'gzip':
-        return gzip.decompress(blob)
-    if kind == 'zstd':
-        p = subprocess.run(['zstd', '-d', '-c'], input=blob,
-                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        return p.stdout if p.returncode == 0 else None
-    return blob
-
-result = {'kind': 'unknown', 'members': [], 'files': [], 'xfiles': [], 'meta': {}, 'errors': []}
-
-if data[:8] == b'!<arch>\n':
-    # ---- ipk: ar archive ------------------------------------------------
-    result['kind'] = 'ipk'
-    pos, names = 8, []
-    while pos + 60 <= len(data):
-        hdr = data[pos:pos + 60]
-        if hdr[58:60] != b'\x60\x0a':
-            result['errors'].append('bad ar header at %d' % pos)
-            break
-        name = hdr[0:16].decode('ascii', 'replace').strip()
-        size = int(hdr[48:58].decode('ascii', 'replace').strip() or 0)
-        body = data[pos + 60:pos + 60 + size]
-        pos += 60 + size + (size % 2)
-        names.append(name)
-        if name.startswith('control.tar'):
-            blob = decompress(body, 'zstd' if name.endswith('.zst') else 'gzip')
-            if blob is None:
-                result['errors'].append('cannot decompress %s' % name)
-                continue
-            _, meta, xfiles, err = members_from_tar_bytes(blob)
-            result['meta'].update(meta)
-            if err:
-                result['errors'].append(err)
-        elif name.startswith('data.tar'):
-            blob = decompress(body, 'zstd' if name.endswith('.zst') else 'gzip')
-            if blob is None:
-                result['errors'].append('cannot decompress %s' % name)
-                continue
-            try:
-                tf = tarfile.open(fileobj=io.BytesIO(blob))
-                for m in tf.getmembers():
-                    result['files'].append(m.name)
-                    if m.mode & 0o111:
-                        result['xfiles'].append(m.name)
-            except Exception as e:
-                result['errors'].append('data.tar: %s' % e)
-    result['members'] = names
-
-elif data[:2] == b'\x1f\x8b':
-    # ---- apk: concatenated gzip streams (sig / .PKGINFO / payload) -------
-    result['kind'] = 'apk'
-    pos = 0
-    while pos < len(data):
-        # Each apk section (signature / .PKGINFO / payload) is an
-        # independently compressed stream; walk them one by one.
-        if data[pos:pos + 2] == b'\x1f\x8b':
-            d = zlib.decompressobj(31)          # 31 = gzip
-            try:
-                blob = d.decompress(data[pos:])
-            except Exception as e:
-                result['errors'].append('gzip stream at %d: %s' % (pos, e))
-                break
-            consumed = len(data) - pos - len(d.unused_data)
-        elif data[pos:pos + 4] == b'\x28\xb5\x2f\xfd':
-            p = subprocess.run(['zstd', '-d', '-c'], input=data[pos:],
-                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-            if p.returncode != 0:
-                result['errors'].append('zstd stream at %d failed' % pos)
-                break
-            blob, consumed = p.stdout, len(data) - pos
-        else:
-            break
-        if consumed <= 0:
-            break
-        pos += consumed
-        try:
-            tf = tarfile.open(fileobj=io.BytesIO(blob))
-        except Exception as e:
-            result['errors'].append('tar stream: %s' % e)
-            continue
-        for m in tf.getmembers():
-            if m.name.startswith('.SIGN.'):
-                continue
-            result['files'].append(m.name)
-            if m.mode & 0o111:
-                result['xfiles'].append(m.name)
-            if os.path.basename(m.name) == '.PKGINFO':
-                try:
-                    result['meta'].update(
-                        parse_control(tf.extractfile(m).read().decode('utf-8', 'replace')))
-                except Exception:
-                    pass
-else:
-    result['errors'].append('unrecognised container (not ar, not gzip)')
-
-def emit(key, value):
-    print('%s=%s' % (key, value))
-
-emit('kind', result['kind'])
-emit('size', len(data))
-for k in ('pkgname', 'pkgver', 'arch', 'origin', 'pkgdesc', 'url', 'size'):
-    if k in result['meta']:
-        emit('meta_' + k, result['meta'][k])
-for k, v in result['meta'].items():
-    if k.startswith('control_'):
-        emit(k, v.replace('\n', ' | '))
-if 'depend' in result['meta']:
-    emit('depend', result['meta']['depend'])
-for n in result['members']:
-    emit('member', n)
-for f in result['files']:
-    emit('file', f)
-for f in result['xfiles']:
-    emit('xfile', f)
-for e in result['errors']:
-    emit('error', e)
-PY
+	python3 "$SCRIPT_DIR/pkg-inspect.py" info "$1"
 }
 
 # ---------------------------------------------------------------------------
@@ -291,16 +141,16 @@ for pkg in "${FILES[@]}"; do
 	*.apk)
 		[ "$kind" = apk ] || fail "$pkg has .apk extension but container is '${kind}' (renamed ipk?)"
 		[ -n "$(get1 meta_pkgname)" ] \
-			|| fail "$pkg carries no .PKGINFO - not a real apk"
+			|| fail "$pkg carries no package metadata - not a real apk"
 		;;
 	*.ipk)
 		[ "$kind" = ipk ] || fail "$pkg has .ipk extension but container is '${kind}' (renamed apk?)"
 		for m in debian-binary control.tar; do
 			get member | grep -q "^${m}" \
-				|| fail "$pkg is missing ar member '${m}'"
+				|| fail "$pkg is missing member '${m}'"
 		done
 		get member | grep -q '^data.tar' \
-			|| fail "$pkg is missing ar member 'data.tar.*'"
+			|| fail "$pkg is missing member 'data.tar.*'"
 		[ -n "$(get1 control_package)" ] \
 			|| fail "$pkg carries no control file - not a real ipk"
 		;;
