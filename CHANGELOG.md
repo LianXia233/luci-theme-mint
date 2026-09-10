@@ -9,6 +9,34 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-11 — 端口状态卡片排版、卡片玻璃统一、随机壁纸失效)
+
+实机截图定位（ImmortalWrt SNAPSHOT 192.168.88.1，Chromium 实测取值）：
+
+- **端口状态卡片挤成窄条、右侧大片空白**：网格轨道为
+  `repeat(auto-fill, minmax(160px, 210px))`，且卡片被
+  `max-width: 210px !important` 钉死。`auto-fill` 会按容器宽度创建
+  **全部空轨道**（1182px 下为 5 个），路由器只有 2 个端口时后 3 个轨道
+  留空，右侧因此出现约 560px 死区。改为
+  `repeat(auto-fit, minmax(200px, 1fr))`（空轨道折叠 + 剩余轨道铺满）
+  并移除卡片宽度上限。实测同一网格由 `210px 210px 210px 210px 210px`
+  （仅前 2 列有内容）变为 `584px 584px`，两卡等宽铺满整行
+- **状态卡片未使用全局毛玻璃**：端口卡片在 `--mz-color-surface-2`（浅色 +
+  壁纸下解析为 0.84 白）上绘制，而同一屏的 section 为 0.72，视觉上读作
+  实色方块而非毛玻璃。新增统一规则
+  `body.mz-has-wallpaper #mz-view .ifacebox`（id + 2 class，特异性高于
+  端口网格规则），卡片背景统一走 `--mz-panel-bg`，模糊/饱和改用
+  `--mz-glass-*` 令牌。实测卡片与 section 均为
+  `rgba(255,255,255,.72)` + `blur(18px) saturate(1.3)`
+- **随机壁纸失效**：`initGlobalWallpaper()` 把 `ui_random` 与 `enabled`
+  并列作为前置返回条件，而 `ui_random` 出厂默认 `0`。结果即使 cron 已经
+  抓好服务端缓存图（`/luci-static/mint/wallpaper-pc.img` —— 本地文件、
+  零外部请求、可 304 复用），也永远不会被应用，后台只剩渐变兜底。
+  现改为：`ui_random` 只约束「每次导航是否重新随机拉取远程图」，
+  服务端缓存图始终优先使用；既无缓存又未开启随机时才退回渐变。
+  实测 `--mz-wallpaper` 已解析为本地缓存图，页面仅请求该本地文件，
+  无任何外部壁纸 API 请求
+
 ### Fixed (2026-09-11 — 架构级重构：层叠体系、Dropdown 裁剪与遮挡、Dark 模式壁纸层、PC 顶栏)
 
 本轮以「从架构层面解决，不堆页面级 Hack」为原则，先做全量代码审查（cascade.css

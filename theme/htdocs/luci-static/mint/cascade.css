@@ -3997,6 +3997,19 @@ body.mz-has-wallpaper .cbi-dynlist > .item {
 	box-shadow: var(--mz-shadow-md);
 }
 
+/* ONE glass surface for every status card in the content area.
+   Per-card rules further down (the port grid, the upstream row) painted
+   --mz-color-surface-2, i.e. ~0.84 alpha, while the sections behind them
+   sat at 0.72 - which is why the status cards read as solid boxes and not
+   as the "global frosted glass" the rest of the UI uses. This selector
+   (id + two classes) outranks the port-grid rules, so a future card
+   flavour cannot drift away from the global glass again. */
+body.mz-has-wallpaper #mz-view .ifacebox {
+	background: var(--mz-panel-bg) !important;
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+}
+
 /* De-nested glass (review TZ-01/TZ-06, 2026-09-07): only the OUTERMOST
    container keeps the frosted background. Inner layers go fully
    transparent - stacked 0.72 layers used to multiply up to ~99%
@@ -5354,11 +5367,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"],
 #mz-view div[style*="display:grid"][style*="minmax(70px,1fr)"],
 #mz-view div[style*="display:grid"][style*="minmax(100px,1fr)"] {
-	grid-template-columns: repeat(auto-fill, minmax(160px, 210px)) !important;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
 	gap: var(--mz-spacing-md) !important;
-	align-items: start !important;
-	justify-items: start !important;
-	justify-content: start !important;
+	align-items: stretch !important;
+	justify-items: stretch !important;
+	justify-content: stretch !important;
 	margin-bottom: var(--mz-spacing-md);
 }
 
@@ -5370,14 +5383,20 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view div[style*="minmax(100px,1fr)"] > .ifacebox {
 	margin: 0 !important;
 	min-width: 0 !important;
-	max-width: 210px !important;
+	/* No width ceiling: the old `max-width: 210px` pinned every port card
+	   to a narrow column, so a two-port router left ~560px of dead space
+	   at the end of the row. The track sizing above keeps cards sane. */
+	max-width: none !important;
 	width: 100% !important;
 	height: auto;
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
 	text-align: center;
-	background: var(--mz-color-surface-2);
+	/* Global glass surface (was --mz-color-surface-2, a near-opaque sheet
+	   that made port cards read as solid boxes next to the frosted
+	   sections). */
+	background: var(--mz-panel-bg, var(--mz-glass-bg));
 	border: 1px solid var(--mz-color-border);
 	border-radius: var(--mz-radius-md);
 	box-shadow: var(--mz-shadow-sm), 0 0 0 1px rgba(16, 24, 40, .05);

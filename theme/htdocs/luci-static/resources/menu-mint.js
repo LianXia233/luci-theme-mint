@@ -103,8 +103,15 @@ return baseclass.extend({
 		}
 
 		const cfg = window.mintWallpaper;
-		if (!cfg || cfg.enabled === false || cfg.ui_random === false) {
-			/* No wallpaper configured/enabled: still run the global
+		/* NOTE: ui_random is deliberately NOT tested here any more. It only
+		   governs per-navigation remote randomisation; the server-side
+		   cached image (cron -> /luci-static/mint/wallpaper-<kind>.img) is
+		   a LOCAL file and must stay usable with ui_random off. Testing it
+		   here is what produced the "random wallpaper stopped working"
+		   report: the shipped default is ui_random=0, so the cached
+		   wallpaper was never applied at all. */
+		if (!cfg || cfg.enabled === false) {
+			/* Wallpaper switched off entirely: still run the global
 			   frosted-glass layer. --mz-wallpaper stays "none", so the
 			   CSS ::after paints the soft gradient fallback and every
 			   admin page gets glass cards + soft shadow regardless
@@ -147,6 +154,14 @@ return baseclass.extend({
 		}
 		else if (cacheFresh) {
 			urls = [cached.url];
+		}
+		else if (cfg.ui_random === false) {
+			/* Nothing cached anywhere and the admin has not opted in to
+			   per-navigation remote randomisation (OT-09): keep the soft
+			   gradient fallback rather than firing an API request on every
+			   page view. The glass layer still switches on. */
+			document.body.classList.add('mz-has-wallpaper');
+			return;
 		}
 		else {
 			/* Random multi-source: shuffle the configured list and try each
