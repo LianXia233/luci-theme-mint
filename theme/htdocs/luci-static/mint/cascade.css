@@ -6530,7 +6530,10 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 
 #mz-view .cbi-dropdown.btn > ul:not(.dropdown) > li,
 #mz-view .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
-	display: flex;
+	/* NO display here: the closed-state visibility of each option is owned by
+	   .
+	   Forcing flex on every <li> out-ranked that rule (ID specificity) and
+	   leaked the unselected option into the closed button. */
 	align-items: center;
 	height: 36px !important;
 	line-height: 1.4 !important;
@@ -6583,4 +6586,41 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	bottom: 100% !important;
 	margin-bottom: 6px !important;
 	max-height: min(60vh, 420px) !important;
+}
+/* ---- 9. Diagnostics rows + phone section-title alignment --------------
+ * Two phone-layout breaks, both rooted in containers LuCI leaves bare:
+ *
+ * 1. .diag-action is a bare INLINE container (no layout of its own). On a
+ *    wide desktop the three tool rows merely look loose; on a 390px phone
+ *    they flow into each other and the Nslookup selector lands mid-row.
+ * 2. The section-title "bleed" (negative side margins that glue the title
+ *    to the card edge) assumes the section padding equals --mz-spacing-lg.
+ *    On the phone the padding differs, so the title bar overflowed its
+ *    section by ~13px on each side while the content sat 9px inside -
+ *    three different left edges on one screen.
+ */
+.diag-action {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 var(--mz-spacing-md);
+}
+
+.diag-action .cbi-dropdown.btn,
+.diag-action .cbi-dropdown.cbi-button {
+	flex: 0 0 auto;
+}
+
+.diag-action input[type="text"] {
+	flex: 1 1 100%;
+	min-width: 0;
+}
+
+@media (max-width: 854px) {
+	.cbi-section > .cbi-title,
+	.cbi-section > .cbi-section-title {
+		margin: 0 0 var(--mz-spacing-md) !important;
+		border-radius: var(--mz-radius-md);
+	}
 }

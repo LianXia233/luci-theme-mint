@@ -10,6 +10,31 @@
 ## [Unreleased]
 ## [Unreleased]
 
+### Fixed (2026-09-11 — 保存并应用泄漏未选中项、diagnostics 行布局、手机卡片对齐)
+
+**一、「保存并应用」关闭态泄漏「强制应用」**
+- 根因：上一轮的 combo 内框规则给按钮 caption 的**每一个** li 都写了
+  `display: flex`，其 ID 特异性压过了关闭态的
+  `.cbi-dropdown:not([open]) > ul > li:not([selected]) { display: none }`，
+  于是未选中的「强制应用」也被渲染出来
+- 修复：该规则不再声明 display（可见性完全交还既有显隐规则）
+
+**二、diagnostics 三个工具行排版混乱（手机端最明显）**
+- 根因：LuCI 把 `.diag-action` 留成裸 `display: inline` 容器 —— 桌面宽屏只是
+  松散，390px 手机上三个工具的输入框/按钮组流式挤成一团
+  （实测三行 x=40/40/227、宽 177/219/105）
+- 修复：`.diag-action` 改为 flex 换行布局（gap 8px）；输入框独占一行、
+  按钮组（模式选择 + ··· + ▾）下一行右齐。实测三行均为 x=40 / w=310 / h=38
+
+**三、手机端概览卡片未对齐**
+- 根因：section 标题的「贴边出血」设计（左右负 margin 粘住卡片边缘）假设
+  section padding 等于 --mz-spacing-lg；手机端 padding 不同，导致标题栏比
+  section 宽 ~26px、内容又缩进 9px —— 同屏三种左边缘
+  （实测修复前 title x=15/w=360、sec x=28/w=334、内容 x=37/w=316）
+- 修复：≤854px 时取消负 margin，标题恢复为普通圆角条
+  （实测 title 与内容均为 x=37 / w=316，完全对齐）
+## [Unreleased]
+
 ### Changed (2026-09-11 — 手机端概览与 PC 统一为完整仪表盘)
 
 - 根因：概览页此前是双渲染器 —— 手机加载 overview-mobile.js（紧凑面板），
