@@ -5119,38 +5119,88 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"],
 #mz-view div[style*="display:grid"][style*="minmax(70px,1fr)"],
 #mz-view div[style*="display:grid"][style*="minmax(100px,1fr)"] {
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
-	gap: var(--mz-spacing-sm) !important;
-	align-items: stretch !important;
-	justify-items: stretch !important;
-	margin-bottom: var(--mz-spacing-sm);
+	grid-template-columns: repeat(auto-fill, minmax(160px, 210px)) !important;
+	gap: var(--mz-spacing-md) !important;
+	align-items: start !important;
+	justify-items: start !important;
+	justify-content: start !important;
+	margin-bottom: var(--mz-spacing-md);
 }
 
+/* Port cards: compact solid cards with a real border and subtle
+   shadow, so they no longer blend into the faint wallpaper/glass. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox,
 #mz-view div[style*="minmax(70px,1fr)"] > .ifacebox,
 #mz-view div[style*="minmax(100px,1fr)"] > .ifacebox {
 	margin: 0 !important;
 	min-width: 0 !important;
-	max-width: none !important;
-	width: auto !important;
-	height: 100%;
+	max-width: 210px !important;
+	width: 100% !important;
+	height: auto;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
 	text-align: center;
+	background: var(--mz-color-surface-2);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	box-shadow: var(--mz-shadow-sm), 0 0 0 1px rgba(16, 24, 40, .05);
+	overflow: hidden;
+	transition: border-color .15s ease, box-shadow .15s ease;
 }
 
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox:hover,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox:hover,
+#mz-view div[style*="minmax(70px,1fr)"] > .ifacebox:hover,
+#mz-view div[style*="minmax(100px,1fr)"] > .ifacebox:hover {
+	border-color: rgba(var(--mz-color-primary-rgb), .55);
+	box-shadow: 0 4px 14px rgba(var(--mz-color-primary-rgb), .12);
+}
+
+/* Port name row: tinted accent header so each port reads at a glance. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-head {
 	padding: 8px 10px !important;
 	font-size: .82rem !important;
+	line-height: 1.3;
+}
+
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-head:first-child,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-head:first-child {
+	background: rgba(var(--mz-color-primary-rgb), .14) !important;
+	color: var(--mz-color-text);
+	font-weight: 650;
+	border-bottom: 1px solid var(--mz-color-border);
+}
+
+/* Speed line: primary, slightly bolder, noticeable on the card. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body > span[title],
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body > span[title] {
+	font-weight: 600;
+	color: var(--mz-color-primary-strong, var(--mz-color-primary));
+}
+
+/* Zone strip: slim 4px bar flush with the card edges. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .zonebadge,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .zonebadge {
+	height: 4px;
+}
+
+/* Traffic readout: hairline-separated footer, no longer floating. */
+#mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body .cbi-tooltip-container,
+#mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body .cbi-tooltip-container {
+	margin-top: 6px;
+	padding-top: 6px;
+	border-top: 1px dashed var(--mz-color-border);
+	line-height: 1.55;
 }
 
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox .ifacebox-body,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox .ifacebox-body {
 	padding: 8px 10px !important;
 	line-height: 1.5;
+	color: var(--mz-color-text-muted);
 }
 
 @media (max-width: 640px) {
@@ -5199,6 +5249,81 @@ body.mz-has-wallpaper .cbi-section-descr {
 		flex-basis: auto;
 		width: 100%;
 	}
+}
+
+/* ================================================================
+ * Homepage "Network"/"Wireless" cards + section headers polish
+ * (2026-09-10): give status cards a defined frame, tint their header
+ * with the zone color, keep labels quiet, make values pop, and turn
+ * the barely-visible "隐藏" label into a clear pill button.
+ * ================================================================ */
+
+/* --- Status cards (net / wireless) --- */
+#mz-view .network-status-table > .ifacebox {
+	background: var(--mz-color-surface-2);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	box-shadow: var(--mz-shadow-sm);
+	overflow: hidden;
+}
+
+#mz-view .network-status-table .ifacebox-head {
+	padding: 9px 12px;
+	background: rgba(var(--zone-color-rgb, var(--mz-color-primary-rgb)), .10);
+	border-bottom: 1px solid var(--mz-color-border);
+	color: var(--mz-color-text);
+	font-weight: 650;
+}
+
+#mz-view .network-status-table .ifacebox-body strong {
+	color: var(--mz-color-text-muted);
+	font-weight: 500;
+	margin-right: 2px;
+}
+
+/* Long values (IPv6 prefixes, addresses): let them wrap instead of
+   overflowing the card. */
+#mz-view .network-status-table .ifacebox-body .nowrap {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+/* --- Section header accent bar --- */
+.cbi-section > .cbi-title > h3,
+.cbi-section > .cbi-section-title > h3 {
+	position: relative;
+	padding-left: 18px;
+}
+
+.cbi-section > .cbi-title > h3::before,
+.cbi-section > .cbi-section-title > h3::before {
+	content: "";
+	position: absolute;
+	left: 3px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 3px;
+	height: 15px;
+	border-radius: 2px;
+	background: var(--mz-color-primary);
+}
+
+/* --- "隐藏" label -> clear pill button with primary outline --- */
+.cbi-title h3 span.label[role="button"] {
+	padding: 1px 11px;
+	border: 1px solid rgba(var(--mz-color-primary-rgb), .4);
+	border-radius: 999px;
+	color: var(--mz-color-text);
+	font-size: .78rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.cbi-title h3 span.label[role="button"]:hover {
+	color: #fff;
+	border-color: var(--mz-color-primary);
+	background: var(--mz-color-primary);
 }
 
 /* --- Network interfaces overview (admin/network/network) --------- */
