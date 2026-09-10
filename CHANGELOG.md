@@ -9,6 +9,24 @@
 
 ## [Unreleased]
 
+### Changed (2026-09-10 — 云编译直出：去掉 OpenWrt SDK，单流水线产出 IPK+APK)
+
+- **删除 SDK 全量编译路径**：主题是纯数据包（无 `src/`），旧 CI 仍下载约 300MB 官方 SDK 并编译 luci-base 依赖链（rpcd、ucode、lucihttp、curl…），单次 10–20 分钟。现改为 `scripts/build-direct.sh` 按 `luci.mk` 安装布局装配载荷，再直接写出与官方后端一致的容器：
+  - ipk = `gzip(tar(debian-binary, data.tar.gz, control.tar.gz))`（OpenWrt `scripts/ipkg-build`）
+  - apk = apk-tools v3 ADB 容器（`ADBd` + raw deflate，与 `apk mkpkg` 一致）
+- **合并双流水线为单工作流**：删除 `build-apk.yml` / `build-ipk.yml`，新增 `build.yml`。一次跑完全部四个包并各自校验：
+  - `luci-theme-mint-<release>-all.ipk` / `.apk`
+  - `luci-i18n-mint-zh-cn-<release>-all.ipk` / `.apk`
+  - 架构仍为无关包：ipk 记 `all`，apk 记 `noarch`；一份产物可装任意目标
+- **release.yml 适配单工作流**：不再等待 APK/IPK 两条流水线汇合，改为汇总 `Build packages` 的单一 artifact 后发布 nightly / 正式版
+- **产物命名去掉系列/目标后缀**：旧名含 `23.05-x86_64` / `snapshot-x86_64` 等易误导字段（包本身与目标无关）；现统一为 `luci-theme-mint-<release>-all.ipk`、`luci-theme-mint-<release>.apk`
+- **`mkadbpkg.py` 跨平台加固**：
+  - 新增 `--exec <相对路径>`：对指定载荷强制写入 0755。Windows/NTFS 无法向 `os.lstat` 表达 Unix 执行位，仅靠 chmod 会让 APK 丢失脚本执行位（`verify-package.sh` 会拒绝）
+  - `scan_dirs` 路径统一为 POSIX `/`，修复 Windows 上 `os.walk`/`relpath` 反斜杠导致 `--exec` 匹配失败
+- **CI 调用方式**：workflow 一律 `bash scripts/...`，避免新建脚本未带可执行位时 runner 报 `Permission denied`（exit 126）
+- **清理无效 Release**：删除旧 `nightly`（混入 ImmortalWrt 杂项包、多系列重复资产、命名混乱）；新流水线已重新发布干净 nightly（4 包 + buildinfo + 发布说明）
+- **文档**：README 云编译章节、RELEASE.md 工作流与产物说明同步为「单工作流直出、无 SDK」
+
 ### Fixed (2026-09-10 — 云编译修复与优化：ipk/apk 云构建全线转绿的前置缺陷 + 简中翻译入包 + 构建提速)
 
 依据 `docs/reviews/CODE_REVIEW_2026-09-10.md`（对照 openwrt/luci master 与 openwrt main 的 `luci.mk`、`package-pack.mk` 官方实现复审）：

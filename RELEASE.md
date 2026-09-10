@@ -14,58 +14,50 @@
 
 ### 工作流说明
 
-#### build-apk.yml（APK）
+#### build.yml（直出 IPK + APK）
 
-- OpenWrt `25.12` / `snapshot`，各 1 个目标（`x86/64`）——主题是纯数据包（无 `src/`），
-  包与目标平台无关，多 target 只会产出内容相同的包
-- 使用官方 SDK 的 apk 后端（`CONFIG_USE_APK=y`）真实构建，包架构记录为 `noarch`
+主题是纯数据包（无 `src/`），无需 OpenWrt SDK 交叉编译。`scripts/build-direct.sh` 按 `luci.mk` 安装布局装配载荷，再写出与官方后端一致的容器：
+
+- ipk = `gzip(tar(debian-binary, data.tar.gz, control.tar.gz))`（OpenWrt `scripts/ipkg-build`）
+- apk = apk-tools v3 ADB 容器（`ADBd` + raw deflate，与 `apk mkpkg` 一致）
+- 一次产出全部 4 个包（主题 + 简中翻译 × 两种格式），数十秒完成
 - 每个产物都经过结构校验（`verify-package.sh`）与安装测试（`install-test.sh`）
-
-#### build-ipk.yml（IPK）
-
-- OpenWrt `24.10` / `23.05`，各 1 个目标（`x86/64`）——这两个系列原生提供 ipk 后端
-  （23.05 仍走独立的 `package-ipkg.mk` 代码路径，值得保留覆盖）
-- 若请求的系列已不再提供 ipk 后端，`--allow-legacy` 会回退到仍提供该后端的官方 SDK
-  （24.10 → 23.05），并在 `.buildinfo.txt` 与 Release 表格中标注「兼容构建」
-- 绝不通过改名 / 换后缀伪造 ipk
 
 #### release.yml（汇总发布）
 
-两个构建工作流都成功完成后，`release.yml` 汇总全部产物并发布：
+`Build packages` 成功后，`release.yml` 下载 artifact、复核包结构并发布：
 
 ```
 nightly
-├── APK   # 推荐用于 OpenWrt 25.12+
-│   ├── OpenWrt 25.12 (x86_64)
-│   └── OpenWrt snapshot (x86_64)
-└── IPK   # 用于仍使用 opkg/ipkg 的系统（24.10 / 23.05）
-    ├── OpenWrt 24.10 (x86_64)
-    └── OpenWrt 23.05 (x86_64)
+├── luci-theme-mint-nightly.apk              # OpenWrt 25.12+
+├── luci-i18n-mint-zh-cn-nightly.apk
+├── luci-theme-mint-nightly-all.ipk          # OpenWrt 24.10 / 23.05（opkg）
+├── luci-i18n-mint-zh-cn-nightly-all.ipk
+└── *.buildinfo.txt / RELEASE-NOTES.md
 ```
 
 Release 说明中会明确写出：**APK 与 IPK 不能互换**——APK 包无法被 opkg 安装，IPK 包无法被 apk 安装。
 
 ### 产物说明
 
-每个 OpenWrt 系列提供**两个**架构无关的包（官方 LuCI 规范将 `po/` 编译为独立翻译包；
-只装主题时界面为英文）：
+每次发布提供**四个**架构无关文件（官方 LuCI 规范将 `po/` 编译为独立翻译包；
+只装主题时界面为英文，主题与翻译须成对安装）：
 
 ```
-luci-theme-mint-<版本>-<OpenWrt 系列>-<target>-all.{apk,ipk}        # 主题
-luci-i18n-mint-zh-cn-<版本>-<OpenWrt 系列>-<target>-all.{apk,ipk}   # 简中翻译
+luci-theme-mint-<release>-all.ipk
+luci-theme-mint-<release>.apk
+luci-i18n-mint-zh-cn-<release>-all.ipk
+luci-i18n-mint-zh-cn-<release>.apk
 ```
 
-包内架构字段：ipk 为 `all`，apk 为 `noarch`（均为「架构无关」，内容相同）。
+包内架构字段：ipk 为 `all`，apk 为 `noarch`（均为「架构无关」，内容相同，可装于任意目标）。
 
 例如：
 
-- `luci-theme-mint-v1.0.0-25.12-x86_64-all.apk` - OpenWrt 25.12 SDK 构建
-- `luci-i18n-mint-zh-cn-v1.0.0-25.12-x86_64-all.apk` - 同 SDK 构建的简中翻译
-- `luci-theme-mint-v1.0.0-24.10-x86_64-all.ipk` - OpenWrt 24.10 SDK 构建
-- `luci-i18n-mint-zh-cn-v1.0.0-24.10-x86_64-all.ipk` - 同 SDK 构建的简中翻译
+- `luci-theme-mint-v1.0.0.apk` / `luci-theme-mint-v1.0.0-all.ipk`
+- `luci-i18n-mint-zh-cn-v1.0.0.apk` / `luci-i18n-mint-zh-cn-v1.0.0-all.ipk`
 
-每个产物附带同名 `.buildinfo.txt`，记录 SDK 下载地址、OpenWrt 版本、Kernel 版本、LuCI 分支与 commit、
-包格式/架构、是否为兼容构建。
+每个产物附带同名 `.buildinfo.txt`，记录主题 commit、包版本、包格式/架构、构建方式（direct / no SDK）。
 
 每个版本在两个位置都可下载：
 1. **GitHub Releases** - 正式版本页面
@@ -175,11 +167,11 @@ git push origin --tags
 
 ```sh
 # OpenWrt 25.12+（apk）
-scp luci-theme-mint-v1.0.0-25.12-x86_64-all.apk luci-i18n-mint-zh-cn-v1.0.0-25.12-x86_64-all.apk root@192.168.1.1:/tmp/
+scp luci-theme-mint-v1.0.0.apk luci-i18n-mint-zh-cn-v1.0.0.apk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "apk add --allow-untrusted /tmp/luci-theme-mint-*.apk /tmp/luci-i18n-mint-zh-cn-*.apk"
 
 # 仍使用 opkg 的系统（24.10 / 23.05）
-scp luci-theme-mint-v1.0.0-24.10-x86_64-all.ipk luci-i18n-mint-zh-cn-v1.0.0-24.10-x86_64-all.ipk root@192.168.1.1:/tmp/
+scp luci-theme-mint-v1.0.0-all.ipk luci-i18n-mint-zh-cn-v1.0.0-all.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/luci-theme-mint-*.ipk /tmp/luci-i18n-mint-zh-cn-*.ipk"
 ```
 

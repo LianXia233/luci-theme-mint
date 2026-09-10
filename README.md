@@ -205,8 +205,8 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 | ImmortalWrt | 21.02+ | ucode | `.apk` | ImmortalWrt 早于主线迁移至 ucode，并默认使用 apk 包管理 |
 | LEDE / OpenWrt ≤ 19.07 | — | — | — | **不支持**：ucode 模板与 rpcd ACL 路径在旧分支不可用 |
 
-云编译产物在每次 Release 同时提供双格式：`.apk`（OpenWrt 25.12 / snapshot SDK 构建）与 `.ipk`
-（24.10 / 23.05 SDK 构建），直接选择与你设备包管理器对应的产物安装；每系列各含主题与简中翻译两个包。
+云编译产物在每次 Release 同时提供双格式：`.apk`（OpenWrt 25.12+ / ImmortalWrt）与 `.ipk`
+（仍使用 opkg 的 24.10 / 23.05），直接选择与你设备包管理器对应的产物安装；两种格式各含主题与简中翻译，共 4 个包。
 
 ### 运行时依赖
 
