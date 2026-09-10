@@ -202,10 +202,28 @@
 				</div>
 			</noscript>
 
+			{#
+			  Page title bar. Desktop hides it (the view's own <h2> already
+			  names the page and the extra strip was pure redundancy);
+			  phones keep it. See the .mz-topbar rules in cascade.css.
+			#}
 			<header class="mz-topbar">
 				<span class="mz-topbar-title" id="mz-topbar-title" aria-live="polite"></span>
-				<div id="indicators" class="mz-indicators" aria-live="polite"></div>
 			</header>
+
+			{#
+			  The LuCI indicator slot lives in its OWN container rather than
+			  inside .mz-topbar. ui.js#showIndicator() mounts into
+			  #indicators and LuCI renders the change/apply indicator and the
+			  XHR poll badge there; leaving it inside a header that desktop
+			  now hides would silently remove those native affordances.
+			  The id MUST stay exactly "indicators" - that is the selector
+			  LuCI itself queries. The container collapses to zero height
+			  while the slot is empty, so it costs no layout space.
+			#}
+			<div class="mz-indicatorbar">
+				<div id="indicators" class="mz-indicators" aria-live="polite"></div>
+			</div>
 
 			<main id="mz-view" class="mz-view">
 				<div id="tabmenu" style="display:none"></div>

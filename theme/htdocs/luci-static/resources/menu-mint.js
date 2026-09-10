@@ -83,11 +83,17 @@ return baseclass.extend({
 		if (document.getElementById('mz-login'))
 			return;
 
-		/* Dark theme (2026-09-09): global glass on PURE BLACK, never a
-		   wallpaper. The mz-has-wallpaper class still activates the whole
-		   glass token/component layer, but no image is fetched and CSS
-		   paints the wallpaper layers black (see the dark ::before/::after
-		   overrides in cascade.css). */
+		/* Dark mode: deep grey glass, no wallpaper.
+		   The early return below skips every network path, so a dark page
+		   never requests a wallpaper API; the inline --mz-wallpaper*
+		   properties are cleared so a stale light-mode URL can never leak
+		   through; and cascade.css removes BOTH wallpaper pseudo-elements
+		   from the box tree (`content: none`), so nothing is composited.
+		   The mz-has-wallpaper class is still applied on purpose - it is
+		   the switch that enables the whole glass component layer, and only
+		   the wallpaper layers are meant to disappear in dark mode.
+		   The user's UCI wallpaper settings are never modified: switching
+		   back to light re-runs this method and reloads them. */
 		if (document.documentElement.getAttribute('data-theme') === 'dark') {
 			document.documentElement.style.removeProperty('--mz-wallpaper');
 			document.documentElement.style.removeProperty('--mz-wallpaper-overlay');

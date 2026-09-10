@@ -225,11 +225,36 @@
 		});
 	}
 
-	var mzDlObserver = new MutationObserver(function () {
+	/* ==== Section headings that embed a status pill ====
+	   Some third-party views inline `display:flex;justify-content:space-between`
+	   on an <h3> and drop a <span class="label"> pill inside (e.g. the port
+	   status panel). The theme's own section-heading rules can reflow the
+	   pill onto its own line, which reads as a broken heading.
+
+	   cascade.css already matches those headings with :has(); tagging them
+	   here as well makes the fix work in browsers without :has() support and
+	   keeps the intent explicit. Nothing is moved or restructured - only a
+	   class is added, so no third-party markup is modified. */
+	function mzH3Pill(root) {
+		(root || document).querySelectorAll(
+			'#mz-view .cbi-section > h3, #mz-view .cbi-section-node > h3, ' +
+			'.mz-sys-panel > h3, .mz-port-panel > h3, .mz-net-card-header > h3'
+		).forEach(function (h) {
+			if (h.querySelector(':scope > .label, :scope > .badge'))
+				h.classList.add('mz-h3-pill');
+		});
+	}
+
+	function mzEnhanceAll() {
 		mzDlEnhance(document);
+		mzH3Pill(document);
+	}
+
+	var mzDlObserver = new MutationObserver(function () {
+		mzEnhanceAll();
 	});
 	document.addEventListener('DOMContentLoaded', function () {
-		mzDlEnhance(document);
+		mzEnhanceAll();
 		mzDlObserver.observe(document.body, { childList: true, subtree: true });
 	});
 })();

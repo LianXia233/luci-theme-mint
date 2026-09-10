@@ -55,6 +55,42 @@
 	--mz-sidebar-width: 236px;
 	--mz-topbar-height: 56px;
 
+	/* ----------------------------------------------------------------
+	   Layer system. Every stacking decision in this stylesheet must go
+	   through one of these tokens; literals like z-index: 9999 are not
+	   allowed (see the "Layer system" section further down). The values
+	   are deliberately far apart so a single popover can never be
+	   outranked by an unrelated component.
+	   ---------------------------------------------------------------- */
+	--mz-z-wallpaper: -2;
+	--mz-z-wallpaper-overlay: -1;
+	--mz-z-base: 1;
+	--mz-z-content: 10;
+	--mz-z-sticky: 100;
+	--mz-z-navigation: 200;
+	--mz-z-scrim: 300;
+	--mz-z-drawer: 400;
+	--mz-z-dropdown: 1000;
+	--mz-z-popover: 1100;
+	--mz-z-modal: 2000;
+	--mz-z-toast: 3000;
+
+	/* ----------------------------------------------------------------
+	   Glass tokens - LIGHT ("white glassmorphism"): a white frosted
+	   sheet that lets the wallpaper show through just enough to be
+	   noticed without ever competing with the UI. Controls (input,
+	   select, button, table) deliberately do NOT get glass; they keep
+	   the opaque surface tokens so they stay unmistakably operable.
+	   ---------------------------------------------------------------- */
+	--mz-glass-bg: rgba(255, 255, 255, .72);
+	--mz-glass-bg-light: rgba(255, 255, 255, .62);
+	--mz-glass-bg-strong: rgba(255, 255, 255, .84);
+	--mz-glass-border: rgba(255, 255, 255, .55);
+	--mz-glass-blur: 18px;
+	--mz-glass-blur-strong: 20px;
+	--mz-glass-saturate: 130%;
+	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+
 	/* Motion */
 	--mz-transition: 180ms ease;
 
@@ -96,22 +132,57 @@ html[data-theme="dark"] {
 	--mz-shadow-md: 0 4px 12px rgba(0, 0, 0, .4);
 	--mz-shadow-lg: 0 12px 32px rgba(0, 0, 0, .5);
 
+	/* ----------------------------------------------------------------
+	   Glass tokens - DARK ("deep grey glass"). Dark mode never loads a
+	   wallpaper, so these surfaces only have to stay legible over the
+	   flat #10151f page. They are deliberately MORE opaque than the
+	   light ones (0.80-0.94): a heavily transparent dark card would let
+	   the page bleed through and smear the text.
+	   Elevation order: background < surface < strong < dropdown < modal.
+	   ---------------------------------------------------------------- */
+	--mz-glass-bg: rgba(29, 33, 41, .84);
+	--mz-glass-bg-light: rgba(25, 29, 36, .88);
+	--mz-glass-bg-strong: rgba(38, 43, 52, .92);
+	--mz-glass-border: rgba(255, 255, 255, .09);
+	--mz-glass-blur: 18px;
+	--mz-glass-blur-strong: 18px;
+	--mz-glass-saturate: 120%;
+	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .24);
+
 	color-scheme: dark;
+}
+
+/* Elevated surfaces: a menu or dialog the user cannot parse is worse
+   than no menu at all, so dropdown and modal stay noticeably more
+   opaque than the cards behind them. */
+html[data-theme="dark"] {
+	--mz-dropdown-bg: rgba(39, 44, 53, .96);
+	--mz-modal-bg: rgba(32, 37, 45, .97);
+}
+
+html:not([data-theme="dark"]) {
+	--mz-dropdown-bg: rgba(255, 255, 255, .96);
+	--mz-modal-bg: rgba(255, 255, 255, .97);
 }
 
 /* ---------------------------------------------------------------- */
 /* Base                                                              */
 /* ---------------------------------------------------------------- */
 
+/* The page colour lives on <html>, NOT on <body>. The wallpaper layers
+   are body pseudo-elements with a NEGATIVE z-index so that they sit
+   behind every piece of UI without forcing .mz-main to open a stacking
+   context; an opaque body background would paint straight over them. */
 html {
 	font-size: 16px;
+	background: var(--mz-color-background);
 }
 
 body {
 	margin: 0;
 	font-family: var(--mz-font-sans);
 	color: var(--mz-color-text);
-	background: var(--mz-color-background);
+	background: transparent;
 	-webkit-font-smoothing: antialiased;
 	line-height: 1.5;
 }
@@ -142,7 +213,7 @@ a:hover {
 	position: absolute;
 	left: -9999px;
 	top: 0;
-	z-index: 100;
+	z-index: var(--mz-z-toast);
 	padding: var(--mz-spacing-sm) var(--mz-spacing-md);
 	background: var(--mz-color-primary);
 	color: #fff;
@@ -167,7 +238,7 @@ a:hover {
 	flex-direction: column;
 	background: var(--mz-color-surface);
 	border-right: 1px solid var(--mz-color-border);
-	z-index: 40;
+	z-index: var(--mz-z-drawer);
 	transition: transform var(--mz-transition);
 }
 
@@ -278,7 +349,7 @@ a:hover {
 	position: fixed;
 	top: 12px;
 	left: 12px;
-	z-index: 50;
+	z-index: var(--mz-z-drawer);
 	width: 40px;
 	height: 40px;
 	border: 1px solid var(--mz-color-border);
@@ -294,7 +365,7 @@ a:hover {
 .mz-overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 35;
+	z-index: var(--mz-z-scrim);
 	background: var(--mz-scrim);
 	opacity: 0;
 	transition: opacity var(--mz-transition);
@@ -318,7 +389,7 @@ a:hover {
 .mz-topbar {
 	position: sticky;
 	top: 0;
-	z-index: 30;
+	z-index: var(--mz-z-navigation);
 	display: flex;
 	align-items: center;
 	min-height: var(--mz-topbar-height);
@@ -337,11 +408,40 @@ a:hover {
 	gap: var(--mz-spacing-sm);
 }
 
+/* LuCI indicator strip - the host of the native #indicators slot
+   (ui.js#showIndicator: change/apply indicator, XHR poll badge, ...).
+   It is a SEPARATE element from .mz-topbar precisely so that hiding the
+   desktop title bar cannot take a native LuCI affordance with it.
+   Zero-height while empty: side padding only and no vertical padding, so
+   an unused strip costs exactly 0px of layout on every page. */
+.mz-indicatorbar {
+	position: sticky;
+	top: 0;
+	z-index: var(--mz-z-navigation);
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	min-height: 0;
+	padding: 0 var(--mz-spacing-lg);
+}
+
+.mz-indicatorbar .mz-indicators:empty {
+	display: none;
+}
+
+/* Content wrapper. It constrains WIDTH only - never visibility.
+   An earlier revision also set `overflow-x: clip` on this selector as a
+   page-level guard, which silently clipped every absolutely positioned
+   descendant reaching past the view box: most visibly the cbi-dropdown
+   menus near the right/bottom edge. A dropdown is supposed to overlap its
+   card and to hang off the page bottom, so overflow is handled by the
+   elements that actually need a scroll container instead. */
 .mz-view {
 	flex: 1;
 	padding: var(--mz-spacing-lg);
 	max-width: 1400px;
 	width: 100%;
+	min-width: 0;
 	box-sizing: border-box;
 	margin: 0 auto;
 }
@@ -809,6 +909,48 @@ th {
 	border-color: transparent;
 }
 
+/* ----------------------------------------------------------------
+ * Headings that embed a status pill
+ *
+ * Third-party views render headings such as
+ *     <h3 style="display:flex;justify-content:space-between">
+ *         端口状态 <span class="label">隐藏</span></h3>
+ * and rely on the theme to keep the title and the pill on ONE row,
+ * vertically centred. The theme's own `.cbi-section h3` rules
+ * (fixed margin/padding/border) plus the narrow-column reflow further
+ * down can push the pill onto a second line, which reads as a broken
+ * heading ("端口状态" / "隐藏" stacked).
+ *
+ * Scoped on purpose. A bare `h3 { ... }` would restyle every heading in
+ * LuCI and in every third-party app, so the rules only match headings
+ * that actually carry a pill:
+ *   - .mz-h3-pill is added by mz-ui.js (works in every browser), and
+ *   - :has(> .label) covers the no-JS / pre-init case on browsers that
+ *     support it. Both selectors hit the same declaration block.
+ * ---------------------------------------------------------------- */
+.mz-h3-pill,
+#mz-view .cbi-section > h3:has(> .label),
+#mz-view .cbi-section > h3:has(> .badge),
+#mz-view .cbi-section-node > h3:has(> .label),
+.mz-sys-panel > h3:has(> .label),
+.mz-port-panel > h3:has(> .label),
+.mz-net-card-header > h3:has(> .label) {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: nowrap;
+	gap: 12px;
+}
+
+/* The pill must never be the thing that wraps or shrinks. */
+.mz-h3-pill > .label,
+.mz-h3-pill > .badge,
+#mz-view .cbi-section > h3:has(> .label) > .label,
+#mz-view .cbi-section > h3:has(> .badge) > .badge {
+	flex: 0 0 auto;
+	white-space: nowrap;
+}
+
 /* Dropdown menus (used by legacy menu JS) */
 .dropdown-menu {
 	background: var(--mz-color-surface);
@@ -906,7 +1048,7 @@ th {
 .mz-login {
 	position: fixed;
 	inset: 0;
-	z-index: 1000;
+	z-index: var(--mz-z-content);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -938,7 +1080,7 @@ th {
 
 .mz-login-card {
 	position: relative;
-	z-index: 1;
+	z-index: var(--mz-z-base);
 	width: min(380px, calc(100vw - 32px));
 	box-sizing: border-box;
 	padding: var(--mz-spacing-xl);
@@ -1035,7 +1177,7 @@ th {
 	position: fixed;
 	right: 14px;
 	bottom: 12px;
-	z-index: 1001;
+	z-index: var(--mz-z-sticky);
 	font-size: .7rem;
 	color: rgba(255, 255, 255, .55);
 	text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
@@ -1068,9 +1210,9 @@ body.mz-login-active #maincontent {
 	.mz-mobilebar {
 		position: sticky;
 		top: 0;
-		/* below the drawer overlay (z 35) so it dims with the rest of
-		   the page while the sidebar drawer is open */
-		z-index: 30;
+		/* Under the drawer scrim (--mz-z-scrim) so the bar dims with
+		   the rest of the page while the sidebar drawer is open. */
+		z-index: var(--mz-z-navigation);
 		display: flex;
 		align-items: center;
 		gap: var(--mz-spacing-sm);
@@ -1112,14 +1254,33 @@ body.mz-login-active #maincontent {
 		flex: 0 0 auto;
 	}
 
-	/* Page-level titles are rendered in the bar instead (user request:
-	   no duplicate title under the bar on any page). Covers the plain
-	   LuCI page heading and the overview dashboard header (its refresh
-	   button is re-parented into the bar by menu-mint.js). Desktop
-	   (>854px) keeps the original in-page titles. */
+	/* Page-level titles are hidden on phones and rendered by the
+	   .mz-topbar strip instead, so no page ever shows its title twice.
+	   Covers the plain LuCI page heading and the overview dashboard
+	   header (its refresh button is re-parented into this bar by
+	   menu-mint.js). Desktop (>854px) keeps the original in-page
+	   titles. */
 	#mz-view > h2,
 	.mint-ovd-header {
 		display: none !important;
+	}
+
+	/* The title strip is deliberately NOT sticky on phones: .mz-mobilebar
+	   already owns the sticky slot at the top edge, and two sticky
+	   siblings both pinned to top:0 would overlap. */
+	.mz-topbar {
+		position: static;
+	}
+
+	/* Controls only (hamburger left, refresh right) - the title moved to
+	   .mz-topbar above. The node itself stays in the DOM because
+	   menu-mint.js#initMobileBar keeps mirroring the heading into it. */
+	.mz-mobilebar {
+		justify-content: space-between;
+	}
+
+	.mz-mobilebar .mz-mobilebar-title {
+		display: none;
 	}
 }
 
@@ -1333,9 +1494,17 @@ body.mz-has-wallpaper .mz-mobilebar {
 .cbi-button-apply + .dropdown-menu,
 .btn + .dropdown-menu {
 	position: absolute;
-	top: 100%;
+	/* Positioning is owned by LuCI's dropdown JS, NOT by the theme: the JS
+	   writes an inline `top` when the menu opens downwards and an inline
+	   `bottom` when there is no room below and the menu must flip upwards.
+	   Hard-coding `top: 100%` here over-constrained the box whenever the
+	   upward strategy was chosen (top AND bottom both resolved), which
+	   collapsed the menu to 0px of content height while every <li> still
+	   measured 48px - the menu rendered as a 10px sliver. Both offsets stay
+	   auto so whichever one the JS writes wins. */
+	top: auto;
 	left: 0;
-	z-index: 100;
+	z-index: var(--mz-z-dropdown);
 	min-width: 180px;
 	background: var(--mz-color-surface);
 	border: 1px solid var(--mz-color-border);
@@ -1570,9 +1739,17 @@ table.cbi-section-table th {
 }
 .cbi-dropdown[open] > ul {
 	position: absolute;
-	top: 100%;
+	/* Positioning is owned by LuCI's dropdown JS, NOT by the theme: the JS
+	   writes an inline `top` when the menu opens downwards and an inline
+	   `bottom` when there is no room below and the menu must flip upwards.
+	   Hard-coding `top: 100%` here over-constrained the box whenever the
+	   upward strategy was chosen (top AND bottom both resolved), which
+	   collapsed the menu to 0px of content height while every <li> still
+	   measured 48px - the menu rendered as a 10px sliver. Both offsets stay
+	   auto so whichever one the JS writes wins. */
+	top: auto;
 	left: 0;
-	z-index: 100;
+	z-index: var(--mz-z-dropdown);
 	min-width: 180px;
 	background: var(--mz-color-surface);
 	border: 1px solid var(--mz-color-border);
@@ -1658,9 +1835,17 @@ table.cbi-section-table th {
 }
 .cbi-dropdown[open] > ul {
 	position: absolute;
-	top: calc(100% + 4px);
+	/* Positioning is owned by LuCI's dropdown JS, NOT by the theme: the JS
+	   writes an inline `top` when the menu opens downwards and an inline
+	   `bottom` when there is no room below and the menu must flip upwards.
+	   Hard-coding `top: 100%` here over-constrained the box whenever the
+	   upward strategy was chosen (top AND bottom both resolved), which
+	   collapsed the menu to 0px of content height while every <li> still
+	   measured 48px - the menu rendered as a 10px sliver. Both offsets stay
+	   auto so whichever one the JS writes wins. */
+	top: auto;
 	left: 0;
-	z-index: 100;
+	z-index: var(--mz-z-dropdown);
 	min-width: 180px;
 	background: var(--mz-color-surface);
 	border: 1px solid var(--mz-color-border);
@@ -2868,10 +3053,13 @@ div[id^="content_"] select {
 	box-sizing: border-box;
 }
 
-/* Guard: page-level tables/controls must never bleed past the view */
-.mz-view {
-	overflow-x: clip;
-}
+/* (Removed: this rule used to set `overflow-x: clip` on .mz-view. `clip` is
+   not a scroll container, so it silently CUT OFF every absolutely positioned
+   descendant that reached past the view box - most visibly the cbi-dropdown
+   menus near the right or bottom edge, and the Save & Apply combo button at
+   the end of a long form. .mz-view now constrains width only; the elements
+   that genuinely need a scroll container (data tables, log panes) declare
+   their own overflow.) */
 
 .cbi-map {
 	min-width: 0;
@@ -2897,7 +3085,7 @@ table.table td,
 #modal_overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 2000;
+	z-index: var(--mz-z-modal);
 	background: transparent;
 	overflow-y: auto;
 	padding: 5vh 16px 40px;
@@ -3025,7 +3213,7 @@ textarea,
 #maincontent .cbi-page-actions {
 	position: sticky;
 	bottom: 0;
-	z-index: 25;
+	z-index: var(--mz-z-sticky);
 	background: var(--mz-color-background);
 	border-top: 1px solid var(--mz-color-border);
 	margin-top: 16px;
@@ -3256,10 +3444,15 @@ html[data-theme="dark"] {
 }
 
 /* Keep the apply split button exactly as tall as the save/reset
-   buttons next to it (dropdown internals previously inflated it). */
+   buttons next to it (dropdown internals previously inflated it).
+   `overflow: hidden` used to live here and was the root cause of the
+   Save & Apply menu being invisible: it clipped the floating <ul> the
+   moment it opened. Height is still pinned, but overflow is NOT - the
+   later `overflow: visible !important` block is a safety net for other
+   cbi-dropdown flavours, not the fix for this one. */
 .cbi-page-actions .cbi-dropdown.cbi-button {
 	height: 34px;
-	overflow: hidden;
+	overflow: visible;
 }
 
 .cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
@@ -3602,27 +3795,31 @@ html[data-theme="dark"] {
  * Wallpaper covers the page background; an overlay keeps text
  * readable while panels turn slightly translucent.
  * ================================================================ */
-body.mz-has-wallpaper {
-	/* Solid color stays as the instant fallback behind the image layer. */
-	background-color: var(--mz-color-background);
-}
+/* body itself stays transparent: the flat fallback colour lives on <html>
+   (see Base) and the wallpaper layers below are body pseudo-elements with
+   a NEGATIVE z-index, so an opaque body background would paint straight
+   over them. */
 
-/* Fixed image layer (::after) + dim/blur overlay (::before). A real fixed
-	   layer is used instead of background-attachment: fixed, which iOS
-	   Safari ignores (review TZ-10). Paint order: image (z 0) < overlay
-	   (z 1) < content (.mz-main z 1, later sibling) < chrome (z 60+). */
+/* Fixed image layer (::after) + dim/blur overlay (::before), both painted
+	   BEHIND all page content via negative z-index. A real fixed layer is
+	   used instead of background-attachment: fixed, which iOS Safari
+	   ignores (review TZ-10). Paint order: page colour (html) < image
+	   (z -2) < overlay (z -1) < every piece of UI (root stacking context).
+	   Using negative z-index here is what allows .mz-main to stay a plain
+	   static box - and therefore what keeps dropdown menus from being
+	   trapped underneath the sidebar. */
 body.mz-has-wallpaper::after {
 	content: "";
 	position: fixed;
 	inset: 0;
-	z-index: 0;
+	z-index: var(--mz-z-wallpaper);
 	pointer-events: none;
 	/* Layer 1: the configured/fetched wallpaper (none when disabled).
 	   Layer 2: a soft gradient fallback so the frosted-glass layer still
 	   has colour to show through on EVERY admin page - when --mz-wallpaper
 	   is "none" the gradient alone paints the backdrop; when a real image
-	   is set it covers the gradient entirely. Dark theme overrides this
-	   below to keep the pure-black glass look. */
+	   is set it covers the gradient entirely. Dark theme disables both
+	   (dark mode never loads a wallpaper). */
 	background-image: var(--mz-wallpaper, none),
 		linear-gradient(135deg, #93a7ff 0%, #bcc6ff 42%, #f2cfe8 100%);
 	background-size: cover;
@@ -3630,68 +3827,92 @@ body.mz-has-wallpaper::after {
 	background-repeat: no-repeat;
 }
 
-/* Dark theme keeps the pure-black glass (no gradient wallpaper layer). */
-body.mz-has-wallpaper[data-theme="dark"]::after {
-	background-image: none;
+/* Dark mode renders NO wallpaper layer at all.
+   `content: none` removes both pseudo-elements from the box tree instead of
+   painting over them, so dark pages never composite a wallpaper (no image,
+   no gradient, no scrim) - they simply sit on the flat page colour with the
+   dark glass surfaces above it. The data-theme attribute lives on <html>,
+   so the selector MUST be html[data-theme="dark"] body...; the previous
+   `body.mz-has-wallpaper[data-theme="dark"]` could never match and dark
+   pages kept painting the light gradient behind the glass.
+
+   The mz-has-wallpaper class itself is still applied in dark mode: it is
+   the switch that enables the whole glass component layer, and only the
+   wallpaper layers are meant to disappear. */
+html[data-theme="dark"] body.mz-has-wallpaper::after,
+html[data-theme="dark"] body.mz-has-wallpaper::before {
+	content: none;
 }
 
 body.mz-has-wallpaper::before {
 	content: "";
 	position: fixed;
 	inset: 0;
-	z-index: 1;
+	z-index: var(--mz-z-wallpaper-overlay);
 	pointer-events: none;
-	/* Dark theme: dim the wallpaper so light typography on glass reads
-	   comfortably. Light theme: a soft white wash brightens the image
-	   instead, so white frosted glass with dark text looks natural. */
+	/* Dark theme: a flat deep scrim would only fight the dark surfaces, so
+	   the overlay stays very light there. Light theme: a soft white wash
+	   brightens the image so white frosted glass with dark text reads
+	   naturally. */
 	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.45));
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 }
 
-body.mz-has-wallpaper:not([data-theme="dark"])::before {
+html:not([data-theme="dark"]) body.mz-has-wallpaper::before {
 	background: rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.35));
 }
 
-/* NOTE: never touch .mz-sidebar positioning here - it is fixed/sticky
-   by default and forcing position:relative would push the whole main
-   area below the tall sidebar column. */
-body.mz-has-wallpaper .mz-main {
-	position: relative;
-	z-index: 1;
-}
-
-body.mz-has-wallpaper .mz-topbar,
-body.mz-has-wallpaper .mz-sidebar {
-	z-index: 60;
-}
+/* NOTE: .mz-main must NOT be given `position: relative; z-index: 1`.
+   That combination opens a stacking context and traps every popup inside
+   it: a cbi-dropdown opening at z-index 1000 would STILL paint below the
+   fixed .mz-sidebar, because the sidebar's z-index is compared against
+   .mz-main's "1" rather than against the dropdown's. The wallpaper now
+   sits at a negative z-index, so the content never needs raising, and all
+   inner popups compete in the root stacking context where the --mz-z-*
+   tokens mean what they say. */
 
 /* Frosted app chrome (review TZ-02, 2026-09-07): the sidebar, topbar,
-   footer and sticky action bar used to be fully opaque slabs that cut
-   the wallpaper into pieces. They now share the strong glass tint so
-   the wallpaper flows edge to edge while text stays readable. */
+   footer and sticky action bar used to be fully opaque slabs that cut the
+   wallpaper into pieces. They now share the strong glass tint so the
+   wallpaper flows edge to edge while text stays readable. Blur/saturate
+   come from the tokens, so the same rule serves white glass in light mode
+   and deep grey glass in dark mode. */
 body.mz-has-wallpaper .mz-sidebar,
 body.mz-has-wallpaper .mz-topbar,
 body.mz-has-wallpaper .mz-footer,
+body.mz-has-wallpaper .mz-mobilebar,
 body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
 body.mz-has-wallpaper #maincontent .cbi-page-actions {
 	background: var(--mz-panel-bg-strong);
-	backdrop-filter: blur(14px) saturate(1.15);
-	-webkit-backdrop-filter: blur(14px) saturate(1.15);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
 }
 
-/* The hamburger must stay above the raised sidebar (review TZ-07). */
+/* Browsers without backdrop-filter (older WebKit, some embedded webviews)
+   would otherwise render a 0.84-alpha panel over a busy photo and lose the
+   text. Fall back to a near-opaque surface so legibility never depends on
+   an unsupported effect. */
+@supports not (backdrop-filter: blur(1px)) {
+	body.mz-has-wallpaper .mz-sidebar,
+	body.mz-has-wallpaper .mz-topbar,
+	body.mz-has-wallpaper .mz-footer,
+	body.mz-has-wallpaper .mz-mobilebar,
+	body.mz-has-wallpaper .cbi-section,
+	body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
+	body.mz-has-wallpaper #maincontent .cbi-page-actions {
+		background: var(--mz-color-surface);
+	}
+}
+
+/* The hamburger must stay above the drawer it opens (review TZ-07). */
 body.mz-has-wallpaper .mz-sidebar-toggle {
-	z-index: 70;
+	z-index: var(--mz-z-drawer);
 }
-
-/* (Removed 2026-09-07 review TZ-05: the old 0.86 panel rules lived here but
-   were fully overridden by the glass layer below. 0.72 / --mz-panel-bg
-   is now the single source of truth.) */
 
 /* The modal overlay stays above the wallpaper backdrop */
 body.mz-has-wallpaper #modal_overlay {
-	z-index: 2000;
+	z-index: var(--mz-z-modal);
 }
 
 /* (Removed 2026-09-07 review TZ-05: old 0.9 table rules, superseded by the glass layer below.) */
@@ -3707,32 +3928,44 @@ body.mz-has-wallpaper #modal_overlay {
    theme uses a barely-there white wash on a deep navy plate with light
    typography. Both share the same blur / saturate so the "frosted"
    affordance is identical; only the color tokens flip. */
-body.mz-has-wallpaper:not([data-theme="dark"]) {
-	--mz-panel-bg: rgba(255, 255, 255, 0.7);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.86);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.55);
+/* LIGHT + wallpaper: "white glassmorphism". The panel tokens are aliases of
+   the --mz-glass-* light tokens so the glass parameters live in exactly one
+   place. Note the `html:not([data-theme="dark"])` prefix: data-theme is an
+   attribute of <html>, so a bare `body.mz-has-wallpaper:not([data-theme])`
+   matched unconditionally and leaked the light palette into dark mode. */
+html:not([data-theme="dark"]) body.mz-has-wallpaper {
+	--mz-panel-bg: var(--mz-glass-bg);
+	--mz-panel-bg-strong: var(--mz-glass-bg-strong);
+	--mz-panel-bg-soft: var(--mz-glass-bg-light);
 	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, 0.6);
-	--mz-color-text: #1a2233;
-	--mz-color-text-muted: rgba(26, 34, 51, 0.62);
-	--mz-color-surface: rgba(255, 255, 255, 0.7);
-	--mz-color-surface-2: rgba(255, 255, 255, 0.86);
-	--mz-color-border: rgba(255, 255, 255, 0.5);
+	--mz-color-text: #20242b;
+	--mz-color-text-muted: rgba(32, 36, 43, 0.62);
+	--mz-color-surface: var(--mz-glass-bg);
+	--mz-color-surface-2: var(--mz-glass-bg-strong);
+	--mz-color-border: var(--mz-glass-border);
 	--mz-color-background: #eef1f6;
 	--mz-color-primary-soft: rgba(79, 110, 247, 0.12);
 }
 
-body.mz-has-wallpaper[data-theme="dark"] {
-	--mz-panel-bg: rgba(255, 255, 255, 0.07);
-	--mz-panel-bg-strong: rgba(255, 255, 255, 0.13);
-	--mz-panel-bg-soft: rgba(255, 255, 255, 0.045);
+/* DARK + wallpaper class (dark mode never paints an image, but the class is
+   still what switches the whole glass layer on): "deep grey glass". The
+   surfaces here are 0.88-0.92 opaque - the previous rgba(255,255,255,0.07)
+   sheets were invisible over a dark page, which is why dark cards looked
+   like floating text. Only one token set covers both the "wallpaper on,
+   dark" and "wallpaper off, dark" cases, because dark never renders an
+   image layer anyway. */
+html[data-theme="dark"] body.mz-has-wallpaper {
+	--mz-panel-bg: rgba(30, 34, 42, 0.88);
+	--mz-panel-bg-strong: rgba(38, 43, 52, 0.92);
+	--mz-panel-bg-soft: rgba(25, 29, 36, 0.88);
 	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, 0.55);
-	--mz-color-text: #eef2f8;
-	--mz-color-text-muted: rgba(228, 235, 246, 0.72);
-	--mz-color-surface: rgba(255, 255, 255, 0.07);
-	--mz-color-surface-2: rgba(255, 255, 255, 0.11);
-	--mz-color-border: rgba(255, 255, 255, 0.12);
-	--mz-color-background: #16202f;
-	--mz-color-primary-soft: rgba(79, 110, 247, 0.18);
+	--mz-color-text: #f2f4f7;
+	--mz-color-text-muted: #aeb4be;
+	--mz-color-surface: rgba(30, 34, 42, 0.88);
+	--mz-color-surface-2: rgba(38, 43, 52, 0.92);
+	--mz-color-border: rgba(255, 255, 255, 0.10);
+	--mz-color-background: #10151f;
+	--mz-color-primary-soft: rgba(125, 147, 255, 0.16);
 }
 
 body.mz-has-wallpaper .cbi-map,
@@ -4274,7 +4507,7 @@ html:not([data-theme="dark"]) {
 	position: absolute;
 	left: 0;
 	top: 100%;
-	z-index: 1000;
+	z-index: var(--mz-z-popover);
 	margin-top: 6px;
 	width: max-content;
 	max-width: 360px;
@@ -4440,9 +4673,11 @@ ul.cbi-tabmenu {
 	font-style: italic;
 }
 
-/* Topbar: breadcrumb left, poll indicator flush right. The markup
-   ships a .pull-right helper this theme does not define. */
-.mz-topbar #indicators.mz-indicators {
+/* Indicator slot: flush right inside its own strip. The markup ships a
+   .pull-right helper this theme does not define, and the slot no longer
+   lives inside .mz-topbar (see the .mz-indicatorbar rules near the top of
+   this file). */
+.mz-indicatorbar .mz-indicators {
 	margin-left: auto;
 }
 
@@ -5445,11 +5680,17 @@ body.mz-has-wallpaper .cbi-section-descr {
 	min-width: 0;
 }
 
-/* Open state: the real menu is ul.dropdown (positioned by JS). */
+/* Open state: the real menu is ul.dropdown (positioned by JS).
+   The high layer value matters: the menu is absolutely positioned inside
+   the form, and it must be able to cover the sidebar (navigation layer),
+   a following card, or the sticky action bar. JS still owns top/bottom
+   and max-height, so the component keeps its own up/down flip logic -
+   the theme only guarantees that whatever it decides to render stays
+   visible. */
 .cbi-dropdown[open] > ul.dropdown {
 	position: absolute;
 	left: 0;
-	z-index: 120;
+	z-index: var(--mz-z-dropdown);
 	display: block;
 	min-width: 180px;
 	max-width: min(420px, 90vw);
@@ -5659,7 +5900,15 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 	flex: 1 1 auto;
 }
 
-@media (max-width: 854px) {
+/* Desktop hides the page-title bar completely (user request): the view's
+   own <h2> already names the page, and the strip only repeated it.
+   Hiding the bar is only safe because the LuCI #indicators slot was moved
+   out into its own .mz-indicatorbar container - with the slot still inside
+   this header, `display: none` would have taken the native change/apply
+   indicator and the XHR poll badge down with it.
+   Phones keep the bar (see the 854px block below), where it carries the
+   page title and the .mz-mobilebar keeps only its controls. */
+@media (min-width: 855px) {
 	.mz-topbar {
 		display: none;
 	}

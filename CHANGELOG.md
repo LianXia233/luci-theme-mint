@@ -9,6 +9,85 @@
 
 ## [Unreleased]
 
+### Fixed (2026-09-11 — 架构级重构：层叠体系、Dropdown 裁剪与遮挡、Dark 模式壁纸层、PC 顶栏)
+
+本轮以「从架构层面解决，不堆页面级 Hack」为原则，先做全量代码审查（cascade.css
+5955 行 + 模板/JS/ucode 后端全链路），定位并修复以下根因。全部改动在实机
+ImmortalWrt SNAPSHOT 192.168.88.1 上以真实浏览器（Chromium）验证，非推断。
+
+**Dropdown（下拉菜单）—— 三个独立根因，逐一修复**
+
+- **向上展开时菜单高度塌陷为 0**：主题 CSS 在 `.cbi-dropdown[open] > ul` 上硬编码
+  `top: 100%`，而 LuCI 的 dropdown JS 在下空间不足时会改用内联 `bottom` 向上展开。
+  两个偏移同时成立造成 over-constrained，菜单内容高度被压成 0，而每个 `<li>` 仍
+  实测 48px —— 菜单只渲染为约 10px 的细条。修复：定位权完全交还组件 JS
+  （`top: auto`），不预设方向。实测同一菜单由 **10px → 218px**，4 个选项全部可见
+- **`.mz-view { overflow-x: clip }` 裁剪一切越界弹出层**：`clip` 不是滚动容器，
+  会直接切掉任何伸出内容盒的绝对定位后代 —— 页面右侧/底部的下拉、表单末尾的
+  保存并应用组合按钮首当其冲。已移除该守卫，宽度约束改由 `min-width: 0` 承担，
+  真正需要滚动的元素（数据表、日志面板）各自声明 overflow
+- **`.mz-main { position: relative; z-index: 1 }` 形成层叠上下文**：该组合把内容区
+  变成一个封闭层叠上下文，区内的下拉（`z-index` 1000）只能与 `.mz-main` 的 1
+  比较，永远低于 `.mz-sidebar`（fixed + z-index 40），表现为「下拉被侧栏/Card
+  遮挡」。壁纸层改为负 z-index 后内容区无需抬升，已移除该属性组合
+
+**Light / Dark 模式**
+
+- **两处 Dark 选择器永不匹配**：`body.mz-has-wallpaper[data-theme="dark"]` 把
+  `data-theme` 写在 `<body>` 上，而该属性实际挂在 `<html>`（header.ut 的
+  `document.documentElement`）。结果 Dark 页面一直绘制亮色渐变壁纸层，
+  Dark 玻璃面板也从未生效。已统一为 `html[data-theme="dark"] body.mz-has-wallpaper`
+- **Dark 模式彻底不渲染壁纸层**：两个壁纸伪元素改用 `content: none` 从盒子树中
+  移除（此前只是 `background-image: none`，仍参与合成）。JS 侧 Dark 分支同样
+  提前返回，不发任何壁纸 API 请求，且不改动用户 UCI 壁纸配置
+- **Dark 玻璃面板在深色底上不可见**：原 Dark 表面为 `rgba(255,255,255,.07)`
+  的白色微透，叠在深色页面上等于没有卡片。改为深灰玻璃
+  （`rgba(30,34,42,.88)` / `rgba(38,43,52,.92)`），并让下拉与模态比普通卡片更实
+  （`.96` / `.97`）。Light 侧统一为白色微透玻璃（0.62–0.84，blur 18–20px）
+- **补齐从未定义的玻璃变量**：`--mz-glass-blur-strong` 与 `--mz-glass-saturate`
+  全文件只有引用没有定义，导致移动端顶栏的 `backdrop-filter` 整条声明失效
+  （`blur()` 无参数即无效）。已在 `:root` 补齐，移动端顶栏毛玻璃恢复
+- 新增 `@supports not (backdrop-filter: blur(1px))` 兜底：不支持毛玻璃的浏览器
+  退回近不透明表面，避免半透明面板压在照片上丢失可读性
+
+**层叠体系（Layer System）**
+
+- 新增 `--mz-z-*` 变量族（wallpaper/-2、base/1、content/10、sticky/100、
+  navigation/200、scrim/300、drawer/400、dropdown/1000、popover/1100、
+  modal/2000、toast/3000），**全文件 12 处字面 z-index 已全部收敛到变量**，
+  消除 100/1000/1001/2000 混用与"谁的数大谁赢"式维护
+
+**PC / Mobile 顶栏**
+
+- **桌面隐藏页面标题栏**（`.mz-topbar`，`min-width: 855px`）：页面自身的 `<h2>`
+  已经承担标题，标题栏只是重复
+- **LuCI 原生 `#indicators` 槽位拆出为独立 `.mz-indicatorbar`**：该槽位由
+  `ui.js#showIndicator()` 挂载，承载未保存更改/应用指示器与 XHR 轮询徽标。
+  若继续留在被隐藏的顶栏内，桌面端会连带丢失这些原生能力。新容器 sticky、
+  空时零高度（只留横向内边距），不使用不占位
+- 移动端保留标题栏（`.mz-topbar` 显示，`position: static` 避免与 sticky 的
+  `.mz-mobilebar` 在 `top: 0` 相互覆盖），同时抑制 `.mz-mobilebar-title` 的
+  重复标题
+
+**标题内嵌状态标签**
+
+- 「端口状态 + 隐藏」这类 `<h3>`（第三方视图内联
+  `display:flex;justify-content:space-between`，内含 `<span class="label">`）
+  被主题自身的 section 标题规则挤到换行。修复采用**作用域限定**：
+  `#mz-view .cbi-section > h3:has(> .label)` 等，并配套 `mz-ui.js` 打
+  `.mz-h3-pill` 类（兼容不支持 `:has()` 的浏览器）。未使用 `h3 { ... }` 全局覆盖，
+  未改动任何第三方 DOM 结构
+
+**其它**
+
+- 移除 `.cbi-page-actions .cbi-dropdown.cbi-button` 的 `overflow: hidden`
+  （保存并应用组合按钮展开菜单被裁剪的直接来源之一），改由后续
+  `overflow: visible !important` 安全网兜底
+- 验证结论（实机 + Chromium 真实渲染，非推断）：桌面 1920×1080 / 1366×768 与
+  移动 390×844 / 412×915 四档视口下，`#indicators` 槽位存在、`.mz-view` 不再裁剪、
+  下拉展开不被任何祖先裁剪且完整落在视口内、Dark 模式无壁纸请求且壁纸层
+  `content: none`、移动端无横向溢出，共 29 项断言全部通过
+
 ### Fixed (2026-09-10 — 实机：总览端口状态卡片塌缩 + 接口页设备 tooltip 常显叠层）
 
 在 ImmortalWrt SNAPSHOT（LuCI Master）192.168.88.1 上截图定位并修复：
