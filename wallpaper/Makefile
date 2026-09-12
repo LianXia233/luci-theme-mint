@@ -48,6 +48,11 @@ endef
 define Package/luci-app-mint-wallpaper/postinst
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT}" ] || {
+	# Wallpaper library directory (user uploads). Same path uci-defaults
+	# creates on first boot; do it here too so the settings page works
+	# immediately after install without a reboot.
+	mkdir -p /www/luci-static/mint/wallpapers
+	chmod 0755 /www/luci-static/mint/wallpapers
 	# Drop the menu / module caches so LuCI sees the entry without a reboot.
 	rm -f /tmp/luci-indexcache*
 	rm -rf /tmp/luci-modulecache/

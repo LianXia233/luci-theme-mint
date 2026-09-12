@@ -2,27 +2,36 @@
 // Copyright (C) 2026 LianXia233
 // Licensed to the public under the Apache License 2.0.
 //
-// Resolves the login-page wallpaper per device class: the settings page
-// stores independent sources for desktop (pc) and mobile visitors, each
-// either a random third-party API or a custom image (uploaded file or
-// direct http(s) link). Device detection happens in the frontend
-// (sysauth.js, via user agent); this module only resolves configuration
-// to concrete image URLs and embeds them into the rendered page.
+// Resolves the wallpaper per device class: the settings page stores
+// independent sources for desktop (pc) and mobile visitors. Each may be:
+//   - a library wallpaper (user-uploaded file under wallpapers/)
+//   - a legacy custom upload (custom-pc.jpg / custom-mobile.jpg)
+//   - a direct http(s) link
+//   - the server-side random cache (wallpaper-*.img, refreshed by cron)
+// Device detection happens in the frontend (sysauth.js / menu-mint.js);
+// this module only resolves configuration to concrete image URLs.
 //
 // Security:
 //  - Custom URLs are validated: http(s) only, no metacharacters.
-//  - Uploaded images live under /www (served statically, no auth -
-//    the login page is pre-authentication).
+//  - Uploaded images live under /www (served statically, no auth — the
+//    login page is pre-authentication).
+//  - Every local image URL carries ?v=<mtime> so a re-upload or cron
+//    refresh busts the browser cache without disabling caching elsewhere.
 
 'use strict';
 
 import { stat } from 'fs';
 import { cursor } from 'uci';
 
-// Uploaded custom images, served statically by uhttpd (no auth needed:
-// the login page is pre-authentication).
+// Legacy single-slot uploads (pre wallpaper-library). Still honoured so
+// upgrades keep working; new uploads go to WALLPAPER_DIR.
 const CUSTOM_PC = '/www/luci-static/mint/custom-pc.jpg';
 const CUSTOM_MOBILE = '/www/luci-static/mint/custom-mobile.jpg';
+
+// User wallpaper library. Persisted on the overlay; survives theme upgrades
+// because the theme package does not own files inside this directory.
+const WALLPAPER_DIR = '/www/luci-static/mint/wallpapers';
+const WALLPAPER_URL_PREFIX = '/luci-static/mint/wallpapers/';
 
 /* OT-35: server-side random wallpaper cache. The random APIs 302-redirect
    to a different image on every request, so no browser caching strategy
@@ -81,6 +90,29 @@ function validCustomUrl(u) {
 	}
 
 	return copyStr(u);
+}
+
+/* Library wallpaper file name: basename only, no path separators, must
+   look like an image we would have accepted on upload. Rejects "..",
+   absolute paths and any extension we never store. */
+function validWallpaperName(name) {
+	if (type(name) != 'string' || length(name) == 0 || length(name) > 128)
+		return null;
+
+	if (index(name, '/') > -1 || index(name, '\\') > -1)
+		return null;
+	if (substr(name, 0, 1) == '.')
+		return null;
+
+	const lower = lc(name);
+	const exts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+	let i, ext;
+	for (i = 0; i < length(exts); i++) {
+		ext = exts[i];
+		if (length(lower) > length(ext) && substr(lower, length(lower) - length(ext)) == ext)
+			return copyStr(name);
+	}
+	return null;
 }
 
 function sourceMode(v, dflt) {
@@ -153,6 +185,22 @@ function clampBlur(v) {
 	return sprintf('%d', n);
 }
 
+/* Append ?v=<mtime> to a local URL so browsers revalidate after an
+   overwrite or cron refresh. Remote http(s) URLs are returned unchanged
+   (the remote host controls its own caching). */
+function withVersion(url, path) {
+	if (type(url) != 'string' || length(url) == 0)
+		return url;
+	if (substr(url, 0, 7) == 'http://' || substr(url, 0, 8) == 'https://')
+		return url;
+
+	const st = stat(path);
+	if (st && st.type == 'file' && st.mtime)
+		return copyStr(url + '?v=' + sprintf('%d', st.mtime));
+
+	return copyStr(url);
+}
+
 /* TZ-16: overlay/blur are clamped here so hand-edited UCI values can
    neither break the CSS nor produce invalid style output. */
 function loadConfig() {
@@ -168,39 +216,72 @@ function loadConfig() {
 		pc_mode: sourceMode(wp.pc_mode, DEFAULTS.pc_mode),
 		pc_url: validCustomUrl(wp.pc_url ?? ''),
 		pc_sources: sourceList(wp.pc_sources, DEFAULTS.pc_sources),
+		pc_wallpaper: validWallpaperName(wp.pc_wallpaper ?? ''),
 		mobile_mode: sourceMode(wp.mobile_mode, DEFAULTS.mobile_mode),
 		mobile_url: validCustomUrl(wp.mobile_url ?? ''),
 		mobile_sources: sourceList(wp.mobile_sources, DEFAULTS.mobile_sources),
+		mobile_wallpaper: validWallpaperName(wp.mobile_wallpaper ?? ''),
 		overlay: clampOverlay(wp.overlay),
 		blur: clampBlur(wp.blur)
 	};
 }
 
-// Custom wallpaper resolution: local uploaded file wins over a remote
-// direct link.
-function resolveCustom(path, url) {
+/* Resolve one local file to a versioned URL, or null when missing. */
+function localUrl(path, urlPrefix) {
 	const st = stat(path);
-	if (st && st.type == 'file' && st.size)
-		return '/luci-static/mint/' + substr(path, rindex(path, '/') + 1);
+	if (!(st && st.type == 'file' && st.size))
+		return null;
+	const base = urlPrefix + substr(path, rindex(path, '/') + 1);
+	return withVersion(base, path);
+}
 
-	return validCustomUrl(url);
+/* Custom wallpaper resolution priority:
+     1. library wallpaper (pc_wallpaper / mobile_wallpaper)
+     2. legacy custom-*.jpg upload
+     3. remote direct link
+   Returns { url, kind } or null. */
+function resolveCustom(cfg, kind) {
+	const libName = (kind == 'mobile') ? cfg.mobile_wallpaper : cfg.pc_wallpaper;
+	const legacyPath = (kind == 'mobile') ? CUSTOM_MOBILE : CUSTOM_PC;
+	const remote = (kind == 'mobile') ? cfg.mobile_url : cfg.pc_url;
+
+	if (libName) {
+		const path = WALLPAPER_DIR + '/' + libName;
+		const u = localUrl(path, WALLPAPER_URL_PREFIX);
+		if (u)
+			return { url: u, kind: 'library' };
+	}
+
+	const legacy = localUrl(legacyPath, '/luci-static/mint/');
+	if (legacy)
+		return { url: legacy, kind: 'legacy' };
+
+	if (remote)
+		return { url: remote, kind: 'url' };
+
+	return null;
 }
 
 function deviceGroup(cfg, kind) {
 	const isCustom = (kind == 'mobile') ? (cfg.mobile_mode == 'custom') : (cfg.pc_mode == 'custom');
-	const customPath = (kind == 'mobile') ? CUSTOM_MOBILE : CUSTOM_PC;
-	const customUrl = (kind == 'mobile') ? cfg.mobile_url : cfg.pc_url;
 	const proxyPath = (kind == 'mobile') ? PROXY_MOBILE : PROXY_PC;
 	const proxyUrl = (kind == 'mobile') ? PROXY_MOBILE_URL : PROXY_PC_URL;
 
-	/* The local proxy file only backs the "random" mode (it IS the cached
-	   random image); custom mode uses the uploaded file / direct link. */
+	/* Library / legacy / remote custom image wins whenever one exists,
+	   even if mode is still 'random' — the settings page sets mode
+	   together with the selection, but a half-migrated config must not
+	   drop the user's image. */
+	const custom = resolveCustom(cfg, kind);
+
 	const st = stat(proxyPath);
-	const proxy = (!isCustom && st && st.type == 'file' && st.size) ? copyStr(proxyUrl) : null;
+	const proxy = (!custom && st && st.type == 'file' && st.size)
+		? withVersion(copyStr(proxyUrl), proxyPath)
+		: null;
 
 	return {
-		mode: isCustom ? copyStr('custom') : copyStr('random'),
-		url: resolveCustom(customPath, customUrl),
+		mode: custom ? copyStr('custom') : copyStr('random'),
+		url: custom ? custom.url : null,
+		url_kind: custom ? custom.kind : null,
 		proxy: proxy,
 		sources: (kind == 'mobile') ? cfg.mobile_sources : cfg.pc_sources
 	};
@@ -226,4 +307,14 @@ export function getWallpapers() {
 		pc: deviceGroup(cfg, 'pc'),
 		mobile: deviceGroup(cfg, 'mobile')
 	};
+}
+
+/* Exposed for the settings page / tests: validate a library file name
+   the same way the resolver does. */
+export function isValidWallpaperName(name) {
+	return validWallpaperName(name) != null;
+}
+
+export function wallpaperDir() {
+	return copyStr(WALLPAPER_DIR);
 }

@@ -9,14 +9,19 @@ config mint 'wallpaper'
 	option ui_random '0'
 	# Desktop source: 'random' (multi-source) or 'custom'
 	option pc_mode 'random'
-	# Desktop custom image: direct http(s) link (an uploaded custom-pc.jpg wins)
+	# Desktop library wallpaper (file name under /www/luci-static/mint/wallpapers/).
+	# When set, it wins over pc_url and the random proxy cache.
+	option pc_wallpaper ''
+	# Desktop custom image: direct http(s) link (library / legacy upload wins)
 	option pc_url ''
 	# Desktop random sources: tried in random order; next one on failure
 	list pc_sources 'https://api.paugram.com/wallpaper/'
 	list pc_sources 'https://t.alcy.cc/bd'
 	# Mobile source: 'random' (multi-source) or 'custom'
 	option mobile_mode 'random'
-	# Mobile custom image: direct http(s) link (an uploaded custom-mobile.jpg wins)
+	# Mobile library wallpaper (same rules as pc_wallpaper)
+	option mobile_wallpaper ''
+	# Mobile custom image: direct http(s) link (library / legacy upload wins)
 	option mobile_url ''
 	# Mobile random sources: tried in random order; next one on failure
 	list mobile_sources 'https://api.seaya.link/wap'

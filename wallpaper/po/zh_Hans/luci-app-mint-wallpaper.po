@@ -157,3 +157,139 @@ msgstr "随机壁纸"
 #: htdocs/luci-static/resources/view/mint/wallpaper.js
 msgid "Cached random wallpaper"
 msgstr "缓存随机壁纸"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Wallpaper Library"
+msgstr "壁纸库"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Upload images, then click a thumbnail to apply it as the desktop / mobile wallpaper. Selections survive refresh and reboot."
+msgstr "上传图片后，点击缩略图即可设为桌面端 / 移动端壁纸。选择会在刷新与重启后保留。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Upload desktop wallpaper…"
+msgstr "上传桌面壁纸…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Upload mobile wallpaper…"
+msgstr "上传移动壁纸…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Force refresh current device cache"
+msgstr "强制刷新当前设备缓存"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Click to apply to:"
+msgstr "点击应用到："
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Desktop"
+msgstr "桌面端"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Mobile"
+msgstr "移动端"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Advanced settings"
+msgstr "高级设置"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random sources, overlay and blur. Library wallpapers above override these when selected."
+msgstr "随机源、遮罩与模糊。上方壁纸库中的选择会覆盖这些设置。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "server cache"
+msgstr "服务端缓存"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Default gradient"
+msgstr "默认渐变"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "no image"
+msgstr "无图片"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "library"
+msgstr "壁纸库"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Delete"
+msgstr "删除"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "No local wallpapers yet. Use the desktop / mobile upload buttons above to add one."
+msgstr "尚无本地壁纸。请使用上方的桌面 / 移动上传按钮添加。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Default gradient applied."
+msgstr "已应用默认渐变。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Random wallpaper selected."
+msgstr "已选择随机壁纸。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Wallpaper applied: %s (%s)"
+msgstr "已应用壁纸：%s（%s）"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Failed to apply wallpaper: %s"
+msgstr "应用壁纸失败：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Delete wallpaper “%s”? This cannot be undone."
+msgstr "删除壁纸“%s”？此操作不可撤销。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Wallpaper deleted: %s"
+msgstr "已删除壁纸：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Delete failed: %s"
+msgstr "删除失败：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Refreshing random wallpaper cache (%s)…"
+msgstr "正在刷新随机壁纸缓存（%s）…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Wallpaper cache refreshed (%s)."
+msgstr "壁纸缓存已刷新（%s）。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Cache refresh failed: %s"
+msgstr "缓存刷新失败：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Unsupported file type. Use JPG, PNG, WEBP or GIF."
+msgstr "不支持的文件类型。请使用 JPG、PNG、WEBP 或 GIF。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Image is too large (max %d MB)."
+msgstr "图片过大（最大 %d MB）。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Uploading desktop wallpaper…"
+msgstr "正在上传桌面壁纸…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Uploading mobile wallpaper…"
+msgstr "正在上传移动壁纸…"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Wallpaper uploaded and applied: %s"
+msgstr "壁纸已上传并应用：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Uploaded: %s"
+msgstr "已上传：%s"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Direct http(s) link to an image. Used when no desktop library wallpaper is selected."
+msgstr "图片的 http(s) 直链。仅在未选择桌面端壁纸库图片时使用。"
+
+#: htdocs/luci-static/resources/view/mint/wallpaper.js
+msgid "Direct http(s) link to an image. Used when no mobile library wallpaper is selected."
+msgstr "图片的 http(s) 直链。仅在未选择移动端壁纸库图片时使用。"

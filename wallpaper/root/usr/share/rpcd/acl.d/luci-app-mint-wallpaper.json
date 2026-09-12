@@ -1,11 +1,13 @@
 {
 	"luci-app-mint-wallpaper": {
-		"description": "Grant access to the Mint wallpaper settings (uci mint, rpcd mint save/refresh/dashboard)",
+		"description": "Grant access to the Mint wallpaper settings (uci mint, rpcd mint save/wp_*, cgi-upload of wallpapers)",
 		"read": {
 			"ubus": {
 				"mint": [
 					"refresh",
-					"dashboard"
+					"dashboard",
+					"wp_list",
+					"wp_refresh"
 				]
 			},
 			"uci": [
@@ -14,13 +16,28 @@
 			"file": {
 				"/www/luci-static/mint": [
 					"list"
+				],
+				"/www/luci-static/mint/*": [
+					"read"
+				],
+				"/www/luci-static/mint/wallpapers": [
+					"list"
+				],
+				"/www/luci-static/mint/wallpapers/*": [
+					"read"
 				]
 			}
 		},
 		"write": {
 			"ubus": {
 				"mint": [
-					"save"
+					"save",
+					"wp_delete",
+					"wp_set",
+					"wp_refresh"
+				],
+				"cgi-io": [
+					"upload"
 				]
 			},
 			"uci": [
@@ -31,6 +48,9 @@
 					"write"
 				],
 				"/www/luci-static/mint/custom-mobile.jpg": [
+					"write"
+				],
+				"/www/luci-static/mint/wallpapers/*": [
 					"write"
 				]
 			}

@@ -1,6 +1,7 @@
 #!/bin/sh
 # uci-defaults for luci-app-mint-wallpaper
-# Seeds /etc/config/mint and installs the server-side wallpaper cache cron.
+# Seeds /etc/config/mint, creates the wallpaper library directory and
+# installs the server-side wallpaper cache cron.
 # Split out of luci-theme-mint's 30_luci-theme-mint on 2026-09-11, when the
 # wallpaper settings moved to their own package.
 
@@ -17,6 +18,26 @@ if uci -q get mintzero.wallpaper >/dev/null 2>&1 && ! uci -q get mint.wallpaper 
 	for _img in custom-pc.jpg custom-mobile.jpg; do
 		[ -f "/www/luci-static/mintzero/$_img" ] && mv -f "/www/luci-static/mintzero/$_img" "/www/luci-static/mint/$_img"
 	done
+fi
+
+# Wallpaper library directory: user uploads live here. Survives theme
+# upgrades because luci-theme-mint does not own files under this path.
+mkdir -p /www/luci-static/mint/wallpapers
+chmod 0755 /www/luci-static/mint/wallpapers
+
+# Adopt legacy single-slot uploads into the library (one-time, non-
+# destructive): keep the old files so an older frontend still works, but
+# register the selection in the new pc_wallpaper / mobile_wallpaper keys
+# when those are still empty.
+if [ -f /www/luci-static/mint/custom-pc.jpg ] && ! uci -q get mint.wallpaper.pc_wallpaper >/dev/null 2>&1; then
+	cp -f /www/luci-static/mint/custom-pc.jpg /www/luci-static/mint/wallpapers/legacy-pc.jpg 2>/dev/null
+	uci -q set mint.wallpaper.pc_wallpaper=legacy-pc.jpg
+	uci -q set mint.wallpaper.pc_mode=custom
+fi
+if [ -f /www/luci-static/mint/custom-mobile.jpg ] && ! uci -q get mint.wallpaper.mobile_wallpaper >/dev/null 2>&1; then
+	cp -f /www/luci-static/mint/custom-mobile.jpg /www/luci-static/mint/wallpapers/legacy-mobile.jpg 2>/dev/null
+	uci -q set mint.wallpaper.mobile_wallpaper=legacy-mobile.jpg
+	uci -q set mint.wallpaper.mobile_mode=custom
 fi
 
 # Wallpaper defaults. Only written when the section does not exist yet, so

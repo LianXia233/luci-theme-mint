@@ -4,30 +4,24 @@
 # Licensed to the public under the Apache License 2.0.
 #
 # Methods:
-#   refresh   - wallpaper compatibility stub (kept so existing ACL grants
-#               and API clients keep working; no server-side cache exists).
+#   refresh   - force-refresh the server-side random wallpaper cache by
+#               re-running mz-wallpaper-fetch.sh (blocking, bounded).
 #   dashboard - real-time system telemetry collector for the Mint Overview
 #               Dashboard. Reads /proc, /sys, ubus and emits a single JSON
 #               snapshot. The browser (overview-dashboard.js) computes
 #               percentages / rates / deltas from the raw counters, so this
 #               script stays a pure, stateless collector.
+#   save      - persist CBI form values to UCI and commit (see mint_save).
+#   wp_list   - list wallpapers in the library + current selections.
+#   wp_delete - remove one user wallpaper; falls back to random if current.
+#   wp_set    - set the current wallpaper (library name, 'random', or clear).
+#   wp_refresh- alias of refresh (settings-page button).
 #
-# NOTE (TZ-17, 2026-09-07): random wallpapers are fetched directly by the
-# browser and custom images are local files - no server-side cache exists,
-# so the old Bing prefetch was removed.
-#
-# Methods (cont.):
-#   save  - persist CBI form values to UCI and commit. Some LuCI builds ship
-#           a stripped cbi.js whose JS save() only issues `uci set` over ubus
-#           and omits `uci commit`; the session-level `uci commit` ubus call
-#           is also denied by rpcd ACL on those builds, so browser-side saves
-#           never reach disk. This method runs inside the rpcd daemon (root),
-#           so `uci commit` always succeeds. The browser (menu-mint.js
-#           mintSave) collects the cbid.* fields, groups them by
-#           config/section and calls `ubus call mint save` per section.
-#           Params: { config, section, values:[ [option, value], ... ] }.
-#           Inputs are sanitised to [A-Za-z0-9_] so no uci path traversal or
-#           shell injection is possible.
+# Upload is intentionally NOT done here: the browser POSTs multipart data to
+# LuCI's official /cgi-bin/cgi-upload (cgi-io), which authenticates the
+# session and streams the body to disk. Pushing multi-megabyte base64 through
+# ubus either hits message limits or (on rpcd builds that do not base64-
+# decode file.write) writes the base64 text itself as the "image".
 
 mint_save() {
 	read -r req
@@ -301,20 +295,221 @@ mint_dashboard() {
 JSON
 }
 
+# ---- wallpaper library ---------------------------------------------------
+
+WP_DIR="/www/luci-static/mint/wallpapers"
+WP_LEGACY_PC="/www/luci-static/mint/custom-pc.jpg"
+WP_LEGACY_MOBILE="/www/luci-static/mint/custom-mobile.jpg"
+
+# Accept only a plain file name (no slashes, no leading dot) with an image
+# extension we actually store. Rejects path traversal before any touch.
+wp_valid_name() {
+	case "$1" in
+		''|.*|*/*|*\\*) return 1 ;;
+		*.jpg|*.jpeg|*.png|*.webp|*.gif|*.JPG|*.JPEG|*.PNG|*.WEBP|*.GIF) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+wp_uci() {
+	uci -q get "mint.wallpaper.$1" 2>/dev/null
+}
+
+# Emit one JSON object entry for a file in the library (no trailing comma).
+wp_entry_json() {
+	name="$1"
+	path="$WP_DIR/$name"
+	[ -f "$path" ] || return 1
+	size=$(wc -c < "$path" 2>/dev/null); [ -n "$size" ] || size=0
+	mtime=$(date -r "$path" +%s 2>/dev/null)
+	[ -n "$mtime" ] || mtime=0
+	name_esc=$(json_escape "$name")
+	printf '{"name":"%s","size":%s,"mtime":%s,"url":"/luci-static/mint/wallpapers/%s?v=%s"}' \
+		"$name_esc" "$size" "$mtime" "$name_esc" "$mtime"
+}
+
+mint_wp_list() {
+	mkdir -p "$WP_DIR" 2>/dev/null
+
+	pc_sel=$(wp_uci pc_wallpaper)
+	mobile_sel=$(wp_uci mobile_wallpaper)
+	pc_mode=$(wp_uci pc_mode); [ -n "$pc_mode" ] || pc_mode=random
+	mobile_mode=$(wp_uci mobile_mode); [ -n "$mobile_mode" ] || mobile_mode=random
+	pc_url=$(wp_uci pc_url); [ -n "$pc_url" ] || pc_url=""
+	mobile_url=$(wp_uci mobile_url); [ -n "$mobile_url" ] || mobile_url=""
+	enabled=$(wp_uci enabled); [ -n "$enabled" ] || enabled=1
+
+	# Library files (sorted, stable order)
+	items=""
+	for f in "$WP_DIR"/*; do
+		[ -f "$f" ] || continue
+		bn=${f##*/}
+		wp_valid_name "$bn" || continue
+		ej=$(wp_entry_json "$bn") || continue
+		if [ -z "$items" ]; then
+			items="$ej"
+		else
+			items="$items,$ej"
+		fi
+	done
+
+	# Server-side random cache thumbs (may be absent before first cron tick)
+	pc_proxy_json="null"
+	if [ -f /www/luci-static/mint/wallpaper-pc.img ]; then
+		pc_proxy_json=$(json_escape "/luci-static/mint/wallpaper-pc.img?v=$(date -r /www/luci-static/mint/wallpaper-pc.img +%s 2>/dev/null || echo 0)")
+		pc_proxy_json="\"$pc_proxy_json\""
+	fi
+	mobile_proxy_json="null"
+	if [ -f /www/luci-static/mint/wallpaper-mobile.img ]; then
+		mobile_proxy_json=$(json_escape "/luci-static/mint/wallpaper-mobile.img?v=$(date -r /www/luci-static/mint/wallpaper-mobile.img +%s 2>/dev/null || echo 0)")
+		mobile_proxy_json="\"$mobile_proxy_json\""
+	fi
+
+	legacy_pc="null"
+	[ -f "$WP_LEGACY_PC" ] && legacy_pc=true
+	legacy_mobile="null"
+	[ -f "$WP_LEGACY_MOBILE" ] && legacy_mobile=true
+
+	printf '{"wallpapers":[%s],"current":{"pc_wallpaper":"%s","mobile_wallpaper":"%s","pc_mode":"%s","mobile_mode":"%s","pc_url":"%s","mobile_url":"%s","enabled":"%s"},"proxy":{"pc":%s,"mobile":%s},"legacy":{"pc":%s,"mobile":%s}}\n' \
+		"$items" \
+		"$(json_escape "$pc_sel")" "$(json_escape "$mobile_sel")" \
+		"$(json_escape "$pc_mode")" "$(json_escape "$mobile_mode")" \
+		"$(json_escape "$pc_url")" "$(json_escape "$mobile_url")" \
+		"$(json_escape "$enabled")" \
+		"$pc_proxy_json" "$mobile_proxy_json" \
+		"$legacy_pc" "$legacy_mobile"
+}
+
+mint_wp_delete() {
+	read -r req
+	name=$(printf '%s' "$req" | jsonfilter -e '@.name' 2>/dev/null)
+	if ! wp_valid_name "$name"; then
+		echo '{"error":"invalid name"}'
+		return
+	fi
+	path="$WP_DIR/$name"
+	if [ ! -f "$path" ]; then
+		echo '{"error":"not found"}'
+		return
+	fi
+	rm -f "$path" || { echo '{"error":"unlink failed"}'; return; }
+
+	# If this was the active wallpaper, fall back to random mode.
+	changed=0
+	if [ "$(wp_uci pc_wallpaper)" = "$name" ]; then
+		uci -q delete mint.wallpaper.pc_wallpaper
+		uci -q set mint.wallpaper.pc_mode=random
+		changed=1
+	fi
+	if [ "$(wp_uci mobile_wallpaper)" = "$name" ]; then
+		uci -q delete mint.wallpaper.mobile_wallpaper
+		uci -q set mint.wallpaper.mobile_mode=random
+		changed=1
+	fi
+	[ "$changed" -gt 0 ] && uci -q commit mint
+	logger -t mint-wallpaper "deleted $name (reset=$changed)"
+	printf '{"ok":true,"name":"%s","reset":%s}\n' "$(json_escape "$name")" "$([ "$changed" -gt 0 ] && echo true || echo false)"
+}
+
+mint_wp_set() {
+	read -r req
+	target=$(printf '%s' "$req" | jsonfilter -e '@.target' 2>/dev/null)   # pc | mobile
+	value=$(printf '%s' "$req" | jsonfilter -e '@.value' 2>/dev/null)     # filename | random | clear
+	case "$target" in
+		pc|mobile) ;;
+		*) echo '{"error":"invalid target"}'; return ;;
+	esac
+
+	case "$value" in
+		random)
+			uci -q delete "mint.wallpaper.${target}_wallpaper"
+			uci -q delete "mint.wallpaper.${target}_url"
+			uci -q set "mint.wallpaper.${target}_mode=random"
+			uci -q commit mint
+			printf '{"ok":true,"target":"%s","value":"random"}\n' "$target"
+			;;
+		clear)
+			uci -q delete "mint.wallpaper.${target}_wallpaper"
+			uci -q delete "mint.wallpaper.${target}_url"
+			uci -q set "mint.wallpaper.${target}_mode=random"
+			uci -q commit mint
+			printf '{"ok":true,"target":"%s","value":"clear"}\n' "$target"
+			;;
+		*)
+			if ! wp_valid_name "$value"; then
+				echo '{"error":"invalid name"}'
+				return
+			fi
+			if [ ! -f "$WP_DIR/$value" ]; then
+				echo '{"error":"not found"}'
+				return
+			fi
+			uci -q set "mint.wallpaper.${target}_wallpaper=$value"
+			uci -q set "mint.wallpaper.${target}_mode=custom"
+			# A library selection replaces any stale remote URL fallback.
+			uci -q delete "mint.wallpaper.${target}_url"
+			uci -q commit mint
+			logger -t mint-wallpaper "set $target -> $value"
+			printf '{"ok":true,"target":"%s","value":"%s"}\n' "$target" "$(json_escape "$value")"
+			;;
+	esac
+}
+
+# Force-refresh the server-side random cache for ONE device class.
+# Params (stdin JSON): { "kind": "pc"|"mobile" } — empty/missing kind is
+# rejected so a stale UI can never accidentally rewrite both caches.
+# The fetch script is invoked with the same kind filter; PC and mobile
+# proxy files are never updated together by a manual refresh.
+mint_wp_refresh() {
+	read -r req
+	kind=$(printf '%s' "$req" | jsonfilter -e '@.kind' 2>/dev/null)
+	case "$kind" in
+		pc|mobile) ;;
+		*)
+			echo '{"error":"kind must be pc or mobile"}'
+			return
+			;;
+	esac
+
+	if [ ! -x /usr/bin/mz-wallpaper-fetch.sh ]; then
+		echo '{"error":"fetch script missing"}'
+		return
+	fi
+	/usr/bin/mz-wallpaper-fetch.sh "$kind"
+
+	f="/www/luci-static/mint/wallpaper-$kind.img"
+	if [ -f "$f" ]; then
+		mtime=$(date -r "$f" +%s 2>/dev/null || echo 0)
+		printf '{"ok":true,"kind":"%s","mtime":%s,"url":"/luci-static/mint/wallpaper-%s.img?v=%s"}\n' \
+			"$kind" "$mtime" "$kind" "$mtime"
+	else
+		printf '{"ok":true,"kind":"%s","mtime":null,"url":null}\n' "$kind"
+	fi
+}
+
 case "$1" in
 	list)
-		echo '{"refresh":{},"dashboard":{},"save":{}}'
+		echo '{"refresh":{},"dashboard":{},"save":{},"wp_list":{},"wp_delete":{},"wp_set":{},"wp_refresh":{}}'
 		;;
 	call)
 		case "$2" in
-			refresh)
-				echo '{"spawned":false,"mode":"random"}'
+			refresh|wp_refresh)
+				mint_wp_refresh
 				;;
 			dashboard)
 				mint_dashboard
 				;;
 			save)
 				mint_save
+				;;
+			wp_list)
+				mint_wp_list
+				;;
+			wp_delete)
+				mint_wp_delete
+				;;
+			wp_set)
+				mint_wp_set
 				;;
 			*)
 				echo '{"error":"invalid method"}'

@@ -77,11 +77,10 @@ fetch_one() {
 	[ "${size:-0}" -ge 3072 ] || { rm -f "$tmp"; return 1; }
 
 	# Hex dump, not command substitution: $(dd ...) cannot carry NUL bytes
-	# (PNG's magic is followed by 00 00 00 0d), so the previous
-	# $'\xff\xd8'*|$(printf '\211PN') match silently never matched PNG at
-	# all - the pattern had no trailing wildcard AND the value was
-	# truncated at the first NUL.
-	sig=$(head -c 12 "$tmp" 2>/dev/null | od -An -tx1 | tr -d ' \n')
+	# (PNG's magic is followed by 00 00 00 0d). Prefer busybox hexdump —
+	# some minimal images ship no `od` applet at all.
+	sig=$(head -c 12 "$tmp" 2>/dev/null | hexdump -v -e '/1 "%02x"' 2>/dev/null)
+	[ -n "$sig" ] || sig=$(head -c 12 "$tmp" 2>/dev/null | od -An -tx1 | tr -d ' \n')
 	case "$sig" in
 		ffd8ff*) ;;                                # JPEG
 		89504e470d0a1a0a*) ;;                      # PNG
@@ -90,6 +89,9 @@ fetch_one() {
 		*) rm -f "$tmp"; return 1 ;;
 	esac
 
+	# World-readable: uhttpd serves the login page pre-auth, and the
+	# browser must be able to fetch this cache file without a session.
+	chmod 0644 "$tmp" 2>/dev/null
 	mv -f "$tmp" "$out"
 	return 0
 }
@@ -119,14 +121,26 @@ pick_source() {
 
 # --- main ---------------------------------------------------------------
 
+# Optional device filter: "pc" | "mobile". Empty / other -> both (cron path).
+# Manual refresh from the settings page always passes one kind so PC and
+# mobile caches never clobber each other.
+KIND_FILTER="$1"
+case "$KIND_FILTER" in
+	pc|mobile) KINDS="$KIND_FILTER" ;;
+	*) KINDS="pc mobile" ;;
+esac
+
 # Simple lock: overlapping runs (cron + manual refresh) must not fight.
 exec 9>"$LOCK"
 flock -n 9 || exit 0
 
 # Random mode only: when a device class is set to a custom image the
 # proxy file is pointless (and would just waste bandwidth).
-for kind in pc mobile; do
+for kind in $KINDS; do
 	mode=$(uci -q get "mint.wallpaper.${kind}_mode" 2>/dev/null)
+	# Library wallpaper also wins over the random proxy.
+	lib=$(uci -q get "mint.wallpaper.${kind}_wallpaper" 2>/dev/null)
+	[ -n "$lib" ] && continue
 	[ "$mode" = "custom" ] && continue
 
 	src=$(pick_source "$kind")

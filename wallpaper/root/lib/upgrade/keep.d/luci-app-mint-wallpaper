@@ -11,3 +11,4 @@
 # mz-wallpaper-fetch cron regenerates them within one period.
 /www/luci-static/mint/custom-pc.jpg
 /www/luci-static/mint/custom-mobile.jpg
+/www/luci-static/mint/wallpapers
