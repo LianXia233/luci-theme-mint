@@ -949,17 +949,15 @@ th {
  *     support it. Both selectors hit the same declaration block.
  * ---------------------------------------------------------------- */
 .mz-h3-pill,
-#mz-view .cbi-section > h3:has(> .label),
-#mz-view .cbi-section > h3:has(> .badge),
-#mz-view .cbi-section-node > h3:has(> .label),
-.mz-sys-panel > h3:has(> .label),
-.mz-port-panel > h3:has(> .label),
-.mz-net-card-header > h3:has(> .label) {
+#mz-view h3:has(> .label),
+#mz-view h3:has(> .badge) {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	flex-wrap: nowrap;
 	gap: 12px;
+	width: 100% !important;
+	box-sizing: border-box;
 }
 
 /* The pill must never be the thing that wraps or shrinks. */

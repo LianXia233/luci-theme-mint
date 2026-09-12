@@ -232,19 +232,20 @@
 	box-shadow: none;
 }
 
+/* Save / Apply / Reset no longer float: they live in normal document
+   flow at the end of the page and align to the bottom-right corner,
+   sharing the container's own hairline so they stay readable without
+   growing a box of their own. */
 #maincontent .cbi-map > .cbi-page-actions,
 #maincontent .cbi-page-actions {
-	position: sticky;
-	bottom: 0;
-	z-index: var(--mz-z-sticky);
+	position: static;
 	margin-top: var(--mz-container-gap);
-	margin-inline: calc(-1 * var(--mz-container-pad));
-	padding: 12px var(--mz-container-pad);
-	padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-	background: var(--mz-container-background);
+	justify-content: flex-end;
+	padding: 12px 0;
+	background: transparent;
 	border-top: var(--mz-container-divider);
-	border-radius: 0 0 var(--mz-container-radius-br)
-		var(--mz-container-radius-bl);
+	border-radius: 0;
+	box-shadow: none;
 }
 
 /* ---------------------------------------------------------------- */

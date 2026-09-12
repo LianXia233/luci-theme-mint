@@ -135,7 +135,7 @@
 	--mz-container-background: var(--mz-color-surface);
 	--mz-container-shadow: var(--mz-lift-card);
 	--mz-container-pad: 22px;
-	--mz-container-margin: 18px;
+	--mz-container-margin: 14px;
 	--mz-container-gap: 22px;
 	/* Divider used between sibling sections inside the container. */
 	--mz-container-divider: 1px solid var(--mz-color-border);
