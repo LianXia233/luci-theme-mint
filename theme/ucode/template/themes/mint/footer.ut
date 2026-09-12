@@ -9,7 +9,7 @@
 		   MINT_ASSET_REV in header.ut AND the ?v= of the @import lines in
 		   cascade.css. Bump whenever any file under htdocs/luci-static/mint
 		   changes. #}
-		{% const MINT_ASSET_REV = '20260913'; %}
+		{% const MINT_ASSET_REV = '20260913b'; %}
 
 		{% if (!blank_page): %}
 			</main>

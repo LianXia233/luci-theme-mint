@@ -42,7 +42,7 @@
 	   headers, so a revision bump is the only reliable way to make
 	   browsers pick up an updated stylesheet. Bump it whenever any file
 	   under htdocs/luci-static/mint changes. */
-	const MINT_ASSET_REV = '20260913';
+	const MINT_ASSET_REV = '20260913b';
 -%}
 
 <!DOCTYPE html>

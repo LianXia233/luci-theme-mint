@@ -245,9 +245,107 @@
 		});
 	}
 
+	function mzDropdownFallback(root) {
+		/* On full LuCI builds the CBI.Dropdown widget wires up .cbi-dropdown
+		   interactivity (open/close, item select, apply/force submit). Some
+		   ImmortalWrt/OpenWrt snapshot builds ship a stripped cbi.js that leaves
+		   a bare .cbi-dropdown in the DOM with NO widget JS, so the menu is
+		   completely inert - clicking the caret does nothing and the <ul> just
+		   renders its items inline. That is exactly the "mobile Save&Apply split
+		   dropdown shows abnormally / does not function" symptom.
+		   Provide a minimal, dependency-free fallback that activates ONLY when the
+		   native widget is missing, so full builds keep their own handler and we
+		   never double-toggle (which would cancel the open/close). */
+		if (typeof CBI !== 'undefined' && CBI && CBI.Dropdown)
+			return;
+	
+		function submitAction(dd) {
+			var form = dd.closest('form');
+			if (form) {
+				try { if (form.requestSubmit) form.requestSubmit(); else form.submit(); }
+				catch (e) { try { form.submit(); } catch (e2) {} }
+				return;
+			}
+			var btn = document.querySelector('.cbi-button-apply, button.cbi-button-apply, input.cbi-button-apply');
+			if (btn) btn.click();
+		}
+	
+		(root || document).querySelectorAll('.cbi-dropdown').forEach(function (dd) {
+			if (dd.getAttribute('data-mint-dd'))
+				return;
+			dd.setAttribute('data-mint-dd', '1');
+	
+			var isAction = /\bcbi-button-(apply|save|important)\b/.test(dd.className);
+			var ul = dd.querySelector(':scope > ul');
+			if (!ul)
+				return;
+			var items = Array.prototype.slice.call(ul.querySelectorAll(':scope > li'));
+			var hidden = dd.querySelector(':scope > div > input[type=hidden]');
+	
+			function close() { dd.removeAttribute('open'); }
+	
+			function select(li) {
+				items.forEach(function (o) { o.removeAttribute('selected'); });
+				li.setAttribute('selected', '');
+				var v = li.getAttribute('data-value');
+				if (v === null) v = (li.textContent || '').trim();
+				if (hidden) hidden.value = v;
+				close();
+				try { dd.dispatchEvent(new Event('cbi-dropdown-change', { bubbles: true })); } catch (e) {}
+			}
+	
+			dd.querySelectorAll(':scope > .open, :scope > .more').forEach(function (c) {
+				c.addEventListener('click', function (ev) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					if (dd.hasAttribute('open')) close();
+					else dd.setAttribute('open', '');
+				});
+			});
+	
+			dd.addEventListener('click', function (ev) {
+				var t = ev.target;
+				if (t && t.closest && t.closest('li'))
+					return;
+				if (dd.querySelector(':scope > .open, :scope > .more') &&
+					t && t.closest && t.closest('.open, .more'))
+					return;
+				ev.preventDefault();
+				if (dd.hasAttribute('open')) { close(); return; }
+				if (isAction) submitAction(dd);
+				else dd.setAttribute('open', '');
+			});
+	
+			items.forEach(function (li) {
+				li.addEventListener('click', function (ev) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					select(li);
+					if (isAction) submitAction(dd);
+				});
+			});
+		});
+	
+		/* Close any open dropdown when clicking elsewhere (install once). */
+		if (!document.getElementById('mz-dd-outside')) {
+			document.addEventListener('click', function (ev) {
+				var t = ev.target;
+				if (!(t && t.closest && t.closest('.cbi-dropdown')))
+					document.querySelectorAll('.cbi-dropdown[open]').forEach(function (d) {
+						d.removeAttribute('open');
+					});
+			});
+			var tag = document.createElement('div');
+			tag.id = 'mz-dd-outside';
+			tag.hidden = true;
+			document.body.appendChild(tag);
+		}
+	}
+	
 	function mzEnhanceAll() {
-		mzDlEnhance(document);
-		mzH3Pill(document);
+	mzDlEnhance(document);
+	mzH3Pill(document);
+	mzDropdownFallback(document);
 	}
 
 	var mzDlObserver = new MutationObserver(function () {

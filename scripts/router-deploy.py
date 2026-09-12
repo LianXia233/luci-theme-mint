@@ -25,6 +25,8 @@ WP_JS = os.path.join(REPO, 'wallpaper', 'htdocs', 'luci-static',
 FILES = [
     (os.path.join(THEME_HTDOCS, 'mint', 'cascade.css'),
      '/www/luci-static/mint/cascade.css'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'mz-ui.js'),
+     '/www/luci-static/mint/mz-ui.js'),
     (os.path.join(THEME_HTDOCS, 'mint', 'css', 'compat.css'),
      '/www/luci-static/mint/css/compat.css'),
     (os.path.join(THEME_HTDOCS, 'mint', 'css', 'tokens.css'),
