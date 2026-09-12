@@ -44,8 +44,38 @@ function shuffle(a) {
 	return out;
 }
 
+/* Module handle on the live menu instance. The wallpaper settings page
+   (a different LuCI view) needs to force the admin background to reload
+   after an apply / upload / delete, and it cannot reach the baseclass
+   instance - so init() publishes this handle plus a global helper. */
+let mzMenuRef = null;
+
+function mzIsMobileUA() {
+	return (mzWp && typeof mzWp.isMobileUA === 'function')
+		? mzWp.isMobileUA()
+		: /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
+}
+
+/* Bump the cache version and re-resolve the wallpaper from the live
+   configuration. Safe to call from any view. */
+function mzReinitWallpaper() {
+	if (mzWp && typeof mzWp.dropSessionCache === 'function')
+		mzWp.dropSessionCache(mzIsMobileUA());
+	const root = document.documentElement;
+	/* Clear first: a failed reload must fall back to the gradient rather
+	   than keep the previous picture painted. */
+	root.style.removeProperty('--mz-wallpaper');
+	if (mzMenuRef && typeof mzMenuRef.initGlobalWallpaper === 'function')
+		mzMenuRef.initGlobalWallpaper();
+}
+
+window.mzWallpaperRefresh = mzReinitWallpaper;
+
 return baseclass.extend({
 	__init__() {
+		/* Publish the handle the global wallpaper refresh helper uses. */
+		mzMenuRef = this;
+
 		ui.menu.load().then((tree) => this.render(tree));
 
 		this.initSidebarToggle();
@@ -170,6 +200,12 @@ return baseclass.extend({
 			urls = shuffle(sources).map((u) => u + (u.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now());
 		}
 
+		/* Carry the client-side cache-busting version on every URL. A
+		   changed selection (apply / upload / delete / force refresh)
+		   bumps it, so the browser can never answer with the picture it
+		   cached under the previous version. See mzWpUtil.stamp(). */
+		urls = urls.map((u) => mzWp.stamp(u));
+
 		let imgRef = null;
 		const timer = window.setTimeout(() => { if (imgRef) imgRef.src = ''; }, 16000);
 		const tryNext = (i) => {
@@ -198,6 +234,14 @@ return baseclass.extend({
 			img.src = urls[i];
 		};
 		tryNext(0);
+	},
+
+	/* Re-run the wallpaper resolution from scratch. Used after the
+	   settings page changed something: the old URL is dropped from the
+	   session cache, the version stamp makes the new one uncached, and
+	   the glass layer is re-applied without a page reload. */
+	reinitWallpaper() {
+		mzReinitWallpaper();
 	},
 
 	/* ----- Sidebar menu ------------------------------------------ */
@@ -241,10 +285,17 @@ return baseclass.extend({
 			const hasChildren = ui.menu.getChildren(child).length > 0 && level < 2;
 			const isActive = L.env.dispatchpath[level] == child.name;
 
+			/* `data-node` is the stable, translation-independent key used
+			   by decorateMenuIcons(); the visible title changes with the
+			   active locale, the menu node name does not. */
+			const a = E('a', {
+				'href': hasChildren ? '#' : L.url(childUrl),
+				'data-node': child.name
+			}, [_(child.title)]);
+			if (hasChildren)
+				a.appendChild(this.mzCaret());
 			const li = E('li', { 'class': isActive ? 'active' : '' }, [
-				E('a', { 'href': hasChildren ? '#' : L.url(childUrl) }, [
-					_(child.title)
-				]),
+				a,
 				hasChildren ? this.renderSubMenu(child, childUrl, level) : E([])
 			]);
 
@@ -326,9 +377,145 @@ return baseclass.extend({
 				});
 			});
 		} catch (err) { /* folding must never break rendering */ }
+		/* Icons last: foldMenu() reads a.textContent for the persisted
+		   collapse key, so the label must still be plain text until it is
+		   done. Wrapping afterwards leaves textContent unchanged. */
+		this.decorateMenuIcons();
+
 		const mm = document.getElementById('mainmenu');
 		if (mm)
 			mm.classList.add('mz-menu-ready');
+	},
+
+	/* Decorative menu icons.
+
+	   Purely presentational: the <a> keeps its href, its text node (now
+	   wrapped in .mz-menu-label) and every listener attached by
+	   foldMenu(), so navigation and folding are untouched. A missing
+	   match falls back to a neutral dot - the slot is optional in CSS. */
+	mzIcon(paths) {
+		const NS = 'http://www.w3.org/2000/svg';
+		const svg = document.createElementNS(NS, 'svg');
+		svg.setAttribute('viewBox', '0 0 24 24');
+		svg.setAttribute('width', '18');
+		svg.setAttribute('height', '18');
+		svg.setAttribute('fill', 'none');
+		svg.setAttribute('stroke', 'currentColor');
+		svg.setAttribute('stroke-width', '1.75');
+		svg.setAttribute('stroke-linecap', 'round');
+		svg.setAttribute('stroke-linejoin', 'round');
+		svg.setAttribute('aria-hidden', 'true');
+		svg.setAttribute('class', 'mz-menu-icon');
+		paths.forEach((d) => {
+			const el = document.createElementNS(NS, 'path');
+			el.setAttribute('d', d);
+			svg.appendChild(el);
+		});
+		return svg;
+	},
+
+	/* First-level menu icons, keyed by the LuCI NODE NAME (data-node).
+
+	   The node name is emitted by renderMenuLevel() and is the same in
+	   every locale, so the icon follows the menu entry rather than a
+	   translated string. Title keywords remain as a fallback for menus
+	   rendered without the attribute (older cached markup, custom
+	   renderers). A node without any match gets the neutral hexagon -
+	   the icon slot is optional in CSS, so an unmatched entry simply
+	   shows none of the noise of a wrong glyph. */
+	MENU_ICONS: {
+		status: ['M3 12h4l3 8 4-16 3 8h4'],
+		system: ['M5 4h14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z',
+			'M5 13h14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z',
+			'M8 7.5h.01', 'M8 16.5h.01'],
+		network: ['M12 3a9 9 0 0 1 0 18a9 9 0 0 1 0-18z',
+			'M3.6 9h16.8', 'M3.6 15h16.8', 'M12 3c3 3.5 3 14.5 0 18'],
+		services: ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'],
+		nas: ['M12 7c4.4 0 8-1.1 8-2.5S16.4 2 12 2 4 3.1 4 4.5 7.6 7 12 7z',
+			'M4 4.5v15C4 20.9 7.6 22 12 22s8-1.1 8-2.5v-15',
+			'M20 12.5c0 1.4-3.6 2.5-8 2.5s-8-1.1-8-2.5'],
+		control: ['M13 2 4 14h7l-1 8 9-12h-7z'],
+		vpn: ['M6 11h12v10H6z', 'M9 11V7a3 3 0 0 1 6 0v4'],
+		modem: ['M8.5 15.5a5 5 0 0 1 7 0', 'M5 12a10 10 0 0 1 14 0',
+			'M2 8.5a15 15 0 0 1 20 0', 'M12 19h.01'],
+		uci: ['M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
+			'M14 3v5h5', 'M9 13h6', 'M9 17h4']
+	},
+
+	/* Fallback keyword table (locale-dependent, checked only when the
+	   node name is unknown). Order matters: first match wins. */
+	MENU_ICON_FALLBACK: [
+		['状态', 'status'], ['实时', 'status'], ['System', 'system'],
+		['系统', 'system'], ['管理', 'system'], ['网络', 'network'],
+		['接口', 'network'], ['无线', 'network'], ['服务', 'services'],
+		['NAS', 'nas'], ['存储', 'nas'], ['管控', 'control'],
+		['VPN', 'vpn'], ['移动', 'modem'], ['模组', 'modem']
+	],
+
+	MENU_ICON_DEFAULT: ['M12 3l8 4.5v9L12 21l-8-4.5v-9z'],
+
+	mzIconFor(node, label) {
+		let key = node;
+		if (!key || !this.MENU_ICONS[key]) {
+			for (let i = 0; i < this.MENU_ICON_FALLBACK.length; i++) {
+				if (label.indexOf(this.MENU_ICON_FALLBACK[i][0]) >= 0) {
+					key = this.MENU_ICON_FALLBACK[i][1];
+					break;
+				}
+			}
+		}
+		return this.MENU_ICONS[key] || this.MENU_ICON_DEFAULT;
+	},
+
+	/* Fold caret for collapsible groups. A real inline SVG instead of a
+	   CSS border chevron: it is a flex item of the menu link, so it is
+	   aligned by the same `align-items: center` as the icon and the
+	   label and can never drift off the text baseline. */
+	mzCaret() {
+		const NS = 'http://www.w3.org/2000/svg';
+		const span = document.createElement('span');
+		span.setAttribute('class', 'mz-menu-caret');
+		span.setAttribute('aria-hidden', 'true');
+		const svg = document.createElementNS(NS, 'svg');
+		svg.setAttribute('viewBox', '0 0 24 24');
+		svg.setAttribute('width', '14');
+		svg.setAttribute('height', '14');
+		svg.setAttribute('fill', 'none');
+		svg.setAttribute('stroke', 'currentColor');
+		svg.setAttribute('stroke-width', '2');
+		svg.setAttribute('stroke-linecap', 'round');
+		svg.setAttribute('stroke-linejoin', 'round');
+		const p = document.createElementNS(NS, 'path');
+		p.setAttribute('d', 'M6 9l6 6 6-6');
+		svg.appendChild(p);
+		span.appendChild(svg);
+		return span;
+	},
+
+	decorateMenuIcons() {
+		try {
+			document.querySelectorAll('#mainmenu > li > a').forEach((a) => {
+				if (a.querySelector('.mz-menu-icon'))
+					return;
+				const label = (a.textContent || '').trim();
+				const node = a.getAttribute('data-node') || '';
+				/* The caret belongs AFTER the label at the far edge, so it
+				   is kept out of the wrapping span and re-appended last. */
+				const caret = a.querySelector('.mz-menu-caret');
+				/* Wrap the existing text node so the icon can sit beside it
+				   without changing the accessible name of the link. */
+				const span = document.createElement('span');
+				span.className = 'mz-menu-label';
+				Array.from(a.childNodes).forEach((n) => {
+					if (n !== caret)
+						span.appendChild(n);
+				});
+				a.appendChild(this.mzIcon(this.mzIconFor(node, label)));
+				a.appendChild(span);
+				if (caret)
+					a.appendChild(caret);
+			});
+		} catch (err) { /* icons are optional, never break the menu */ }
 	},
 
 	/* ----- Firewall zone colors (TZ-04) ----------------------------

@@ -1,0 +1,214 @@
+/*
+ * mint - login / sysauth
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * The login page uses the same card, control and motion vocabulary as
+ * the admin UI so the two never look like separate products. The
+ * wallpaper layer is re-used verbatim from wallpaper.css - only the
+ * card on top of it is login-specific.
+ */
+
+.mz-login {
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--mz-spacing-lg);
+	box-sizing: border-box;
+}
+
+/* Background layer: image plus a gradient fallback so a failed fetch
+   still produces a composed page rather than a flat colour. */
+.mz-login-bg {
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-wallpaper);
+	pointer-events: none;
+	background-image: var(--mz-wallpaper, none),
+		linear-gradient(160deg, #123c4a 0%, #1c5a63 55%, #2b7a7a 100%);
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	filter: blur(var(--mz-wallpaper-blur));
+	opacity: 0;
+	transition: opacity var(--mz-dur-panel) var(--mz-ease);
+}
+
+.mz-login-bg.is-loaded {
+	opacity: 1;
+}
+
+.mz-login-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-wallpaper-overlay);
+	pointer-events: none;
+	background: linear-gradient(180deg,
+		rgba(8, 12, 22, var(--mz-wallpaper-overlay)) 0%,
+		rgba(8, 12, 22, calc(var(--mz-wallpaper-overlay) + 0.15)) 100%);
+}
+
+/* ---------------------------------------------------------------- */
+/* Login card                                                         */
+/* ---------------------------------------------------------------- */
+
+.mz-login-card {
+	position: relative;
+	z-index: var(--mz-z-content);
+	width: min(400px, 100%);
+	box-sizing: border-box;
+	padding: var(--mz-spacing-xl) var(--mz-spacing-lg) var(--mz-spacing-lg);
+	border: 1px solid var(--mz-glass-border);
+	border-radius: var(--mz-radius-card);
+	background: rgba(255, 255, 255, .82);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	box-shadow: var(--mz-shadow-lg);
+	animation: mz-modal-in var(--mz-dur-panel) var(--mz-ease);
+}
+
+html[data-theme="dark"] .mz-login-card {
+	background: rgba(32, 37, 45, .92);
+	border-color: rgba(255, 255, 255, .10);
+}
+
+.mz-login-logo {
+	display: block;
+	width: 76px;
+	height: 76px;
+	margin: 0 auto var(--mz-spacing-md);
+	object-fit: contain;
+	border-radius: var(--mz-radius-md);
+}
+
+.mz-login-welcome {
+	margin: 0 0 var(--mz-spacing-lg);
+	text-align: center;
+	font-size: 1.12rem;
+	font-weight: 800;
+	letter-spacing: -.01em;
+	color: var(--mz-color-text);
+}
+
+html[data-theme="dark"] .mz-login-welcome {
+	color: #f2f4f7;
+}
+
+.mz-login-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--mz-spacing-md);
+}
+
+.mz-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.mz-field label {
+	font-size: .82rem;
+	font-weight: 700;
+	color: var(--mz-color-text-muted);
+}
+
+html[data-theme="dark"] .mz-field label {
+	color: #aeb4be;
+}
+
+.mz-field input {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 44px;
+	padding: 10px 14px;
+	border: 1px solid var(--mz-input-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-input-bg);
+	color: var(--mz-color-text);
+	font-size: .92rem;
+	transition: border-color var(--mz-dur-control) var(--mz-ease),
+		box-shadow var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-field input::placeholder {
+	color: var(--mz-input-placeholder);
+}
+
+.mz-field input:focus {
+	outline: none;
+	border-color: var(--mz-color-primary);
+	box-shadow: 0 0 0 3px rgba(var(--mz-color-primary-rgb), .18);
+}
+
+html[data-theme="dark"] .mz-field input {
+	background: rgba(20, 24, 30, .92);
+	border-color: rgba(255, 255, 255, .16);
+	color: #f2f4f7;
+}
+
+.mz-remember {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-size: .84rem;
+	color: var(--mz-color-text-muted);
+	min-height: 44px;
+}
+
+/* Submit: full width, brand solid. */
+.mz-login-form .cbi-button,
+.mz-login-form .btn,
+.mz-login-form button[type="submit"] {
+	width: 100%;
+	min-height: 46px;
+	font-size: .95rem;
+	font-weight: 700;
+}
+
+.mz-login-version {
+	margin-top: var(--mz-spacing-md);
+	text-align: center;
+	font-size: .78rem;
+	color: var(--mz-color-text-muted);
+}
+
+.mz-login .alert-message {
+	margin-bottom: var(--mz-spacing-md);
+	font-size: .82rem;
+}
+
+.mz-login .alert-message.error {
+	background: var(--mz-color-danger-soft);
+	color: #96232a;
+}
+
+html[data-theme="dark"] .mz-login .alert-message.error {
+	color: var(--mz-color-danger);
+}
+
+.mz-login-copyright {
+	margin-top: var(--mz-spacing-sm);
+	text-align: center;
+	font-size: .74rem;
+	color: var(--mz-color-text-muted);
+	opacity: .8;
+}
+
+/* ---------------------------------------------------------------- */
+/* Narrow phones                                                      */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+	.mz-login {
+		padding: var(--mz-spacing-md);
+		align-items: flex-start;
+		padding-top: 8vh;
+	}
+
+	.mz-login-card {
+		padding: var(--mz-spacing-lg) var(--mz-spacing-md);
+		border-radius: 12px 3px 18px 3px;
+	}
+}

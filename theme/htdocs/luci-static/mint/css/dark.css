@@ -1,0 +1,95 @@
+/*
+ * mint - dark mode
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Dark mode is NOT a LuCI theme variant: it is toggled from the sidebar
+ * button and persisted in localStorage as html[data-theme="dark"].
+ * Colours come from the token block in css/tokens.css; this file only
+ * holds what a flat token swap cannot express - softened borders,
+ * dimmed media, and reduced wallpaper presence.
+ *
+ * Rules: never pure #000 backgrounds, never pure #fff text.
+ */
+
+html[data-theme="dark"] {
+	/* Dark glass surfaces stay legible over the flat page. */
+	--mz-panel-bg: rgba(29, 33, 41, .84);
+	--mz-panel-bg-strong: rgba(38, 43, 52, .92);
+	--mz-panel-bg-soft: rgba(25, 29, 36, .88);
+}
+
+html[data-theme="dark"] body {
+	color: var(--mz-color-text);
+}
+
+/* Softer separators: a #2a3348 hairline is enough, anything brighter
+   starts to look like a grid overlay on a dark dashboard. */
+html[data-theme="dark"] .mz-sidebar,
+html[data-theme="dark"] .mz-footer,
+html[data-theme="dark"] .mz-mobilebar,
+html[data-theme="dark"] .mz-indicatorbar {
+	border-color: rgba(255, 255, 255, .07);
+}
+
+html[data-theme="dark"] .cbi-section,
+html[data-theme="dark"] .cbi-section-node,
+html[data-theme="dark"] .cbi-map,
+html[data-theme="dark"] .mz-info-card,
+html[data-theme="dark"] .mz-ring-card,
+html[data-theme="dark"] .mz-port-card,
+html[data-theme="dark"] .mz-net-card,
+html[data-theme="dark"] .mz-card {
+	border-color: rgba(255, 255, 255, .09);
+	box-shadow: var(--mz-lift-card);
+}
+
+html[data-theme="dark"] .cbi-section > h2,
+html[data-theme="dark"] .cbi-section > h3,
+html[data-theme="dark"] .cbi-section-node > h3 {
+	border-bottom-color: rgba(255, 255, 255, .10);
+}
+
+/* Dim photography and bright logos so a light asset does not punch a
+   hole in the dark composition. */
+html[data-theme="dark"] img {
+	filter: brightness(.92) saturate(.95);
+}
+
+html[data-theme="dark"] .mz-brand-logo {
+	filter: brightness(.95);
+}
+
+/* Table hover: keep the brand hue but at a lower intensity. */
+html[data-theme="dark"] table.table tbody tr:hover,
+html[data-theme="dark"] table.cbi-section-table tbody tr:hover {
+	background: rgba(var(--mz-color-primary-rgb), .10);
+}
+
+/* Scrollbar thumb follows the dark surface instead of the brand tint. */
+html[data-theme="dark"] {
+	scrollbar-color: rgba(255, 255, 255, .22) transparent;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, .20);
+	background-clip: content-box;
+}
+
+/* Selected tabs: solid ink reads better than a bright primary slab. */
+html[data-theme="dark"] .cbi-tabmenu > li > a:hover {
+	color: var(--mz-color-primary);
+}
+
+/* Native select option list follows the dark scheme. */
+html[data-theme="dark"] select option {
+	background: #1d2536;
+	color: var(--mz-color-text);
+}
+
+/* Wallpaper presence: dark mode never paints an image (see
+   wallpaper.css), so nothing here has to dim one. Kept as an explicit
+   guard in case a build re-enables the layer. */
+html[data-theme="dark"] body.mz-has-wallpaper::after {
+	opacity: 0;
+}

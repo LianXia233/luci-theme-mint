@@ -7,6 +7,85 @@
 
 ---
 
+## [1.2.0] - 2026-09-13
+
+### Changed（单层视觉容器架构 + 导航 SVG 重绘 + 移动端导航优化）
+
+**一、单层视觉容器（One Page / One Container）**
+
+- `.mz-view` 成为每页**唯一**视觉容器：全站只有它允许绘制 background / border / radius / shadow，容器几何与外观全部由 `--mz-container-*` 令牌族定义（radius `14px 4px 22px 4px`、border、shadow、pad 22px、margin 18px、gap 22px、divider）
+- 内部元素全量透明扁平化：`.cbi-map` / `.cbi-section` / `.cbi-section-node` / 表格 / fieldset / ifacebox / 旧 `.mz-*` 卡片等 30 余类选择器统一 `background:transparent; border:0; radius:0; shadow:none; backdrop-filter:none`，只保留布局、间距与排版职责——**禁止 Card 套 Card、多重边框/圆角/阴影/背景**
+- `cards.css` 经 `git mv` 重命名为 `container.css` 并全量重写（容器 / 内部透明 / 节奏 / 标题 / 动作条 / 网格 / 指标块 / 空状态 / ifacebox）
+- 壁纸模式的扁平化在 `wallpaper.css` 以 `body.mz-has-wallpaper .mz-view X`（特异性 0,3,1）权威重申，压过 compat.css 的 `body.mz-has-wallpaper .cbi-section`（0,2,1）旧规则
+- 壁纸层级栈重排：壁纸（z -2）→ 遮罩+单次模糊（z -1，遮罩 0.55）→ 侧栏/移动条毛玻璃 → `.mz-view` 半透明填充（浅色 0.78 / 深色 0.88）。**容器自身禁用 backdrop-filter**：不创建层叠上下文（cbi-dropdown 浮层 z 1000 不再被侧栏 z 400 压住），且全页模糊只做一次（路由器性能预算）
+- **Action Bar 独立功能层**：`.cbi-page-actions` 底部 sticky、以 `--mz-container-pad` 负 margin 全出血（对"禁止负 margin"的原则性豁免：全出血而非补偿 hack）、不做成完整卡片；移动端 640px 以下改单行排列（保存并应用 / 保存 / 重置同一行右对齐）
+- 总览仪表盘（overview-dashboard.css）同步扁平化：gauge / stat / chart / sys 卡片透明化，删掉逐卡片玻璃叠加
+- 侧栏收窄至 200px，内容区上限放宽至 1680px + 18px 外边距，桌面端合理铺满可用空间
+- 断点瘦身：responsive.css 只允许改容器令牌，删除重复的 padding/背景声明；移动端表格改 hairline 分隔
+- 新增 `scripts/container-check.py`（容器嵌套/层叠上下文/溢出静态检测）并全站 98 页跑通
+
+**二、导航 SVG 重绘（一级菜单图标与折叠箭头）**
+
+- 一级菜单图标 lucide 风格线性 SVG（stroke 1.75），按 LuCI 节点名映射（status/system/network/services/nas/control/vpn/modem/uci）+ 中文关键词兜底 + 六边形默认
+- 折叠箭头改用内联 SVG（`M6 9l6 6 6-6`，14px）：`.mz-menu-caret` inline-flex 对齐、`margin-left:auto` 右贴齐、折叠态 rotate(-90deg)；实测 8/8 分组右对齐 12px、垂直居中、无旧三角残留
+- `decorateMenuIcons` 重写为 [图标][标签][箭头] 三段结构，保留 caret 不被卷入 label span
+
+**三、移动端导航与资源缓存**
+
+- 854px 以下 Tab 条改横向滑动条：`nowrap + overflow-x auto + 触摸惯性滚动 + scroll-snap`，隐藏滚动条，44px 触摸目标，选中项 inset 高亮
+- **静态资源缓存戳**：`MINT_ASSET_REV = '20260913'`（header.ut 常量，footer.ut 独立模板自带同步副本）；cascade.css 全部 12 个 @import、cascade/mz-ui/overview-dashboard css+js/mz-nftables 的引用 URL 均带 `?v=`，修复路由器长缓存头导致升级后浏览器残留旧样式的问题
+- 新增 `scripts/audit-all.py` 全站巡检（逐页 HTTP/JS 错误/横向溢出/Tab 点击/cbi-dropdown 弹层矩形/sticky 动作条，浅色+深色+390px 三轮）
+
+### Fixed
+
+- PC 端一级菜单折叠箭头错位/双箭头（CSS 三角与 SVG 并存）：删除 compat 的 `::after` 三角（`content: none` 中和）
+- 概览页 `<h2>状态</h2>` 标题恢复显示
+- HomeProxy 等页面 16px 横向溢出消除
+- 壁纸模式下容器透明度被 compat 旧规则压过导致的"隔层毛玻璃叠加"
+
+---
+
+## [1.1.0] - 2026-09-13
+
+### Changed (2026-09-13 — UI 架构级重构：Glass & Layered 设计系统 + CSS 分层 + 壁纸缓存版本戳)
+
+**一、CSS 分层架构（cascade.css 拆分）**
+
+- `cascade.css`（6817 行单文件）整体迁移为 `css/compat.css`，作为 LuCI 原生兼容与第三方视图的兼容底座，**原有规则一条不删**，功能零回退
+- 新 `cascade.css` 只声明 `@import` 加载顺序，新增 11 个职责单一的层：
+  `tokens`（设计令牌）→ `base`（文档默认/排版/滚动条）→ `layout`（应用骨架）→ `navigation`（菜单/页签）→ `cards`（统一卡片）→ `components`（按钮/表单/表格/弹窗/徽章/提示）→ `wallpaper`（层级栈）→ `dark`（深色结构差异）→ `animations`（关键帧）→ `responsive`（断点）→ `login`（登录页）
+- 令牌层后置加载：同一自定义属性由新层胜出，旧引用全部继续解析（compat 依赖的 70 个变量在 tokens 层全量定义，含 5 个历史缺口兜底）
+
+**二、Glass & Layered 视觉语言（参考站设计语言移植）**
+
+- 卡片统一不对称圆角 `14px 4px 22px 4px`、品牌色偏移阴影 `4px 5px`（hover 增强）、标题 2px 下边线 + 青色强调条
+- 侧栏 / 移动条毛玻璃 `backdrop-filter: blur(18px) saturate(1.35)`，壁纸自下而上透出：壁纸(z -2) → 遮罩/模糊(z -1) → 玻璃 UI → 内容
+- 动效统一为 `cubic-bezier(.22,.8,.25,1)` 一条曲线、页面入场 `mz-page-in`、卡片 `mz-reveal`，并支持 `prefers-reduced-motion`
+- 菜单注入 lucide 风格线性图标（`decorateMenuIcons()`，纯装饰：不触碰 href、事件与折叠状态，失配时回退中性圆点）
+- PC 端彻底移除 `.mz-topbar`（`display:none`），原生 `#indicators` 槽位保留在独立 `.mz-indicatorbar` 中不受影响；页面标题由视图自身 `<h2>` 承担（实机复核 Overview `<h2>状态</h2>` 正常渲染）
+
+**三、壁纸客户端缓存版本戳（修复切换/上传/删除后旧图残留）**
+
+- `mzWpUtil` 新增 `version / bumpVersion / stamp / dropSessionCache / apply`：设置页每次应用、上传、删除、强制刷新都递增 `localStorage mz-wp-ver`，全部壁纸 URL 追加 `_mzv` 参数——同 URL 换图、cron 重写缓存图、重复选择同一条目三种场景都不会再命中浏览器旧缓存
+- 新图先 `new Image()` 预加载解码再写入 CSS 变量（`apply()`），绘制期间加 `mz-wp-swapping` 淡入，切换无闪烁；加载失败回退渐变背景而不是留下死 URL
+- `menu-mint.js` 暴露全局 `window.mzWallpaperRefresh()`，壁纸设置页变更后无需刷新页面即可重解析后台壁纸；`handleDelete` 双设备清除合并为一次刷新
+- 后端 `?v=<mtime>` 机制不变，正常 HTTP 缓存与 304 复用不受影响
+
+**四、汉化补全**
+
+- `footer.ut` 的 "Powered by" 改走 `_()` i18n，`theme.pot` 与 `zh_Hans` po 补充条目（译为「基于」）
+- 壁纸设置页全部文案已确认走 `_()`；实机部署时同步上传编译后的 `luci-i18n-*-zh-cn.lmo` 后页面全中文（壁纸库/上传/强制刷新/高级设置等）
+
+**五、实机验证（ImmortalWrt SNAPSHOT / H5000M）**
+
+- 12 个页面渲染冒烟：11 个 HTTP 200 且无模板错误（`admin/system/opkg` 404 为该固件未安装 luci-app-opkg，与主题无关）
+- 计算样式断言：主色 `#0fb5a5`、卡片圆角 `14px/22px`、偏移阴影、侧栏 blur(18px)、菜单图标 9/9、`--mz-wallpaper` 正确注入均生效
+- 视口 375 / 390 / 412px 无横向滚动（scrollWidth == clientWidth）
+- 壁纸交互实测：应用库壁纸 → 版本戳递增且立即生效 → 强制刷新缓存 → 跨导航保持，全程无 JS pageerror
+- 新增脚本：`normalize-lf.py`（全仓 LF 强制 + CSS 括号平衡检查）、`router-deploy.py` / `verify-render.py` / `visual-check.py` / `wp-interactive-test.py`（实机部署与验证工具链）
+
+---
+
 ## [1.0.2] - 2026-09-11
 
 ### Fixed (2026-09-11 — 保存并应用泄漏未选中项、diagnostics 行布局、手机卡片对齐)

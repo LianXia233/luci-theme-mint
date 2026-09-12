@@ -8,9 +8,13 @@
 
 ## 功能特性
 
-- 基于 CSS 变量（Design Tokens）的现代设计系统：色彩、间距、圆角、阴影、字体、**层叠层级（`--mz-z-*`）**、**玻璃参数（`--mz-glass-*`）**
-- 浅色 / 深色 / 跟随系统三种配色（默认跟随系统，尊重 `prefers-color-scheme`；侧栏按钮可覆盖）。浅色为白色微透毛玻璃（0.62–0.84 / blur 18–20px），深色为深灰毛玻璃（0.88–0.92）且**完全不加载壁纸**（不渲染壁纸层、不请求壁纸 API、不修改用户壁纸配置）
-- 随机壁纸全屏登录页（按设备类型自动选择图源，带渐变兜底）；支持自定义壁纸（上传图片或填写图片直链）。壁纸设置入口：系统 → Mint Wallpaper → Wallpaper Settings
+- **单层视觉容器架构（2026-09-13）**：每页**只有一个**视觉容器——`.mz-view` 是全站唯一允许绘制 background / border / radius / shadow 的元素（容器令牌 `--mz-container-*` 单一真源）；内部 Section / CBI / 表格 / 卡片全部透明扁平化，只负责布局、间距与排版，**禁止 Card 套 Card、多重边框/圆角/阴影**。Action Bar 为独立功能层（底部 sticky、全出血、不做完整卡片）。壁纸在最底层，每页只做一次模糊（body::before），容器自身禁用 backdrop-filter——避免创建层叠上下文困住 cbi-dropdown（z 1000）被侧栏（z 400）遮挡，也是路由器唯一可承受的模糊预算
+- **分层 CSS 架构（2026-09-13）**：`cascade.css` 只做 `@import` 编排，规则按职责拆为 `css/compat | tokens | base | layout | navigation | container | components | wallpaper | dark | animations | responsive | login` 十二层；旧样式整体保留为兼容底座，新设计系统按级联顺序覆盖，功能零回退。全站静态资源带 `?v=<MINT_ASSET_REV>` 缓存戳（header.ut 常量 + cascade.css @import 同步更新），升级后浏览器不会残留旧样式
+- 基于 CSS 变量（Design Tokens）的现代设计系统：色彩、间距、圆角、阴影、字体、**层叠层级（`--mz-z-*`）**、**玻璃参数（`--mz-glass-*`）**、**容器令牌（`--mz-container-*`）**、**动效曲线（`--mz-ease` / `--mz-dur-*`）**
+- **Glass & Layered 视觉语言（2026-09-13）**：不对称容器圆角（14/4/22/4px）、品牌色偏移阴影、节标题 2px 下边线 + 强调色条、侧栏毛玻璃、菜单线性 SVG 图标（menu-mint.js 按 LuCI 节点名注入，纯装饰不触碰链接与折叠逻辑）+ SVG 折叠箭头（flex 对齐、垂直居中）
+- 浅色 / 深色 / 跟随系统三种配色（默认跟随系统，尊重 `prefers-color-scheme`；侧栏按钮可覆盖）。浅色为白色微透毛玻璃（0.64–0.86 / blur 16–18px），深色为深灰毛玻璃（0.88–0.92）且**完全不加载壁纸**（不渲染壁纸层、不请求壁纸 API、不修改用户壁纸配置）
+- 随机壁纸全屏登录页（按设备类型自动选择图源，带渐变兜底）；支持自定义壁纸（上传图片或填写图片直链）。壁纸设置入口：系统 → Mint 壁纸 → 壁纸设置
+- **壁纸客户端缓存版本戳（2026-09-13）**：设置页每次应用 / 上传 / 删除 / 强制刷新都会递增 `mz-wp-ver`，所有壁纸 URL 追加 `_mzv` 参数并预加载解码后再绘制，切换壁纸不再命中旧缓存；删除壁纸后立即回退渐变背景
 - 服务端壁纸缓存：cron 每 5 分钟把随机图落到 `/luci-static/mint/wallpaper-<kind>.img`，后台优先使用这份本地缓存（可 304 复用、零外部请求）。「后台随机壁纸」开关只控制是否每次导航重新拉取远程随机图，关闭时本地缓存仍会生效
 - 壁纸与布局解耦：壁纸层为 body 伪元素并置于**负 z-index**，因此内容区不需要抬升层级，弹出层永远不会被侧栏或卡片压住
 - 侧栏导航从 LuCI 实时菜单树渲染（无硬编码菜单）
@@ -37,7 +41,20 @@
 theme/                          # 主题包源码（luci-theme-mint，纯 UI）
 ├── Makefile                    # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
-│   ├── cascade.css             # 设计系统 + 布局 + 组件
+│   ├── cascade.css             # 入口：仅声明 css/ 下各层的加载顺序
+│   ├── css/                    # 分层样式表（compat 为旧版全量兼容底座）
+│   │   ├── compat.css          # 旧版规则全量保留（LuCI 兼容 / 第三方视图）
+│   │   ├── tokens.css          # 设计令牌（后加载覆盖旧令牌）
+│   │   ├── base.css            # 文档默认 / 排版 / 滚动条
+│   │   ├── layout.css          # 应用骨架（侧栏 / 主列 / 页脚）
+│   │   ├── navigation.css      # 侧栏菜单 / 页签 / 面包屑（SVG caret 对齐）
+│   │   ├── container.css       # 单层视觉容器（.mz-view 唯一容器 + 内部扁平化）
+│   │   ├── components.css      # 按钮 / 表单 / 表格 / 弹窗 / 徽章 / 提示
+│   │   ├── wallpaper.css       # 壁纸 -> 遮罩 -> 玻璃 -> 内容 层级栈
+│   │   ├── dark.css            # 深色模式结构差异
+│   │   ├── animations.css      # 关键帧与入场动效（含 reduced-motion）
+│   │   ├── responsive.css      # 断点（854 抽屉+横向 Tab 滑动条 / 640 手机+动作条单行 / 400 窄屏）
+│   │   └── login.css           # 登录页
 │   ├── overview-dashboard.js   # PC 端总览仪表盘（仅桌面端 Status > Overview 加载）
 │   ├── overview-mobile.js      # 移动端总览增强（仅手机/平板 Status > Overview 加载）
 │   ├── mz-ui.js                # 设备无关通用 UI 辅助（全后台页面加载）

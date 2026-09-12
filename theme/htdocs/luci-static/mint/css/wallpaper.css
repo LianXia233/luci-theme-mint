@@ -1,0 +1,457 @@
+/*
+ * mint - wallpaper & glass layer
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Layer contract, bottom to top:
+ *
+ *     Wallpaper        body.mz-has-wallpaper::after   z -2   fixed image
+ *     Overlay / Blur   body.mz-has-wallpaper::before  z -1   scrim + blur
+ *     Glass UI         sidebar / bars / cards          z >=1  frosted
+ *     Content          text, controls                  normal flow
+ *
+ * The two wallpaper layers use a NEGATIVE z-index and live on <body>, so
+ * .mz-main never has to open a stacking context. That is what keeps
+ * cbi-dropdown menus (z 1000) above the fixed sidebar instead of trapped
+ * inside a raised content column.
+ *
+ * The wallpaper can therefore never cover a menu, card, modal, form or
+ * button - it is painted strictly below the root stacking context.
+ */
+
+/* ---------------------------------------------------------------- */
+/* Layer 1 - the image                                               */
+/* ---------------------------------------------------------------- */
+
+body.mz-has-wallpaper::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-wallpaper);
+	pointer-events: none;
+	/* A real fixed layer is used instead of
+	   background-attachment: fixed, which iOS Safari ignores.
+	   Layer 1: the configured/fetched wallpaper (none when disabled).
+	   Layer 2: a soft gradient fallback so the frosted glass still has
+	   colour to show through on EVERY admin page. */
+	background-image: var(--mz-wallpaper, none),
+		linear-gradient(135deg, #a8e6d8 0%, #c7d9ff 45%, #f2cfe8 100%);
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+/* ---------------------------------------------------------------- */
+/* Layer 2 - scrim + blur                                            */
+/* ---------------------------------------------------------------- */
+
+body.mz-has-wallpaper::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-wallpaper-overlay);
+	pointer-events: none;
+	/* Light theme: a soft white wash brightens the image so the frosted
+	   sheet with dark text reads naturally. Without this wash the
+	   saturated parts of a photo win over the UI. */
+	background: rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.55));
+	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
+}
+
+/* Dark mode renders NO wallpaper at all: `content: none` removes both
+   pseudo-elements from the box tree instead of painting over them, so
+   dark pages sit on the flat page colour with dark glass above.
+   The data-theme attribute lives on <html>, so the selector MUST be
+   html[data-theme="dark"] body... - a bare
+   body.mz-has-wallpaper[data-theme="dark"] could never match. */
+html[data-theme="dark"] body.mz-has-wallpaper::after,
+html[data-theme="dark"] body.mz-has-wallpaper::before {
+	content: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Glass tokens - light ("white glassmorphism")                       */
+/* ---------------------------------------------------------------- */
+
+html:not([data-theme="dark"]) body.mz-has-wallpaper {
+	--mz-panel-bg: var(--mz-glass-bg);
+	--mz-panel-bg-strong: var(--mz-glass-bg-strong);
+	--mz-panel-bg-soft: var(--mz-glass-bg-light);
+	--mz-panel-halo: 0 1px 3px rgba(255, 255, 255, .6);
+	--mz-color-text: #1d2127;
+	--mz-color-text-muted: rgba(29, 33, 39, .66);
+	--mz-color-surface: var(--mz-glass-bg);
+	--mz-color-surface-2: var(--mz-glass-bg-strong);
+	--mz-color-border: var(--mz-glass-border);
+	--mz-color-background: #eef1f6;
+	--mz-color-primary-soft: rgba(15, 181, 165, .14);
+	/* On glass the neutral shadows wash out; the tinted offset reads. */
+	--mz-lift-card: 4px 5px rgba(24, 54, 83, .10);
+	--mz-lift-card-hover: 6px 8px rgba(24, 54, 83, .16);
+	/* THE container becomes the single frosted sheet. Re-declared on
+	   body (not :root) because --mz-container-border resolves its
+	   var() where it is declared: a body-level border token must be
+	   re-computed here to pick up the glass colour. */
+	--mz-container-background: var(--mz-glass-bg);
+	--mz-container-border: 1px solid var(--mz-glass-border);
+	--mz-container-shadow: 0 10px 34px rgba(24, 54, 83, .14);
+}
+
+/* Glass tokens - dark ("deep grey glass"). Dark never paints an image,
+   so these surfaces only have to stay legible over the flat page.
+   They are more opaque on purpose: a heavily transparent dark card
+   would let the page bleed through and smear the text. */
+html[data-theme="dark"] body.mz-has-wallpaper {
+	--mz-panel-bg: rgba(30, 34, 42, .88);
+	--mz-panel-bg-strong: rgba(38, 43, 52, .92);
+	--mz-panel-bg-soft: rgba(25, 29, 36, .88);
+	--mz-panel-halo: 0 1px 3px rgba(0, 0, 0, .55);
+	--mz-color-text: #f2f4f7;
+	--mz-color-text-muted: #aeb4be;
+	--mz-color-surface: rgba(30, 34, 42, .88);
+	--mz-color-surface-2: rgba(38, 43, 52, .92);
+	--mz-color-border: rgba(255, 255, 255, .10);
+	--mz-color-background: #10151f;
+	--mz-color-primary-soft: rgba(79, 209, 197, .16);
+	/* Dark never paints a wallpaper, so the container sits on the flat
+	   page colour - but it still has to be ONE plate. */
+	--mz-container-background: rgba(30, 34, 42, .88);
+	--mz-container-border: 1px solid rgba(255, 255, 255, .10);
+	--mz-container-shadow: 0 10px 34px rgba(0, 0, 0, .34);
+}
+
+/* ---------------------------------------------------------------- */
+/* The ONE frosted sheet                                             */
+/* ---------------------------------------------------------------- */
+/* The blur already happened once, on body::before. The page container
+   therefore only adds a translucent fill - it must NOT take a
+   backdrop-filter of its own:
+     * a second blur on top of the scrim doubles the effect and makes
+       the wallpaper wash out/over-brighten;
+     * backdrop-filter opens a stacking context, which would trap every
+       cbi-dropdown (z 1000) inside the column and let the sidebar win;
+     * one blur per page is the only budget a router can afford.
+   Result: exactly ONE frosted sheet between the wallpaper and the
+   content - no stack of semi-transparent cards brightening the image
+   layer by layer. */
+body.mz-has-wallpaper .mz-view {
+	background: var(--mz-container-background);
+	border-color: var(--mz-glass-border);
+}
+
+/* ---------------------------------------------------------------- */
+/* Frosted app chrome                                                 */
+/* ---------------------------------------------------------------- */
+/* The sidebar and the bars share the strong glass tint so the
+   wallpaper flows edge to edge instead of being cut into slabs. These
+   are chrome, not page content, and they legitimately own a blur. */
+body.mz-has-wallpaper .mz-sidebar,
+body.mz-has-wallpaper .mz-topbar,
+body.mz-has-wallpaper .mz-mobilebar {
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-glass-border);
+}
+
+/* The footer is a thin strip below the container, not a panel. */
+body.mz-has-wallpaper .mz-footer {
+	background: transparent;
+	border-top-color: var(--mz-glass-border);
+}
+
+/* The action bar is a FUNCTIONAL layer, not a second frosted sheet: it
+   takes the container's own fill and no blur. A backdrop-filter here
+   would open a stacking context and trap the "Save & Apply" split
+   dropdown inside the bar (z 100) under the mobile bar (z 200).
+   Specificity is matched to the legacy rule in compat.css on purpose -
+   it is the only way to win without !important. */
+body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
+body.mz-has-wallpaper #maincontent .cbi-page-actions {
+	background: var(--mz-container-background);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	border-color: var(--mz-glass-border);
+}
+
+/* ---------------------------------------------------------------- */
+/* Authoritative flatten for wallpaper mode                          */
+/* ---------------------------------------------------------------- */
+/* compat.css still carries its old "frost every card" pass as
+   `body.mz-has-wallpaper .cbi-section {...}` (2 classes + 1 element),
+   which OUTRANKS the plain `.mz-view .cbi-section {...}` in
+   container.css (2 classes, 0 elements) and would put a second frosted
+   slab inside the page container again. This block repeats the flatten
+   with one extra class so the single-container rule also holds while a
+   wallpaper is active. It is the ONLY duplicate of the container
+   flatten and exists purely to out-specify that legacy rule - it is not
+   a per-page patch.
+   Nothing here gets a backdrop-filter: the blur already happened on
+   body::before, and a second one both over-brightens the wallpaper and
+   opens a stacking context that traps cbi-dropdown menus. */
+body.mz-has-wallpaper .mz-view .cbi-map,
+body.mz-has-wallpaper .mz-view .cbi-section,
+body.mz-has-wallpaper .mz-view .cbi-section-node,
+body.mz-has-wallpaper .mz-view .cbi-section-table,
+body.mz-has-wallpaper .mz-view .cbi-section-create,
+body.mz-has-wallpaper .mz-view table.table,
+body.mz-has-wallpaper .mz-view .cbi-tabmenu,
+body.mz-has-wallpaper .mz-view .cbi-map-descr,
+body.mz-has-wallpaper .mz-view .cbi-tab-descr,
+body.mz-has-wallpaper .mz-view .cbi-dynlist,
+body.mz-has-wallpaper .mz-view .cbi-dynlist > .item,
+body.mz-has-wallpaper .mz-view .mz-info-card,
+body.mz-has-wallpaper .mz-view .mz-ring-card,
+body.mz-has-wallpaper .mz-view .mz-port-card,
+body.mz-has-wallpaper .mz-view .mz-net-card,
+body.mz-has-wallpaper .mz-view .mz-sys-panel,
+body.mz-has-wallpaper .mz-view .mz-sys-grid,
+body.mz-has-wallpaper .mz-view .mz-wifi-card,
+body.mz-has-wallpaper .mz-view .mz-table-card,
+body.mz-has-wallpaper .mz-view .mz-card,
+body.mz-has-wallpaper .mz-view .mz-empty-state,
+body.mz-has-wallpaper .mz-view .ifacebox,
+body.mz-has-wallpaper .mz-view .ifacebox-head,
+body.mz-has-wallpaper .mz-view .ifacebox-head.active,
+body.mz-has-wallpaper .mz-view .ifacebox-body,
+body.mz-has-wallpaper .mz-view .ifacebadge {
+	background: transparent;
+	border-color: transparent;
+	border-width: 0;
+	border-radius: 0;
+	box-shadow: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+/* Table headers keep an opaque-ish tint: a fully transparent header
+   over a busy photo makes the column labels unreadable. */
+body.mz-has-wallpaper table.table th,
+body.mz-has-wallpaper table.cbi-section-table th {
+	background: var(--mz-panel-bg-soft);
+}
+
+/* ---------------------------------------------------------------- */
+/* No backdrop-filter support                                         */
+/* ---------------------------------------------------------------- */
+/* Older WebKit / embedded webviews would otherwise render a 0.74-alpha
+   panel over a busy photo and lose the text. Fall back to a near-opaque
+   surface so legibility never depends on an unsupported effect. */
+
+@supports not (backdrop-filter: blur(1px)) {
+	body.mz-has-wallpaper .mz-sidebar,
+	body.mz-has-wallpaper .mz-topbar,
+	body.mz-has-wallpaper .mz-mobilebar {
+		background: var(--mz-color-surface);
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* Layer guards                                                       */
+/* ---------------------------------------------------------------- */
+
+/* The hamburger must stay above the drawer it opens. */
+body.mz-has-wallpaper .mz-sidebar-toggle {
+	z-index: var(--mz-z-drawer);
+}
+
+/* The modal overlay stays above the wallpaper backdrop. */
+body.mz-has-wallpaper #modal_overlay {
+	z-index: var(--mz-z-modal);
+}
+
+/* ---------------------------------------------------------------- */
+/* Wallpaper manager (settings page)                                  */
+/* ---------------------------------------------------------------- */
+
+.mz-wp-mgr {
+	display: flex;
+	flex-direction: column;
+	gap: var(--mz-spacing-md);
+}
+
+.mz-wp-mgr-head h2 {
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: -.015em;
+	margin: 0 0 6px;
+}
+
+.mz-wp-mgr-sub {
+	margin: 0;
+	font-size: .86rem;
+	color: var(--mz-color-text-muted);
+	max-width: 68ch;
+}
+
+/* A toolbar is a layout row, not a second container. */
+.mz-wp-mgr-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--mz-spacing-sm);
+	padding: 0 0 var(--mz-spacing-md);
+	border: 0;
+	border-bottom: var(--mz-container-divider);
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.mz-wp-mgr-status {
+	font-size: .84rem;
+	font-weight: 650;
+	color: var(--mz-color-primary);
+	min-height: 20px;
+}
+
+.mz-wp-target-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--mz-spacing-md);
+	font-size: .86rem;
+}
+
+.mz-wp-target-label {
+	font-weight: 700;
+	color: var(--mz-color-text-muted);
+}
+
+.mz-wp-target {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-pill);
+	background: var(--mz-panel-bg);
+	cursor: pointer;
+	transition: border-color var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-wp-target:hover {
+	border-color: var(--mz-color-primary);
+}
+
+.mz-wp-target-hint {
+	font-size: .8rem;
+	color: var(--mz-color-text-muted);
+}
+
+.mz-wp-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: var(--mz-spacing-md);
+}
+
+/* NOTE: the settings view (luci-app-mint-wallpaper) emits .mz-wp-card,
+   .mz-wp-badge, .mz-wp-del and .mz-wp-empty - keep the names in sync
+   with wallpaper.js#buildGridNodes. */
+/* A wallpaper tile is MEDIA CONTENT (the thumbnail itself), not a
+   panel: it keeps the clipping radius and the selection ring but no
+   fill and no lift, so the grid never reads as a second card layer. */
+.mz-wp-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-card);
+	background: transparent;
+	box-shadow: none;
+	overflow: hidden;
+	cursor: pointer;
+	transition: border-color var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-wp-card:hover {
+	border-color: rgba(var(--mz-color-primary-rgb), .4);
+}
+
+.mz-wp-card.is-active {
+	border-color: var(--mz-color-primary);
+	box-shadow: inset 0 0 0 1px var(--mz-color-primary);
+}
+
+.mz-wp-thumb {
+	display: block;
+	width: 100%;
+	aspect-ratio: 16 / 10;
+	object-fit: cover;
+	background: var(--mz-color-surface-2);
+}
+
+.mz-wp-thumb-random,
+.mz-wp-thumb-none {
+	/* No image behind the placeholder tiles: paint a quiet brand wash
+	   instead of letting the wallpaper bleed through unmasked. */
+	background-image: linear-gradient(135deg,
+		rgba(var(--mz-color-primary-rgb), .18),
+		rgba(var(--mz-accent-rgb), .18));
+}
+
+.mz-wp-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 10px 12px;
+	font-size: .82rem;
+}
+
+.mz-wp-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 650;
+}
+
+.mz-wp-badge {
+	flex: 0 0 auto;
+	font-size: .72rem;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: var(--mz-radius-pill);
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+}
+
+.mz-wp-del {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: var(--mz-z-content);
+	width: 28px;
+	height: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-sm);
+	background: var(--mz-panel-bg-strong);
+	color: var(--mz-color-text-muted);
+	font-size: .8rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background var(--mz-dur-instant) var(--mz-ease),
+		color var(--mz-dur-instant) var(--mz-ease);
+}
+
+.mz-wp-del:hover {
+	background: var(--mz-color-danger-soft);
+	color: var(--mz-color-danger);
+}
+
+.mz-wp-empty {
+	grid-column: 1 / -1;
+	padding: var(--mz-spacing-xl) var(--mz-spacing-lg);
+	text-align: center;
+	color: var(--mz-color-text-muted);
+	font-size: .88rem;
+}
+
+/* The advanced-settings map keeps the same card frame. */
+.mz-wp-adv .cbi-map {
+	margin-top: var(--mz-spacing-md);
+}

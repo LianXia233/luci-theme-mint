@@ -36,6 +36,13 @@
 	}
 
 	http.prepare_content('text/html; charset=UTF-8');
+
+	/* Asset cache revision. MUST match the ?v= of the @import lines in
+	   cascade.css: the static files are served with long-lived cache
+	   headers, so a revision bump is the only reliable way to make
+	   browsers pick up an updated stylesheet. Bump it whenever any file
+	   under htdocs/luci-static/mint changes. */
+	const MINT_ASSET_REV = '20260913';
 -%}
 
 <!DOCTYPE html>
@@ -73,7 +80,7 @@
 		{% else %}
 		<meta name="theme-color" content="#0f172a">
 		{% endif %}
-		<link rel="stylesheet" href="{{ media }}/cascade.css">
+		<link rel="stylesheet" href="{{ media }}/cascade.css?v={{ MINT_ASSET_REV }}">
 		<link rel="icon" href="{{ media }}/favicon/favicon.svg" sizes="any" type="image/svg+xml">
 		<link rel="icon" href="{{ media }}/favicon/favicon-48.png" sizes="48x48">
 		<link rel="apple-touch-icon" href="{{ media }}/favicon/favicon-180.png">
@@ -119,6 +126,78 @@
 			window.mzWpUtil = {
 				isMobileUA: function() {
 					return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
+				},
+				/* ----- Cache-busting version ---------------------------------
+				   The backend stamps every local wallpaper URL with ?v=<mtime>
+				   (see wallpaper.uc#withVersion), which covers an overwrite of
+				   the same file. It does NOT cover "the user re-selected a
+				   different entry that happens to share a URL" or "the browser
+				   cached the image before the cron job rewrote it" - in both
+				   cases the URL is byte-identical while the expected picture
+				   changed. The settings page therefore bumps a client-side
+				   version on every apply / upload / delete / force-refresh and
+				   every wallpaper URL carries it, so a changed selection can
+				   never be served from cache. Normal caching is untouched: the
+				   stamp only changes when the user changes something. */
+				version: function() {
+					try { return localStorage.getItem('mz-wp-ver') || '0'; }
+					catch (e) { return '0'; }
+				},
+				bumpVersion: function() {
+					var v = String(Date.now());
+					try { localStorage.setItem('mz-wp-ver', v); } catch (e) {}
+					return v;
+				},
+				stamp: function(url) {
+					if (!url || typeof url !== 'string') return url;
+					var v = this.version();
+					if (!v || v === '0') return url;
+					return url + (url.indexOf('?') >= 0 ? '&' : '?') + '_mzv=' + v;
+				},
+				/* Drop the 5-minute session cache so a new selection is not
+				   shadowed by the previously remembered URL. */
+				dropSessionCache: function(mobile) {
+					try {
+						sessionStorage.removeItem('mz-wp-url-' + (mobile ? 'mobile' : 'pc'));
+						sessionStorage.removeItem('mz-wp-url-' + (mobile ? 'pc' : 'mobile'));
+					} catch (e) {}
+				},
+				/* Preload, then paint. Without this the CSS variable flips
+				   before the new image has decoded and the browser keeps
+				   showing the previous picture for a frame - or forever, if
+				   the new URL 304s from a stale cache entry. */
+				apply: function(url, done) {
+					var self = this;
+					if (!url) {
+						document.documentElement.style.removeProperty('--mz-wallpaper');
+						if (done) done(false);
+						return;
+					}
+					var target = self.stamp(url);
+					var img = new Image();
+					var settled = false;
+					var finish = function(ok) {
+						if (settled) return;
+						settled = true;
+						if (done) done(ok);
+					};
+					img.referrerPolicy = 'no-referrer';
+					img.onload = function() {
+						document.body.classList.add('mz-wp-swapping');
+						document.documentElement.style.setProperty('--mz-wallpaper', 'url("' + target + '")');
+						document.body.classList.add('mz-has-wallpaper');
+						window.setTimeout(function() {
+							document.body.classList.remove('mz-wp-swapping');
+						}, 400);
+						finish(true);
+					};
+					img.onerror = function() {
+						/* Never leave a dead URL painted: fall back to the
+						   gradient so the glass layer stays composed. */
+						document.documentElement.style.removeProperty('--mz-wallpaper');
+						finish(false);
+					};
+					img.src = target;
 				},
 				/* Pick one random source from the configured list; falls back
 				   to the built-in per-device defaults when the list is empty. */

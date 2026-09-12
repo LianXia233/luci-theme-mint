@@ -1,0 +1,358 @@
+/*
+ * mint - responsive
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Breakpoints:
+ *   1280px  tighter gutters on small laptops
+ *   1024px  content padding step-down
+ *    854px  sidebar becomes an off-canvas drawer, single-column cards
+ *    640px  phone: full-width cards, 44px touch targets
+ *    400px  narrow phone safety pass (no horizontal scroll at 375px)
+ *
+ * The last two blocks exist specifically to keep 375 / 390 / 412px
+ * viewports free of a horizontal scrollbar: every grid collapses to one
+ * column, long identifiers wrap, and media is capped to the viewport.
+ *
+ * IMPORTANT: a breakpoint may only CHANGE THE CONTAINER TOKENS
+ * (--mz-container-pad / --mz-container-margin). It must never restate
+ * `.mz-view { padding: ... }` or `.cbi-section { padding: ... }`: the
+ * sticky action bar full-bleeds by exactly one --mz-container-pad, so a
+ * padding written separately from the token is what produces the
+ * "action bar tears a hole through the panel" overflow.
+ */
+
+/* ---------------------------------------------------------------- */
+/* 1280px - small laptops                                             */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 1280px) {
+	:root {
+		--mz-sidebar-width: 184px;
+		--mz-container-margin: 14px;
+		--mz-container-pad: 20px;
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* 1024px - tablets                                                   */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 1024px) {
+	:root {
+		--mz-container-margin: 12px;
+		--mz-container-pad: 18px;
+	}
+
+	.mz-info-cards,
+	.mz-sys-grid,
+	.mz-port-grid,
+	.mz-net-grid,
+	.mz-wifi-grid,
+	.mz-card-grid {
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* 854px - drawer + single column                                     */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 854px) {
+	:root {
+		--mz-sidebar-width: 280px;
+		--mz-container-margin: 12px;
+		--mz-container-pad: 18px;
+	}
+
+	.mz-sidebar {
+		transform: translateX(-100%);
+		box-shadow: var(--mz-shadow-lg);
+	}
+
+	.mz-sidebar.is-open {
+		transform: translateX(0);
+	}
+
+	/* The hamburger lives inside .mz-mobilebar (created by JS). Keep the
+	   base toggle hidden so a failed initMobileBar can never re-introduce
+	   a fixed floating button over the page. */
+	.mz-sidebar-toggle {
+		display: none;
+	}
+
+	.mz-mobilebar {
+		display: flex;
+	}
+
+	.mz-main {
+		margin-left: 0;
+	}
+
+	/* One column for every card grid. */
+	.mz-info-cards,
+	.mz-sys-grid,
+	.mz-port-grid,
+	.mz-net-grid,
+	.mz-wifi-grid,
+	.mz-card-grid,
+	.mz-card-grid-2,
+	.mz-card-grid-3 {
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	}
+
+	/* Page titles: the view's own <h2> is hidden on phones and rendered
+	   by .mz-mobilebar, so no page shows its title twice. */
+	#mz-view > h2,
+	.mint-ovd-header {
+		display: none !important;
+	}
+
+	/* ----------------------------------------------------------------
+	   Narrow screens: page / plugin tabs become ONE horizontal strip.
+	   compat.css sets `.tabs { flex-wrap: wrap }`, which on a phone with
+	   a dozen plugin entries turns the bar into a tall grid of chips
+	   that pushes the whole page down. Instead: a single scrollable row
+	   with touch momentum, snap-to-item and a hidden scrollbar.
+	   Overflow stays ON THIS ELEMENT ONLY - it contains nothing but
+	   links, so no dropdown can be clipped by it.
+	   ---------------------------------------------------------------- */
+	#tabmenu .tabs,
+	.cbi-tabmenu {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-x: contain;
+		scroll-snap-type: x proximity;
+		scrollbar-width: none;
+		padding-bottom: 4px;
+	}
+
+	#tabmenu .tabs::-webkit-scrollbar,
+	.cbi-tabmenu::-webkit-scrollbar {
+		display: none;
+		height: 0;
+	}
+
+	#tabmenu .tabs li,
+	.cbi-tabmenu li {
+		flex: 0 0 auto;
+		scroll-snap-align: start;
+	}
+
+	#tabmenu .tabs a,
+	.cbi-tabmenu a,
+	.cbi-tabmenu > li > a {
+		white-space: nowrap;
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	/* The active chip keeps the solid brand fill, and is nudged so the
+	   current page is identifiable even when the strip is scrolled. */
+	#tabmenu .tabs li.active a,
+	.cbi-tabmenu li.active a,
+	.cbi-tabmenu > li.active > a {
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
+	}
+
+	.mz-topbar {
+		display: none;
+	}
+
+	/* Tables become stacked records. A record is separated by ONE
+	   hairline - never a bordered rounded box, which would re-introduce
+	   a nested card inside the single page container. `overflow` stays
+	   visible so tooltips and dropdowns inside a cell are not clipped. */
+	.table,
+	.table .tr,
+	table.table,
+	table.cbi-section-table {
+		display: block;
+		width: 100%;
+	}
+
+	.table .td,
+	.table .th,
+	table.table td,
+	table.table th,
+	table.cbi-section-table td,
+	table.cbi-section-table th {
+		display: block;
+		box-sizing: border-box;
+		width: 100% !important;
+		border-bottom: none;
+	}
+
+	.table .tr,
+	table.table tr,
+	table.cbi-section-table tr {
+		display: block;
+		margin-bottom: var(--mz-spacing-sm);
+		padding-bottom: var(--mz-spacing-sm);
+		border: 0;
+		border-bottom: var(--mz-container-divider);
+		border-radius: 0;
+		overflow: visible;
+	}
+
+	table.table tr:last-child,
+	table.cbi-section-table tr:last-child {
+		border-bottom: 0;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	table.table th,
+	table.cbi-section-table th {
+		background: var(--mz-panel-bg-soft);
+	}
+
+	table.table td,
+	table.cbi-section-table td {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--mz-spacing-sm);
+		padding: 8px 12px;
+	}
+
+	table.table td::before,
+	table.cbi-section-table td::before {
+		content: attr(data-title);
+		flex: 0 0 40%;
+		font-weight: 650;
+		color: var(--mz-color-text-muted);
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* 640px - phones                                                     */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+	:root {
+		--mz-spacing-lg: 16px;
+		--mz-spacing-xl: 24px;
+		--mz-container-margin: 8px;
+		--mz-container-pad: 14px;
+		--mz-container-gap: 16px;
+	}
+
+	body {
+		font-size: .92rem;
+	}
+
+	.mz-info-cards,
+	.mz-sys-grid,
+	.mz-port-grid,
+	.mz-net-grid,
+	.mz-wifi-grid,
+	.mz-card-grid,
+	.mz-card-grid-2,
+	.mz-card-grid-3,
+	.mz-wp-grid {
+		grid-template-columns: 1fr;
+	}
+
+	/* 44px touch targets. */
+	.btn,
+	.cbi-button,
+	.mz-btn {
+		min-height: 44px;
+		padding: 10px 18px;
+	}
+
+	.mz-icon-btn {
+		width: 32px;
+		height: 32px;
+		padding: 6px;
+		margin: -6px;
+	}
+
+	#tabmenu .tabs a,
+	.cbi-tabmenu > li > a {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.mz-menu a {
+		min-height: 44px;
+	}
+
+	/* Action bar: ONE wrapping row. The previous full-width stack pushed
+	   保存 / 重置 out of the bar and on top of the page content. */
+	.cbi-section-actions,
+	.cbi-page-actions {
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		row-gap: 8px;
+	}
+
+	/* Long values (MAC, IPv6, UIDs) must wrap instead of forcing the
+	   page wider than the viewport. */
+	.cbi-value-field,
+	.mz-info-value,
+	table.table td,
+	table.cbi-section-table td {
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	img,
+	video,
+	canvas,
+	svg {
+		max-width: 100%;
+		height: auto;
+	}
+
+	pre,
+	code {
+		overflow-wrap: anywhere;
+	}
+
+	.mz-footer {
+		padding: var(--mz-spacing-md) var(--mz-spacing-sm);
+		font-size: .76rem;
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* 400px - narrow phone safety pass                                   */
+/* ---------------------------------------------------------------- */
+
+@media (max-width: 400px) {
+	:root {
+		--mz-radius-card: 12px 3px 16px 3px;
+		--mz-container-margin: 6px;
+		--mz-container-pad: 12px;
+		--mz-container-radius: 12px 3px 16px 3px;
+		--mz-container-radius-br: 16px;
+		--mz-container-radius-bl: 3px;
+	}
+
+	.mz-wp-mgr-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.mz-wp-mgr-toolbar > .btn,
+	.mz-wp-mgr-toolbar > .cbi-button {
+		width: 100%;
+	}
+
+	table.table td,
+	table.cbi-section-table td {
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	table.table td::before,
+	table.cbi-section-table td::before {
+		flex: 0 0 auto;
+		font-size: .76rem;
+	}
+}

@@ -135,6 +135,10 @@ msgid "Network"
 msgstr "网络"
 
 #: htdocs/luci-static/mint/overview-mobile.js:514
+#: ucode/template/themes/mint/footer.ut:11
+msgid "Powered by"
+msgstr "基于"
+
 msgid "System information"
 msgstr "系统信息"
 

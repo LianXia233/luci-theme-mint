@@ -3,12 +3,16 @@
  * Self-contained dashboard styles. Namespaced under .mint-overview-dashboard
  * to avoid collisions with LuCI / other theme modules. Reuses mint CSS
  * design tokens (--mz-color-*, --mz-radius-*, --mz-spacing-*, --mz-shadow-*).
+ *
+ * SINGLE-CONTAINER RULE: the dashboard lives inside .mz-view, which is
+ * the page's one and only visual container. Every block below is
+ * therefore FLAT - no background, no border, no radius, no shadow.
+ * Blocks are separated by the grid gap and, where a group needs an
+ * anchor, by one hairline. Nothing here may re-create a card.
  * ================================================================== */
 
 .mint-overview-dashboard {
 	--ovd-gap: var(--mz-spacing-md);
-	--ovd-card-bg: var(--mz-color-surface);
-	--ovd-border: var(--mz-color-border);
 	--ovd-muted: var(--mz-color-text-muted);
 	--ovd-text: var(--mz-color-text);
 	--ovd-ring-track: var(--mz-color-surface-2);
@@ -38,9 +42,9 @@
 	width: 38px;
 	height: 38px;
 	min-width: 38px;
-	border: 1px solid var(--ovd-border);
+	border: 1px solid var(--mz-color-border);
 	border-radius: var(--mz-radius-md);
-	background: var(--ovd-card-bg);
+	background: transparent;
 	color: var(--ovd-text);
 	cursor: pointer;
 	transition: background var(--mz-transition), transform var(--mz-transition), border-color var(--mz-transition);
@@ -62,11 +66,11 @@
 	display: flex;
 	align-items: center;
 	gap: var(--mz-spacing-sm);
-	padding: var(--mz-spacing-md);
-	background: var(--ovd-card-bg);
-	border: 1px solid var(--ovd-border);
-	border-radius: var(--mz-radius-lg);
-	box-shadow: var(--mz-shadow-sm);
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
 	min-width: 0;
 }
 .mint-ovd-ring-wrap {
@@ -125,11 +129,11 @@
 	margin-bottom: var(--ovd-gap);
 }
 .mint-ovd-stat {
-	padding: var(--mz-spacing-md);
-	background: var(--ovd-card-bg);
-	border: 1px solid var(--ovd-border);
-	border-radius: var(--mz-radius-lg);
-	box-shadow: var(--mz-shadow-sm);
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
 	min-width: 0;
 }
 .mint-ovd-stat-label { font-size: .76rem; color: var(--ovd-muted); }
@@ -158,11 +162,11 @@
 	margin-bottom: var(--ovd-gap);
 }
 .mint-ovd-chart {
-	padding: var(--mz-spacing-md);
-	background: var(--ovd-card-bg);
-	border: 1px solid var(--ovd-border);
-	border-radius: var(--mz-radius-lg);
-	box-shadow: var(--mz-shadow-sm);
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
@@ -192,11 +196,12 @@
 
 /* ---- system info ---- */
 .mint-ovd-sys {
-	padding: var(--mz-spacing-md);
-	background: var(--ovd-card-bg);
-	border: 1px solid var(--ovd-border);
-	border-radius: var(--mz-radius-lg);
-	box-shadow: var(--mz-shadow-sm);
+	padding: var(--mz-spacing-md) 0 0;
+	background: transparent;
+	border: 0;
+	border-top: var(--mz-container-divider);
+	border-radius: 0;
+	box-shadow: none;
 }
 .mint-ovd-sys-title { font-size: .9rem; font-weight: 650; margin: 0 0 var(--mz-spacing-sm); }
 .mint-ovd-sys-grid {
@@ -264,28 +269,13 @@
 }
 
 /* ==================================================================
- * Wallpaper mode (glass pass, 2026-09-08)
- * When the global wallpaper is active the surface token becomes a 7%
-   white wash, which alone is too faint for the dense dashboard cards.
-   Give every dashboard card the shared glass treatment - panel token,
-   blur, translucent border - so the wallpaper shows through and the
-   charts stay readable. Blur is limited to these card shells (about
-   ten elements), matching the theme's backdrop-filter budget.
+ * Wallpaper mode
+ * The wallpaper is blurred ONCE by body::before and the frosted fill
+ * is applied ONCE by .mz-view. The dashboard therefore needs nothing
+ * here: giving the tiles their own glass used to stack four
+ * translucent layers (scrim + card + tile + chart canvas) and made
+ * the wallpaper wash out to near-white.
  * ================================================================== */
-body.mz-has-wallpaper .mint-overview-dashboard {
-	--ovd-border: var(--mz-glass-border);
-}
-
-body.mz-has-wallpaper .mint-ovd-gauge,
-body.mz-has-wallpaper .mint-ovd-stat,
-body.mz-has-wallpaper .mint-ovd-chart,
-body.mz-has-wallpaper .mint-ovd-sys {
-	background: var(--mz-panel-bg);
-	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
-	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
-	border-color: var(--mz-glass-border);
-	box-shadow: var(--mz-glass-shadow);
-}
 /* ----------------------------------------------------------------
  * Phone typography polish (2026-09-11)
  * The dashboard is now the single renderer for every viewport. On a

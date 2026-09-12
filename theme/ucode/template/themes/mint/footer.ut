@@ -4,12 +4,22 @@
  Licensed to the public under the Apache License 2.0.
 -#}
 
+		{# Asset cache revision. footer.ut is a separate ucode template, so it
+		   cannot see header.ut's constant: keep this in sync with the
+		   MINT_ASSET_REV in header.ut AND the ?v= of the @import lines in
+		   cascade.css. Bump whenever any file under htdocs/luci-static/mint
+		   changes. #}
+		{% const MINT_ASSET_REV = '20260913'; %}
+
 		{% if (!blank_page): %}
 			</main>
 
 			<footer class="mz-footer">
 				<span>
-					Powered by
+					{# i18n: the theme's own footer text. Kept as a msgid so the
+					    zh_Hans po supplies 由 … 提供支持 while other locales
+					    keep their own wording. #}
+					{{ _('Powered by') }}
 					<a href="https://github.com/openwrt/luci" target="_blank" rel="noreferrer">
 						{{ version.luciname }} ({{ version.luciversion }})</a>
 					/
@@ -21,9 +31,9 @@
 			</footer>
 		</div>
 		<script>L.require('menu-mint')</script>
-		<script src="{{ media }}/mz-ui.js" defer></script>
+		<script src="{{ media }}/mz-ui.js?v={{ MINT_ASSET_REV }}" defer></script>
 		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-overview'): %}
-		<link rel="stylesheet" href="{{ media }}/overview-dashboard.css" />
+		<link rel="stylesheet" href="{{ media }}/overview-dashboard.css?v={{ MINT_ASSET_REV }}" />
 		<script>
 		(function () {
 			/* One dashboard for every device (2026-09-11): phones previously
@@ -34,7 +44,7 @@
 			   used everywhere and the layout reflows per viewport.
 			   overview-mobile.js stays in the package but is no longer booted. */
 			var s = document.createElement('script');
-			s.src = '{{ media }}/overview-dashboard.js';
+			s.src = '{{ media }}/overview-dashboard.js?v={{ MINT_ASSET_REV }}';
 			s.defer = true;
 			(document.head || document.body).appendChild(s);
 		})();
@@ -94,7 +104,7 @@
 		</script>
 		{% endif %}
 		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-nftables'): %}
-		<script src="{{ media }}/mz-nftables.js" defer></script>
+		<script src="{{ media }}/mz-nftables.js?v={{ MINT_ASSET_REV }}" defer></script>
 		{% endif %}
 		{% endif %}
 	</body>

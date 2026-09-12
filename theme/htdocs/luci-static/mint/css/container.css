@@ -1,0 +1,364 @@
+/*
+ * mint - the single visual container
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * ==================================================================
+ * ONE PAGE / ONE MAIN CONTAINER / ONE BORDER / ONE RADIUS / ONE SHADOW
+ * ==================================================================
+ *
+ * Page anatomy, bottom to top:
+ *
+ *     wallpaper image        body::after                 z -2
+ *     scrim + blur           body::before                z -1
+ *     app chrome             .mz-sidebar / .mz-mobilebar z 200-400
+ *     page column            .mz-main                    layout only
+ *     THE CONTAINER          .mz-view                    <- painted
+ *       inner components     .cbi-map / .cbi-section /
+ *                            .cbi-section-node / form /
+ *                            fieldset / table / .ifacebox
+ *                                                        <- transparent
+ *
+ * `.mz-view` is the only element of a page that may paint a
+ * background, a border, a corner radius or a shadow. Every structural
+ * component inside it is reduced to layout + spacing + typography, so a
+ * page reads as one sheet instead of a stack of nested white boxes.
+ *
+ * Two hard constraints behind the implementation:
+ *
+ *  1. NO backdrop-filter / transform / filter / opacity on .mz-view.
+ *     Each of those opens a new stacking context, which would trap a
+ *     cbi-dropdown (z-index 1000) inside the column and let the fixed
+ *     sidebar paint over it. The wallpaper is blurred ONCE by
+ *     body::before; the container only adds a translucent fill. That
+ *     is also the only blur budget affordable on a router.
+ *
+ *  2. The full-bleed negative margin of the sticky action bar is
+ *     derived from the very same --mz-container-pad token as the
+ *     container padding. It is a deliberate full-bleed, not a
+ *     compensating hack, and the two values cannot drift apart.
+ */
+
+/* ---------------------------------------------------------------- */
+/* 1. The container                                                  */
+/* ---------------------------------------------------------------- */
+
+.mz-view {
+	flex: 1;
+	box-sizing: border-box;
+	width: min(var(--mz-content-max),
+		calc(100% - 2 * var(--mz-container-margin)));
+	max-width: var(--mz-content-max);
+	min-width: 0;
+	margin: var(--mz-container-margin) auto;
+	padding: var(--mz-container-pad);
+	background: var(--mz-container-background);
+	border: var(--mz-container-border);
+	border-radius: var(--mz-container-radius);
+	box-shadow: var(--mz-container-shadow);
+}
+
+/* ---------------------------------------------------------------- */
+/* 2. Inner components are transparent                               */
+/* ---------------------------------------------------------------- */
+/* Anything that only groups content must stop painting itself. This
+   single block is what removes the nested-white-box look; it is
+   deliberately scoped to `.mz-view` so the login screen keeps its own
+   composition and no third-party widget outside the page column is
+   touched. */
+
+.mz-view .cbi-map,
+.mz-view form.cbi-map,
+.mz-view .cbi-section,
+.mz-view .cbi-section-node,
+.mz-view .cbi-section-table,
+.mz-view .cbi-section-create,
+.mz-view .cbi-value-field,
+.mz-view .cbi-dynlist,
+.mz-view .cbi-dynlist > .item,
+.mz-view .cbi-map-descr,
+.mz-view .cbi-tab-descr,
+.mz-view fieldset,
+.mz-view table.table,
+.mz-view .table,
+.mz-view table.cbi-section-table,
+.mz-view .ifacebox,
+.mz-view .ifacebox-head,
+.mz-view .ifacebox-body,
+.mz-view .ifacebadge,
+.mz-view .mz-info-card,
+.mz-view .mz-ring-card,
+.mz-view .mz-port-card,
+.mz-view .mz-net-card,
+.mz-view .mz-sys-panel,
+.mz-view .mz-wifi-card,
+.mz-view .mz-table-card,
+.mz-view .mz-card,
+.mz-view .mz-panel,
+.mz-view .mz-empty-state {
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+/* No hover lift either: a shadow on hover would re-create the second
+   visual layer the container is supposed to own alone. */
+.mz-view .cbi-section:hover,
+.mz-view .cbi-section-node:hover,
+.mz-view .mz-info-card:hover,
+.mz-view .mz-ring-card:hover,
+.mz-view .mz-port-card:hover,
+.mz-view .mz-net-card:hover,
+.mz-view .mz-card:hover {
+	box-shadow: none;
+	transform: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* 3. Section rhythm                                                 */
+/* ---------------------------------------------------------------- */
+/* Sections keep the container's padding (they add none of their own)
+   and are separated by ONE hairline - the "----" divider between
+   content blocks. Never a second frame. */
+
+.mz-view .cbi-section,
+.mz-view .cbi-section-node,
+.mz-view .cbi-map {
+	padding: 0;
+	margin: 0;
+}
+
+.mz-view .cbi-section + .cbi-section,
+.mz-view .cbi-section + .cbi-section-node,
+.mz-view .cbi-section-node + .cbi-section-node,
+.mz-view .cbi-section-node + .cbi-section,
+.mz-view .cbi-map + .cbi-map {
+	margin-top: var(--mz-container-gap);
+	padding-top: var(--mz-container-gap);
+	border-top: var(--mz-container-divider);
+}
+
+/* The last block must not leave a trailing divider. */
+.mz-view > .cbi-section:last-child,
+.mz-view > .cbi-map:last-child {
+	padding-bottom: 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* 4. Section heading                                                */
+/* ---------------------------------------------------------------- */
+/* Reference-site language: a 2px underline, tight tracking and a
+   short accent bar on the leading edge. The heading is part of the
+   container's content, not a header strip of its own, so the legacy
+   negative-margin "frosted head" is flattened to a plain divider. */
+
+.mz-view .cbi-section > h2,
+.mz-view .cbi-section > h3,
+.mz-view .cbi-section-node > h3,
+.mz-view .cbi-section-title,
+.mz-view .cbi-section > .cbi-title,
+.mz-view .cbi-section > .cbi-section-title,
+.mz-view .mz-sys-panel > h3,
+.mz-view .mz-net-card-header > h3,
+.mz-view .mz-card-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 var(--mz-spacing-md);
+	padding: 0 0 11px;
+	font-size: 1.02rem;
+	font-weight: 750;
+	letter-spacing: -.01em;
+	line-height: 1.4;
+	color: var(--mz-color-text);
+	background: transparent;
+	border: 0;
+	border-bottom: 2px solid var(--mz-color-border);
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.mz-view .cbi-section > h2::before,
+.mz-view .cbi-section > h3::before,
+.mz-view .cbi-section-node > h3::before,
+.mz-view .mz-sys-panel > h3::before,
+.mz-view .mz-net-card-header > h3::before {
+	content: "";
+	flex: 0 0 auto;
+	width: var(--mz-accent-bar-w);
+	height: 17px;
+	border-radius: var(--mz-radius-pill);
+	background: var(--mz-accent);
+}
+
+/* A heading that embeds a status pill must keep it on the same line. */
+.mz-view .cbi-section > h3.mz-h3-pill,
+.mz-view .cbi-section-node > h3.mz-h3-pill,
+.mz-view .mz-sys-panel > h3.mz-h3-pill,
+.mz-view .mz-port-panel > h3.mz-h3-pill,
+.mz-view .mz-net-card-header > h3.mz-h3-pill {
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+
+.mz-h3-pill > .label,
+.mz-h3-pill > .badge {
+	margin-left: auto;
+}
+
+/* ---------------------------------------------------------------- */
+/* 5. Action bar - a FUNCTIONAL layer, not a second card             */
+/* ---------------------------------------------------------------- */
+/* Save / Apply / Reset may own a fill and ONE hairline so they stay
+   readable while scrolling, but they must never grow a border box, a
+   corner radius or a shadow of their own. The full-bleed margin is
+   exactly one --mz-container-pad: the container's own padding. */
+
+#maincontent .cbi-section-actions,
+#maincontent .cbi-page-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+	margin-top: var(--mz-container-gap);
+	padding: 12px 0;
+	background: transparent;
+	border: 0;
+	border-top: var(--mz-container-divider);
+	border-radius: 0;
+	box-shadow: none;
+}
+
+#maincontent .cbi-map > .cbi-page-actions,
+#maincontent .cbi-page-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: var(--mz-z-sticky);
+	margin-top: var(--mz-container-gap);
+	margin-inline: calc(-1 * var(--mz-container-pad));
+	padding: 12px var(--mz-container-pad);
+	padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+	background: var(--mz-container-background);
+	border-top: var(--mz-container-divider);
+	border-radius: 0 0 var(--mz-container-radius-br)
+		var(--mz-container-radius-bl);
+}
+
+/* ---------------------------------------------------------------- */
+/* 6. Content grids (layout only)                                    */
+/* ---------------------------------------------------------------- */
+
+.mz-info-cards,
+.mz-sys-grid,
+.mz-port-grid,
+.mz-net-grid,
+.mz-wifi-grid,
+.mz-card-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: var(--mz-spacing-md);
+	margin-bottom: var(--mz-spacing-md);
+}
+
+.mz-card-grid-2 {
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.mz-card-grid-3 {
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* ---------------------------------------------------------------- */
+/* 7. Compact metric block                                           */
+/* ---------------------------------------------------------------- */
+
+.mz-info-card {
+	padding: 0;
+}
+
+.mz-info-label {
+	font-size: .76rem;
+	font-weight: 600;
+	letter-spacing: .02em;
+	color: var(--mz-color-text-muted);
+	margin-bottom: 3px;
+}
+
+.mz-info-value {
+	font-size: 1.15rem;
+	font-weight: 750;
+	letter-spacing: -.01em;
+	color: var(--mz-color-text);
+	overflow-wrap: anywhere;
+}
+
+.mz-info-model {
+	font-size: .78rem;
+	font-weight: 500;
+	color: var(--mz-color-text-muted);
+}
+
+/* ---------------------------------------------------------------- */
+/* 8. Empty state                                                    */
+/* ---------------------------------------------------------------- */
+
+.mz-view .mz-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--mz-spacing-sm);
+	padding: var(--mz-spacing-xl) 0;
+	text-align: center;
+	color: var(--mz-color-text-muted);
+}
+
+.mz-empty-state .mz-empty-icon {
+	width: 34px;
+	height: 34px;
+	opacity: .5;
+}
+
+.mz-empty-state .mz-empty-title {
+	font-size: .95rem;
+	font-weight: 700;
+	color: var(--mz-color-text);
+}
+
+.mz-empty-state .mz-empty-text {
+	font-size: .84rem;
+	max-width: 42ch;
+}
+
+/* ---------------------------------------------------------------- */
+/* 9. ifacebox (firewall zones)                                      */
+/* ---------------------------------------------------------------- */
+
+.mz-view .ifacebox {
+	overflow: visible;
+	margin: 0 0 var(--mz-spacing-md);
+}
+
+.mz-view .ifacebox-head {
+	padding: 0 0 8px;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid var(--mz-color-border);
+	border-radius: 0;
+	font-size: .86rem;
+	font-weight: 700;
+}
+
+.mz-view .ifacebox-head.active {
+	background: transparent;
+	color: var(--mz-color-success);
+}
+
+.mz-view .ifacebox-body {
+	padding: 10px 0 0;
+	font-size: .88rem;
+	line-height: 1.7;
+}

@@ -137,9 +137,31 @@ function activeNames(data) {
 	};
 }
 
+/* Coalesce repeated refresh requests. handleDelete() clears both device
+   groups in a row and a single re-resolution is enough for both. */
+var mzRefreshPending = false;
+
+function mzScheduleWallpaperRefresh() {
+	if (mzRefreshPending)
+		return;
+	mzRefreshPending = true;
+	window.setTimeout(function () {
+		mzRefreshPending = false;
+		if (typeof window.mzWallpaperRefresh === 'function')
+			window.mzWallpaperRefresh();
+	}, 0);
+}
+
 /* Push the new selection into the live admin background without a reload.
    Only the edited device group is rewritten; the other device keeps its
-   current config so PC / mobile stay independent. */
+   current config so PC / mobile stay independent.
+
+   Cache handling: the backend stamps local URLs with ?v=<mtime>, which
+   covers a file being overwritten. It cannot cover "the same URL now
+   means a different picture" (re-selecting an entry, or a cron rewrite
+   the browser already cached) - so every mutation here bumps the
+   client-side version that mzWpUtil.stamp() appends, drops the 5-minute
+   session cache, and preloads the image before painting it. */
 function applyLiveWallpaper(url, target) {
 	var grp = (!url)
 		? { mode: 'random', url: '', proxy: '', sources: [] }
@@ -156,6 +178,12 @@ function applyLiveWallpaper(url, target) {
 		}
 	}
 
+	var wpUtil = (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUtil : null;
+	if (wpUtil && typeof wpUtil.bumpVersion === 'function')
+		wpUtil.bumpVersion();
+	if (wpUtil && typeof wpUtil.dropSessionCache === 'function')
+		wpUtil.dropSessionCache(target === 'mobile');
+
 	if (!url) {
 		/* Leave the gradient if the OTHER device still has an image. */
 		var other = (target === 'mobile')
@@ -164,8 +192,19 @@ function applyLiveWallpaper(url, target) {
 		var otherHas = other && (other.url || other.proxy);
 		if (!otherHas)
 			document.documentElement.style.removeProperty('--mz-wallpaper');
+		/* Re-resolve: the gradient / server proxy fallback has to be
+		   recomputed now that this device no longer pins an image. */
+		mzScheduleWallpaperRefresh();
 		return;
 	}
+
+	if (wpUtil && typeof wpUtil.apply === 'function') {
+		wpUtil.apply(url);
+		return;
+	}
+
+	/* Fallback when the shared helper is unavailable (login page or an
+	   older cached header script). */
 	document.documentElement.style.setProperty('--mz-wallpaper', 'url("' + url + '")');
 	document.body.classList.add('mz-has-wallpaper');
 }

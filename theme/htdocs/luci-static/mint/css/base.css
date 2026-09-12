@@ -1,0 +1,163 @@
+/*
+ * mint - base layer
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Document defaults, typography scale, focus rings and scrollbars.
+ * Deliberately scoped: no universal selector, so third-party LuCI views
+ * keep their own component styling.
+ */
+
+/* The page colour lives on <html>, NOT on <body>. The wallpaper layers
+   are body pseudo-elements with a NEGATIVE z-index so they sit behind
+   every piece of UI without forcing .mz-main to open a stacking
+   context; an opaque body background would paint straight over them. */
+html {
+	font-size: 16px;
+	background: var(--mz-color-background);
+	/* Smooth in-page anchors without hijacking scroll on load. */
+	scroll-behavior: smooth;
+	-webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
+body {
+	margin: 0;
+	font-family: var(--mz-font-sans);
+	font-size: .94rem;
+	color: var(--mz-color-text);
+	background: transparent;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	line-height: 1.6;
+	letter-spacing: .004em;
+}
+
+code, pre, kbd, samp {
+	font-family: var(--mz-font-mono);
+	font-size: .875em;
+}
+
+a {
+	color: var(--mz-color-primary);
+	text-decoration: none;
+	transition: color var(--mz-dur-control) var(--mz-ease);
+}
+
+a:hover {
+	color: var(--mz-color-primary-hover);
+}
+
+/* A single, consistent focus ring for every interactive element. */
+:focus-visible {
+	outline: 2px solid var(--mz-color-primary);
+	outline-offset: 2px;
+	border-radius: var(--mz-radius-sm);
+}
+
+::selection {
+	background: rgba(var(--mz-color-primary-rgb), .22);
+}
+
+/* ---------------------------------------------------------------- */
+/* Typography scale                                                   */
+/* ---------------------------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+	margin: 0;
+	font-weight: 700;
+	line-height: 1.35;
+	letter-spacing: -.01em;
+	color: var(--mz-color-text);
+}
+
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.1rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: .92rem; }
+h6 { font-size: .85rem; }
+
+p { margin: 0 0 .8em; }
+p:last-child { margin-bottom: 0; }
+
+small, .small { font-size: .82em; }
+
+hr {
+	border: 0;
+	border-top: 1px solid var(--mz-color-border);
+	margin: var(--mz-spacing-lg) 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Scrollbars                                                         */
+/* ---------------------------------------------------------------- */
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(var(--mz-color-primary-rgb), .35) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(var(--mz-color-primary-rgb), .28);
+	border: 3px solid transparent;
+	background-clip: content-box;
+	border-radius: var(--mz-radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(var(--mz-color-primary-rgb), .48);
+	background-clip: content-box;
+}
+
+/* ---------------------------------------------------------------- */
+/* Utilities                                                          */
+/* ---------------------------------------------------------------- */
+
+.mz-hidden {
+	display: none !important;
+}
+
+.mz-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Skip link (a11y) */
+.mz-skip-link {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	z-index: var(--mz-z-toast);
+	padding: var(--mz-spacing-sm) var(--mz-spacing-md);
+	background: var(--mz-color-primary);
+	color: #fff;
+	font-weight: 600;
+	border-radius: 0 0 var(--mz-radius-md) 0;
+}
+
+.mz-skip-link:focus {
+	left: 0;
+	color: #fff;
+}

@@ -1,0 +1,250 @@
+/*
+ * mint - layout (app shell)
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * The application shell: sidebar, main column, page container, footer
+ * and the mobile bar. Content width is constrained by a single
+ * `min(<max>, 100% - <gutter>)` expression so the page never produces a
+ * horizontal scrollbar between 320px and very wide screens.
+ */
+
+/* ---------------------------------------------------------------- */
+/* Sidebar                                                            */
+/* ---------------------------------------------------------------- */
+
+.mz-sidebar {
+	position: fixed;
+	inset-block: 0;
+	left: 0;
+	width: var(--mz-sidebar-width);
+	display: flex;
+	flex-direction: column;
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur)) saturate(var(--mz-glass-saturate));
+	border-right: 1px solid var(--mz-color-border);
+	z-index: var(--mz-z-drawer);
+	transition: transform var(--mz-dur-panel) var(--mz-ease);
+}
+
+.mz-brand {
+	padding: var(--mz-spacing-lg) var(--mz-spacing-lg) var(--mz-spacing-md);
+	border-bottom: 1px solid var(--mz-color-border);
+}
+
+.mz-brand-link {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--mz-color-text);
+	font-weight: 800;
+	font-size: 1.08rem;
+	letter-spacing: .01em;
+	min-height: 44px;
+}
+
+.mz-brand-link:hover {
+	color: var(--mz-color-text);
+}
+
+.mz-brand-logo {
+	height: 40px;
+	width: auto;
+	max-width: 100%;
+	object-fit: contain;
+	border-radius: var(--mz-radius-sm);
+}
+
+.mz-nav {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: var(--mz-spacing-sm) var(--mz-spacing-sm) var(--mz-spacing-md);
+	overscroll-behavior: contain;
+}
+
+.mz-sidebar-footer {
+	padding: var(--mz-spacing-sm) var(--mz-spacing-md) var(--mz-spacing-md);
+	border-top: 1px solid var(--mz-color-border);
+}
+
+.mz-sidebar-actions {
+	display: flex;
+	gap: var(--mz-spacing-xs);
+	justify-content: flex-end;
+	align-items: center;
+}
+
+/* ---------------------------------------------------------------- */
+/* Main column                                                        */
+/* ---------------------------------------------------------------- */
+
+.mz-main {
+	margin-left: var(--mz-sidebar-width);
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	/* min-width:0 lets a wide table shrink instead of pushing the whole
+	   page into a horizontal scroll. */
+	min-width: 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Desktop title bar                                                  */
+/* ---------------------------------------------------------------- */
+/* The view's own <h2> already names the page, so on desktop the extra
+   strip is pure redundancy and is removed entirely (the container only
+   exists so the mobile bar can own the title on phones). */
+
+@media (min-width: 855px) {
+	.mz-topbar {
+		display: none;
+	}
+}
+
+/* LuCI indicator strip - host of the native #indicators slot
+   (ui.js#showIndicator: change/apply indicator, XHR poll badge).
+   It is a SEPARATE element from .mz-topbar precisely so that hiding the
+   desktop title bar cannot take a native LuCI affordance with it.
+   Zero-height while empty. */
+.mz-indicatorbar {
+	position: sticky;
+	top: 0;
+	z-index: var(--mz-z-navigation);
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	min-height: 0;
+	padding: 0 var(--mz-spacing-lg);
+	pointer-events: none;
+}
+
+.mz-indicatorbar > * {
+	pointer-events: auto;
+}
+
+.mz-indicators {
+	display: flex;
+	align-items: center;
+	gap: var(--mz-spacing-sm);
+	flex-wrap: wrap;
+}
+
+.mz-indicatorbar .mz-indicators:empty {
+	display: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Page container                                                     */
+/* ---------------------------------------------------------------- */
+/* .mz-view is the page's ONE visual container and is defined in
+   container.css (background / border / radius / shadow / padding).
+   Only its placement inside the flex column belongs here, so the
+   geometry has exactly one home and the sticky action bar can
+   full-bleed by exactly one --mz-container-pad. Constraint: it must
+   never be given overflow other than `visible` - an `overflow-x: clip`
+   guard here would silently cut off every absolutely positioned
+   descendant reaching past the view box (cbi-dropdown menus near the
+   right/bottom edge). */
+
+.mz-view {
+	flex: 1;
+	min-width: 0;
+	margin: var(--mz-container-margin) auto;
+}
+
+/* ---------------------------------------------------------------- */
+/* Footer                                                             */
+/* ---------------------------------------------------------------- */
+
+.mz-footer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: var(--mz-spacing-md) var(--mz-spacing-lg);
+	font-size: .8rem;
+	color: var(--mz-color-text-muted);
+	border-top: 1px solid var(--mz-color-border);
+	background: transparent;
+	text-align: center;
+}
+
+.mz-footer a {
+	color: var(--mz-color-text-muted);
+	font-weight: 500;
+}
+
+.mz-footer a:hover {
+	color: var(--mz-color-primary);
+}
+
+.mz-footer-sep {
+	margin: 0 var(--mz-spacing-sm);
+	opacity: .5;
+}
+
+.mz-footer-brand {
+	font-weight: 700;
+	color: var(--mz-color-primary);
+}
+
+/* ---------------------------------------------------------------- */
+/* Mobile bar                                                         */
+/* ---------------------------------------------------------------- */
+
+.mz-mobilebar {
+	display: none;
+	position: sticky;
+	top: 0;
+	z-index: var(--mz-z-navigation);
+	align-items: center;
+	gap: var(--mz-spacing-sm);
+	min-height: 56px;
+	padding: 0 var(--mz-spacing-md);
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	border-bottom: 1px solid var(--mz-color-border);
+}
+
+/* ---------------------------------------------------------------- */
+/* Scrim + hamburger                                                  */
+/* ---------------------------------------------------------------- */
+
+.mz-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-scrim);
+	background: var(--mz-scrim);
+	opacity: 0;
+	transition: opacity var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-overlay.is-open {
+	opacity: 1;
+}
+
+.mz-sidebar-toggle {
+	display: none;
+	position: fixed;
+	top: 12px;
+	left: 12px;
+	z-index: var(--mz-z-drawer);
+	width: 40px;
+	height: 40px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-color-surface);
+	color: var(--mz-color-text);
+	box-shadow: var(--mz-shadow-sm);
+	cursor: pointer;
+	align-items: center;
+	justify-content: center;
+	transition: background var(--mz-dur-control) var(--mz-ease),
+		border-color var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-sidebar-toggle:active {
+	transform: scale(.94);
+}

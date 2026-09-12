@@ -117,6 +117,9 @@ return view.extend({
 			applyWallpaperSettings(cfg);
 
 			const showWallpaper = (urls, labelFn) => {
+				/* Carry the client-side cache version so a re-selected or
+				   cron-rewritten image is never served from cache. */
+				urls = urls.map((u) => (wp.stamp ? wp.stamp(u) : u));
 				let imgRef = null;
 				const timer = window.setTimeout(() => { if (imgRef) imgRef.src = ''; }, 16000);
 

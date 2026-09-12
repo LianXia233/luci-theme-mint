@@ -1,0 +1,797 @@
+/*
+ * mint - components
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * The shared component vocabulary: buttons, form controls, tables,
+ * modals, badges, alerts, progress and loading states. Every entry is a
+ * real LuCI class or a theme class - nothing is matched with a universal
+ * selector, so third-party views keep their own markup working.
+ */
+
+/* ---------------------------------------------------------------- */
+/* Buttons                                                            */
+/* ---------------------------------------------------------------- */
+
+.btn,
+.cbi-button,
+button.cbi-button,
+input[type="submit"].cbi-button,
+input[type="button"].cbi-button,
+.mz-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-height: 38px;
+	padding: 8px 18px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-panel-bg);
+	color: var(--mz-color-text);
+	font-family: inherit;
+	font-size: .88rem;
+	font-weight: 650;
+	line-height: 1.2;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background var(--mz-dur-control) var(--mz-ease),
+		border-color var(--mz-dur-control) var(--mz-ease),
+		color var(--mz-dur-control) var(--mz-ease),
+		transform var(--mz-dur-instant) var(--mz-ease),
+		box-shadow var(--mz-dur-control) var(--mz-ease);
+}
+
+.btn:hover,
+.cbi-button:hover,
+button.cbi-button:hover,
+input[type="submit"].cbi-button:hover,
+input[type="button"].cbi-button:hover,
+.mz-btn:hover {
+	border-color: rgba(var(--mz-color-primary-rgb), .45);
+	background: var(--mz-color-surface-2);
+	color: var(--mz-color-primary);
+	text-decoration: none;
+}
+
+.btn:active,
+.cbi-button:active,
+.mz-btn:active {
+	transform: scale(.97);
+}
+
+.btn:disabled,
+.cbi-button:disabled,
+.cbi-button[disabled],
+.mz-btn:disabled {
+	opacity: .5;
+	pointer-events: none;
+}
+
+/* Primary / positive action */
+.cbi-button-positive,
+.cbi-button-action,
+.btn.primary,
+.mz-btn-primary {
+	background: var(--mz-color-primary);
+	border-color: var(--mz-color-primary);
+	color: #fff;
+}
+
+.cbi-button-positive:hover,
+.cbi-button-action:hover,
+.btn.primary:hover,
+.mz-btn-primary:hover {
+	background: var(--mz-color-primary-hover);
+	border-color: var(--mz-color-primary-hover);
+	color: #fff;
+}
+
+/* Destructive */
+.cbi-button-negative,
+.btn.danger,
+.mz-btn-danger {
+	background: var(--mz-color-danger);
+	border-color: var(--mz-color-danger);
+	color: #fff;
+}
+
+.cbi-button-negative:hover,
+.btn.danger:hover,
+.mz-btn-danger:hover {
+	background: #c33d44;
+	border-color: #c33d44;
+	color: #fff;
+}
+
+/* Neutral / save */
+.cbi-button-neutral,
+.cbi-button-important {
+	background: var(--mz-ink);
+	border-color: var(--mz-ink);
+	color: #fff;
+}
+
+.cbi-button-neutral:hover,
+.cbi-button-important:hover {
+	opacity: .88;
+	color: #fff;
+}
+
+/* Ghost button */
+.mz-btn-ghost {
+	background: transparent;
+	border-color: transparent;
+	color: var(--mz-color-text-muted);
+}
+
+.mz-btn-ghost:hover {
+	background: var(--mz-color-surface-2);
+	border-color: var(--mz-color-border);
+	color: var(--mz-color-text);
+}
+
+.mz-btn-block {
+	display: flex;
+	width: 100%;
+}
+
+/* Icon button (sidebar, toolbars): 30px visual + 7px padding = 44px
+   hit area (WCAG 2.5.5 / iOS 44pt). */
+.mz-icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	box-sizing: content-box;
+	padding: 7px;
+	margin: -7px;
+	border: 1px solid transparent;
+	border-radius: var(--mz-radius-sm);
+	background: transparent;
+	color: var(--mz-color-text-muted);
+	cursor: pointer;
+	transition: background var(--mz-dur-control) var(--mz-ease),
+		color var(--mz-dur-control) var(--mz-ease),
+		border-color var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-icon-btn:hover {
+	background: var(--mz-color-surface-2);
+	border-color: var(--mz-color-border);
+	color: var(--mz-color-primary);
+}
+
+.mz-icon-btn:active {
+	transform: scale(.94);
+}
+
+/* ---------------------------------------------------------------- */
+/* Form controls                                                      */
+/* ---------------------------------------------------------------- */
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input.cbi-input-text,
+input.cbi-input-password,
+input.cbi-input-integer,
+input.cbi-input-file,
+textarea,
+select,
+.cbi-input-select {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 38px;
+	padding: 8px 12px;
+	border: 1px solid var(--mz-input-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-input-bg);
+	color: var(--mz-color-text);
+	font-family: inherit;
+	font-size: .88rem;
+	line-height: 1.4;
+	transition: border-color var(--mz-dur-control) var(--mz-ease),
+		box-shadow var(--mz-dur-control) var(--mz-ease),
+		background var(--mz-dur-control) var(--mz-ease);
+}
+
+textarea {
+	min-height: 92px;
+	resize: vertical;
+}
+
+input:hover,
+textarea:hover,
+select:hover,
+.cbi-input-select:hover {
+	border-color: var(--mz-input-border-hover);
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.cbi-input-select:focus {
+	outline: none;
+	border-color: var(--mz-color-primary);
+	box-shadow: 0 0 0 3px rgba(var(--mz-color-primary-rgb), .16);
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--mz-input-placeholder);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+	opacity: .6;
+	cursor: not-allowed;
+}
+
+/* Checkbox / radio keep the native control (screen-reader friendly) and
+   only get an accent colour + a larger hit box. */
+input[type="checkbox"],
+input[type="radio"] {
+	width: 16px;
+	height: 16px;
+	min-height: 0;
+	margin: 0 6px 0 0;
+	accent-color: var(--mz-color-primary);
+	flex: 0 0 auto;
+}
+
+label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: .88rem;
+	cursor: pointer;
+}
+
+/* Form rows */
+.cbi-value {
+	padding: 10px 0;
+	border-bottom: 1px solid var(--mz-color-border);
+}
+
+.cbi-value:last-child {
+	border-bottom: none;
+}
+
+.cbi-value-title {
+	font-size: .88rem;
+	font-weight: 650;
+	color: var(--mz-color-text);
+}
+
+.cbi-value-description {
+	font-size: .8rem;
+	color: var(--mz-color-text-muted);
+	margin-top: 3px;
+}
+
+.cbi-value-field {
+	min-width: 0;
+}
+
+/* A fieldset groups rows - it is not a second container. */
+fieldset {
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	margin: 0 0 var(--mz-spacing-md);
+	background: transparent;
+	box-shadow: none;
+	min-width: 0;
+}
+
+legend {
+	padding: 0;
+	margin-bottom: var(--mz-spacing-sm);
+	font-size: .9rem;
+	font-weight: 700;
+	color: var(--mz-color-text);
+}
+
+/* ---------------------------------------------------------------- */
+/* Tables                                                             */
+/* ---------------------------------------------------------------- */
+
+table.table,
+.table,
+table.cbi-section-table {
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+	font-size: .88rem;
+}
+
+table.table th,
+.table .th,
+table.cbi-section-table th {
+	padding: 10px 12px;
+	text-align: left;
+	font-size: .8rem;
+	font-weight: 700;
+	letter-spacing: .02em;
+	color: var(--mz-color-text-muted);
+	background: var(--mz-panel-bg-soft);
+	border-bottom: 1px solid var(--mz-color-border);
+	white-space: nowrap;
+}
+
+table.table td,
+.table .td,
+table.cbi-section-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--mz-color-border);
+	vertical-align: middle;
+	overflow-wrap: anywhere;
+}
+
+table.table tbody tr:last-child td,
+table.cbi-section-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+table.table tbody tr:hover,
+.table .tr:hover,
+table.cbi-section-table tbody tr:hover {
+	background: var(--mz-color-primary-soft);
+}
+
+/* Tables already wrapped in a card do not need a second frame. */
+.cbi-section table.table,
+.cbi-section-node table.table {
+	border: none;
+	background: transparent;
+	box-shadow: none;
+	padding: 0;
+	margin: 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Badges / status                                                    */
+/* ---------------------------------------------------------------- */
+
+.label,
+.badge,
+.mz-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 10px;
+	border-radius: var(--mz-radius-pill);
+	background: var(--mz-color-surface-2);
+	border: 1px solid var(--mz-color-border);
+	color: var(--mz-color-text-muted);
+	font-size: .76rem;
+	font-weight: 700;
+	line-height: 1.4;
+	white-space: nowrap;
+}
+
+.mz-badge-success,
+.label.success {
+	background: var(--mz-color-success-soft);
+	border-color: transparent;
+	color: var(--mz-color-success);
+}
+
+.mz-badge-warning,
+.label.warning {
+	background: var(--mz-color-warning-soft);
+	border-color: transparent;
+	color: var(--mz-color-warning);
+}
+
+.mz-badge-danger,
+.label.error {
+	background: var(--mz-color-danger-soft);
+	border-color: transparent;
+	color: var(--mz-color-danger);
+}
+
+.mz-badge-info,
+.label.notice {
+	background: var(--mz-color-info-soft);
+	border-color: transparent;
+	color: var(--mz-color-info);
+}
+
+/* Status dot */
+.mz-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--mz-color-text-muted);
+	flex: 0 0 auto;
+}
+
+.mz-dot.up,
+.mz-dot.success { background: var(--mz-color-success); }
+.mz-dot.warn { background: var(--mz-color-warning); }
+.mz-dot.down,
+.mz-dot.error { background: var(--mz-color-danger); }
+
+/* ---------------------------------------------------------------- */
+/* Alerts                                                             */
+/* ---------------------------------------------------------------- */
+
+.alert-message,
+.errorbox,
+.warningbox,
+.infobox,
+.cbi-section-error,
+.notice {
+	position: relative;
+	padding: 13px 16px 13px 18px;
+	border-radius: var(--mz-radius-md);
+	margin: 0 0 var(--mz-spacing-md);
+	font-size: .86rem;
+	line-height: 1.55;
+	background: var(--mz-color-primary-soft);
+	border: 1px solid transparent;
+	color: var(--mz-color-text);
+	overflow: hidden;
+}
+
+.alert-message::before,
+.errorbox::before,
+.warningbox::before,
+.infobox::before,
+.cbi-section-error::before,
+.notice::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: var(--mz-accent-bar-w);
+	background: var(--mz-accent);
+}
+
+.alert-message h4,
+.notice h4 {
+	margin: 0 0 4px;
+	font-size: .9rem;
+	font-weight: 750;
+	color: inherit;
+}
+
+.alert-message.warning,
+.warningbox,
+.notice {
+	background: var(--mz-color-warning-soft);
+	color: #8a5606;
+}
+
+.alert-message.warning::before,
+.warningbox::before,
+.notice::before {
+	background: var(--mz-color-warning);
+}
+
+.alert-message.error,
+.errorbox,
+.cbi-section-error {
+	background: var(--mz-color-danger-soft);
+	color: #96232a;
+}
+
+.alert-message.error::before,
+.errorbox::before,
+.cbi-section-error::before {
+	background: var(--mz-color-danger);
+}
+
+.alert-message.success {
+	background: var(--mz-color-success-soft);
+	color: #1d6b4b;
+}
+
+.alert-message.success::before {
+	background: var(--mz-color-success);
+}
+
+html[data-theme="dark"] .alert-message.warning,
+html[data-theme="dark"] .warningbox,
+html[data-theme="dark"] .notice {
+	color: var(--mz-color-warning);
+}
+
+html[data-theme="dark"] .alert-message.error,
+html[data-theme="dark"] .errorbox,
+html[data-theme="dark"] .cbi-section-error {
+	color: var(--mz-color-danger);
+}
+
+html[data-theme="dark"] .alert-message.success {
+	color: var(--mz-color-success);
+}
+
+/* ---------------------------------------------------------------- */
+/* Modal                                                              */
+/* ---------------------------------------------------------------- */
+
+#modal_overlay,
+.mz-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-modal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--mz-spacing-md);
+	background: var(--mz-scrim);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	animation: mz-overlay-in var(--mz-dur-control) var(--mz-ease);
+}
+
+.modal,
+.cbi-modal,
+.mz-modal {
+	position: relative;
+	width: min(560px, 100%);
+	max-height: 88vh;
+	overflow: auto;
+	overscroll-behavior: contain;
+	padding: var(--mz-spacing-lg);
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-card);
+	background: var(--mz-modal-bg);
+	box-shadow: var(--mz-shadow-lg);
+	animation: mz-modal-in var(--mz-dur-panel) var(--mz-ease);
+}
+
+.modal > h3,
+.cbi-modal > h3,
+.mz-modal > h3 {
+	margin: 0 0 var(--mz-spacing-md);
+	padding-bottom: 11px;
+	border-bottom: 2px solid var(--mz-color-border);
+	font-size: 1.02rem;
+	font-weight: 750;
+}
+
+/* ---------------------------------------------------------------- */
+/* Dropdown (cbi-dropdown)                                            */
+/* ---------------------------------------------------------------- */
+/* LuCI cbi-dropdown structure (cbi/dropdown.js):
+ *   <div class="cbi-dropdown">
+ *     <ul>            <- the VALUE strip: shows only [selected] items
+ *                        while closed; becomes the popup itself when the
+ *                        widget gets [open] (compat.css owns that rule,
+ *                        including "positioning belongs to LuCI JS")
+ *     <span class="more"> / <span class="open">
+ *     <ul class="dropdown">   <- second popup, only on some widgets
+ *
+ * RULE: never touch `.cbi-dropdown > ul` here. The previous revision did
+ * (`position:absolute` + white card on every `> ul`), which ripped the
+ * closed-state value strip out of the flow - the selected value floated
+ * mid-form and the "Save & Apply" split button kept an empty glass shell
+ * where its label used to be. Only `ul.dropdown` (and `[open] > ul` via
+ * compat.css) may be styled as a floating layer. */
+
+.cbi-dropdown,
+.mz-dropdown {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+/* The floating popup list ONLY (the ul.dropdown of this LuCI build).
+   Long option lists MUST scroll inside the popup instead of stretching
+   past the viewport. LuCI's dropdown JS writes an INLINE max-height
+   computed against the document height (not the viewport), which on
+   tall pages lets the slab run ~400px past the fold - an inline style
+   cannot be beaten by specificity, so the viewport clamp needs the one
+   deliberate !important in this theme. */
+.cbi-dropdown > ul.dropdown,
+.mz-dropdown > ul {
+	position: absolute;
+	top: auto;
+	left: 0;
+	z-index: var(--mz-z-dropdown);
+	min-width: 100%;
+	max-height: min(340px, 55vh) !important;
+	overflow-x: hidden !important;
+	overflow-y: auto !important;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+	margin: 4px 0 0;
+	padding: 6px;
+	list-style: none;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-md);
+	background: var(--mz-dropdown-bg);
+	box-shadow: var(--mz-shadow-lg);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	animation: mz-pop-in var(--mz-dur-control) var(--mz-ease);
+}
+
+/* The value strip (ul.preview) must stay a plain flow box. */
+.cbi-dropdown > ul.preview {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 3px;
+}
+
+.cbi-dropdown > ul.dropdown > li,
+.mz-dropdown > ul > li {
+	padding: 7px 12px;
+	border-radius: var(--mz-radius-sm);
+	font-size: .86rem;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background var(--mz-dur-instant) var(--mz-ease);
+}
+
+.cbi-dropdown > ul.dropdown > li:hover,
+.mz-dropdown > ul > li:hover {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+}
+
+/* ---------------------------------------------------------------- */
+/* Tooltip (LuCI .cbi-tooltip)                                        */
+/* ---------------------------------------------------------------- */
+/* Native pattern: <span class="cbi-tooltip-container">label
+ *   <span class="cbi-tooltip">detail</span></span>.
+ * The detail node must stay out of the flow and hidden until its
+ * container is hovered; without these rules a third-party page that
+ * relies on the stock sheet renders it inline or always-visible. */
+
+.cbi-tooltip-container {
+	position: relative;
+	cursor: help;
+}
+
+.cbi-tooltip {
+	display: none;
+	position: absolute;
+	left: 50%;
+	bottom: calc(100% + 8px);
+	transform: translateX(-50%);
+	z-index: var(--mz-z-popover);
+	box-sizing: border-box;
+	width: max-content;
+	max-width: min(420px, 80vw);
+	padding: 7px 11px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-sm);
+	background: var(--mz-ink);
+	color: #fff;
+	font-size: .78rem;
+	font-weight: 500;
+	line-height: 1.5;
+	text-align: left;
+	white-space: normal;
+	box-shadow: var(--mz-shadow-md);
+	pointer-events: none;
+	animation: mz-pop-in var(--mz-dur-instant) var(--mz-ease);
+}
+
+.cbi-tooltip-container:hover > .cbi-tooltip,
+.cbi-tooltip-container:focus-within > .cbi-tooltip {
+	display: block;
+}
+
+/* ---------------------------------------------------------------- */
+/* Progress                                                           */
+/* ---------------------------------------------------------------- */
+
+.progress,
+.mz-progress {
+	position: relative;
+	height: 8px;
+	border-radius: var(--mz-radius-pill);
+	background: var(--mz-color-surface-2);
+	overflow: hidden;
+}
+
+.progress > div,
+.mz-progress > div {
+	height: 100%;
+	border-radius: var(--mz-radius-pill);
+	background: linear-gradient(90deg,
+		var(--mz-color-primary), var(--mz-accent));
+	transition: width var(--mz-dur-panel) var(--mz-ease);
+}
+
+/* ---------------------------------------------------------------- */
+/* Loading                                                            */
+/* ---------------------------------------------------------------- */
+
+.mz-loading,
+.loading {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: .84rem;
+	color: var(--mz-color-text-muted);
+}
+
+.mz-spinner {
+	width: 16px;
+	height: 16px;
+	border: 2px solid rgba(var(--mz-color-primary-rgb), .25);
+	border-top-color: var(--mz-color-primary);
+	border-radius: 50%;
+	animation: mz-spin .7s linear infinite;
+}
+
+/* ---------------------------------------------------------------- */
+/* Tooltip                                                            */
+/* ---------------------------------------------------------------- */
+
+.mz-tooltip {
+	position: relative;
+}
+
+.mz-tooltip:hover::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	left: 50%;
+	bottom: calc(100% + 8px);
+	transform: translateX(-50%);
+	z-index: var(--mz-z-popover);
+	padding: 6px 10px;
+	border-radius: var(--mz-radius-sm);
+	background: var(--mz-ink);
+	color: #fff;
+	font-size: .78rem;
+	font-weight: 500;
+	white-space: nowrap;
+	box-shadow: var(--mz-shadow-md);
+	pointer-events: none;
+	animation: mz-pop-in var(--mz-dur-instant) var(--mz-ease);
+}
+
+/* ---------------------------------------------------------------- */
+/* dynlist edit / delete affordances (mz-ui.js)                       */
+/* ---------------------------------------------------------------- */
+
+.mz-dl-actions {
+	display: inline-flex;
+	gap: 4px;
+	margin-left: 8px;
+}
+
+.mz-dl-btn {
+	width: 24px;
+	height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-sm);
+	background: var(--mz-panel-bg);
+	color: var(--mz-color-text-muted);
+	font-size: .74rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background var(--mz-dur-instant) var(--mz-ease),
+		color var(--mz-dur-instant) var(--mz-ease);
+}
+
+.mz-dl-btn:hover {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+}
+
+.mz-dl-del:hover {
+	background: var(--mz-color-danger-soft);
+	color: var(--mz-color-danger);
+}

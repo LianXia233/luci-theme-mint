@@ -1,0 +1,304 @@
+/*
+ * mint - design tokens (Glass & Layered Dashboard)
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Single source of truth for every colour, radius, shadow, spacing,
+ * layer and motion value used by the theme. Loaded AFTER css/compat.css
+ * so the values defined here win over the legacy ones, while every
+ * selector in the legacy sheet keeps resolving (no variable is removed).
+ *
+ * Visual language reference: asymmetric corner radii, an offset tinted
+ * shadow, a 12px blurred navigation bar and a 2px section underline.
+ */
+
+/* ---------------------------------------------------------------- */
+/* Brand                                                             */
+/* ---------------------------------------------------------------- */
+
+:root {
+	/* Mint signature: teal-green primary (the "mint" identity). */
+	--mz-color-primary: #0fb5a5;
+	--mz-color-primary-rgb: 15, 181, 165;
+	--mz-color-primary-hover: #0b9385;
+	--mz-color-primary-strong: #0a8074;
+	--mz-color-primary-soft: rgba(15, 181, 165, .12);
+
+	/* Reference-site accent: cyan, used for the card edge bar and the
+	   "solid" selected state so the primary teal stays reserved for
+	   actions and focus. */
+	--mz-accent: #19b6ed;
+	--mz-accent-rgb: 25, 182, 237;
+	--mz-accent-soft: rgba(25, 182, 237, .12);
+	/* Deep ink from the reference palette - solid selected chips. */
+	--mz-ink: #183653;
+	--mz-ink-rgb: 24, 54, 83;
+
+	/* Colour - light */
+	--mz-scrim: rgba(8, 12, 20, .55);
+	--mz-color-background: #f4f7f8;
+	--mz-color-surface: #ffffff;
+	--mz-color-surface-2: #fafbfc;
+	--mz-color-surface-strong: #ffffff;
+	--mz-color-border: #e3e8ec;
+	--mz-color-text: #1a2233;
+	--mz-color-text-muted: #64708a;
+
+	--mz-color-success: #2f9e6e;
+	--mz-color-success-soft: rgba(47, 158, 110, .12);
+	--mz-color-warning: #d9861f;
+	--mz-color-warning-soft: rgba(217, 134, 31, .12);
+	--mz-color-danger: #d9484f;
+	--mz-color-danger-soft: rgba(217, 72, 79, .12);
+	--mz-color-info: #19b6ed;
+	--mz-color-info-soft: rgba(25, 182, 237, .12);
+
+	/* Aliases kept for legacy rules that predate the naming split. */
+	--mz-border: var(--mz-color-border);
+	--mz-text-muted: var(--mz-color-text-muted);
+	/* Third-party views may set this themselves; provide a neutral
+	   fallback so an undefined variable never renders as transparent. */
+	--background-color-high: rgba(15, 181, 165, .12);
+	--zone-color-rgb: 15, 181, 165;
+
+	/* ----------------------------------------------------------------
+	   Radius. The card radius is deliberately ASYMMETRIC: a large
+	   bottom-right corner with tight opposite corners is the reference
+	   site's signature and reads as a "cut sheet" rather than a plain
+	   rounded box. Control radii stay symmetric so dense LuCI forms do
+	   not look ragged.
+	   ---------------------------------------------------------------- */
+	--mz-radius-xs: 4px;
+	--mz-radius-sm: 7px;
+	--mz-radius-md: 10px;
+	--mz-radius-lg: 14px;
+	--mz-radius-xl: 20px;
+	--mz-radius-pill: 999px;
+	--mz-radius-card: 14px 4px 22px 4px;
+	--mz-radius-chip: 9px 3px 11px 3px;
+
+	/* ----------------------------------------------------------------
+	   Shadow. Two families:
+	     - --mz-shadow-*: neutral elevation, used where a panel must lift
+	       off an unknown backdrop (dropdowns, modals).
+	     - --mz-lift-*: offset TINTED shadow (reference-site language).
+	       Cards resting on the wallpaper use it: a small positive offset
+	       in the brand hue reads as depth without a heavy blur.
+	   ---------------------------------------------------------------- */
+	--mz-shadow-sm: 0 1px 2px rgba(16, 24, 40, .06);
+	--mz-shadow-md: 0 4px 12px rgba(16, 24, 40, .08);
+	--mz-shadow-lg: 0 12px 32px rgba(16, 24, 40, .14);
+	--mz-lift-card: 4px 5px rgba(15, 181, 165, .10);
+	--mz-lift-card-hover: 6px 7px rgba(15, 181, 165, .16);
+	--mz-lift-chip: 2px 3px rgba(25, 182, 237, .10);
+
+	/* Spacing */
+	--mz-spacing-xs: 4px;
+	--mz-spacing-sm: 8px;
+	--mz-spacing-md: 14px;
+	--mz-spacing-lg: 22px;
+	--mz-spacing-xl: 34px;
+
+	/* Layout */
+	/* Layout. The page container fills the viewport up to a generous
+	   ceiling: a 1680px cap keeps text measures sane on ultrawide
+	   monitors while leaving only a small gutter on common sizes, so
+	   the content no longer floats in the middle of an empty page. */
+	--mz-sidebar-width: 200px;
+	--mz-topbar-height: 60px;
+	--mz-content-max: 1680px;
+
+	/* ----------------------------------------------------------------
+	   THE SINGLE VISUAL CONTAINER.
+	   Design rule: One Page / One Main Container / One Border /
+	   One Radius / One Shadow. `.mz-view` is the ONLY element of a page
+	   allowed to paint a background, a border, a corner radius or a
+	   shadow. Everything inside it (Section, CBI section, section node,
+	   form, fieldset, table, panel, dynlist, theme tiles) is
+	   transparent and only owns layout, spacing and typography.
+	   Consequences that must never be broken:
+	     - no backdrop-filter here: the wallpaper scrim (body::before)
+	       already blurs once, and a filter value other than `none`
+	       would open a stacking context and trap cbi-dropdown menus
+	       (z 1000) below the sidebar. One blur for the whole page is
+	       also the only affordable budget on a router.
+	     - --mz-container-pad is the single source of truth shared by
+	       the container padding and by the full-bleed negative margin
+	       of the sticky action bar, so the two can never drift apart.
+	   ---------------------------------------------------------------- */
+	--mz-container-radius: 14px 4px 22px 4px;
+	--mz-container-radius-tl: 14px;
+	--mz-container-radius-tr: 4px;
+	--mz-container-radius-br: 22px;
+	--mz-container-radius-bl: 4px;
+	--mz-container-border: 1px solid var(--mz-color-border);
+	--mz-container-background: var(--mz-color-surface);
+	--mz-container-shadow: var(--mz-lift-card);
+	--mz-container-pad: 22px;
+	--mz-container-margin: 18px;
+	--mz-container-gap: 22px;
+	/* Divider used between sibling sections inside the container. */
+	--mz-container-divider: 1px solid var(--mz-color-border);
+
+	/* ----------------------------------------------------------------
+	   Layer system. Every stacking decision in this stylesheet must go
+	   through one of these tokens; literals like z-index: 9999 are not
+	   allowed. The values are deliberately far apart so a single popover
+	   can never be outranked by an unrelated component.
+	   ---------------------------------------------------------------- */
+	--mz-z-wallpaper: -2;
+	--mz-z-wallpaper-overlay: -1;
+	--mz-z-base: 1;
+	--mz-z-content: 10;
+	--mz-z-sticky: 100;
+	--mz-z-navigation: 200;
+	--mz-z-scrim: 300;
+	--mz-z-drawer: 400;
+	--mz-z-dropdown: 1000;
+	--mz-z-popover: 1100;
+	--mz-z-modal: 2000;
+	--mz-z-toast: 3000;
+
+	/* ----------------------------------------------------------------
+	   FORM CONTROL tokens - deliberately separate from
+	   --mz-color-border. That token becomes a near-WHITE
+	   rgba(255,255,255,.55) once the glass layer is active: correct for
+	   card edges and hairlines, invisible for text boxes - which is
+	   exactly why every input, select and dropdown looked borderless.
+	   Controls keep their own tokens so they stay legible on the glass
+	   sheet AND on the flat page colour.
+	   ---------------------------------------------------------------- */
+	--mz-input-bg: rgba(255, 255, 255, .92);
+	--mz-input-border: rgba(100, 116, 139, .38);
+	--mz-input-border-hover: rgba(100, 116, 139, .58);
+	--mz-input-placeholder: #8a93a3;
+
+	/* ----------------------------------------------------------------
+	   Glass tokens - LIGHT ("white glassmorphism"): ONE frosted sheet
+	   between the wallpaper and the content. The fill is deliberately
+	   opaque enough (0.88) that the page reads as a solid sheet: the
+	   wallpaper must be noticed at the page edges, never compete with
+	   the text. The blur itself happens once on body::before, so the
+	   alpha here is what actually controls how much image bleeds
+	   through the container.
+	   ---------------------------------------------------------------- */
+	--mz-glass-bg: rgba(255, 255, 255, .78);
+	--mz-glass-bg-light: rgba(255, 255, 255, .68);
+	--mz-glass-bg-strong: rgba(255, 255, 255, .90);
+	--mz-glass-border: rgba(255, 255, 255, .55);
+	--mz-glass-blur: 16px;
+	--mz-glass-blur-strong: 18px;
+	--mz-glass-saturate: 135%;
+	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+
+	/* Panel tokens (resolved per mode further down). */
+	--mz-panel-bg: var(--mz-color-surface);
+	--mz-panel-bg-strong: var(--mz-color-surface);
+	--mz-panel-bg-soft: var(--mz-color-surface-2);
+	--mz-panel-halo: none;
+
+	/* Card edge bar (reference-site accent stripe). */
+	--mz-accent-bar-w: 3px;
+	--mz-accent-bar-h: 38px;
+
+	/* ----------------------------------------------------------------
+	   Motion. One easing curve and three durations; nothing in the
+	   theme may animate on a different curve.
+	   ---------------------------------------------------------------- */
+	--mz-ease: cubic-bezier(.22, .8, .25, 1);
+	--mz-dur-control: .22s;
+	--mz-dur-panel: .34s;
+	--mz-dur-instant: .12s;
+	--mz-transition: 220ms var(--mz-ease);
+
+	/* Typography */
+	--mz-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+		"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+	--mz-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+	/* Wallpaper */
+	--mz-wallpaper: none;
+	--mz-wallpaper-overlay: .45;
+	--mz-wallpaper-blur: 0px;
+
+	color-scheme: light;
+}
+
+/* ---------------------------------------------------------------- */
+/* Dark surfaces - multi-level, never pure black                     */
+/* ---------------------------------------------------------------- */
+
+html[data-theme="dark"] {
+	--mz-color-primary: #4fd1c5;
+	--mz-color-primary-rgb: 79, 209, 197;
+	--mz-color-primary-hover: #6fdcd2;
+	--mz-color-primary-strong: #8ae5dc;
+	--mz-color-primary-soft: rgba(79, 209, 197, .16);
+
+	--mz-accent: #57c8f0;
+	--mz-accent-rgb: 87, 200, 240;
+	--mz-accent-soft: rgba(87, 200, 240, .16);
+	--mz-ink: #0d1b2a;
+	--mz-ink-rgb: 13, 27, 42;
+
+	--mz-scrim: rgba(8, 12, 20, .65);
+	--mz-color-background: #10151f;
+	--mz-color-surface: #171e2c;
+	--mz-color-surface-2: #1d2536;
+	--mz-color-surface-strong: #212a3d;
+	--mz-color-border: #2a3348;
+	--mz-color-text: #e6e9f0;
+	--mz-color-text-muted: #8b94ab;
+
+	--mz-color-success: #4cbd8b;
+	--mz-color-success-soft: rgba(76, 189, 139, .16);
+	--mz-color-warning: #e8a04c;
+	--mz-color-warning-soft: rgba(232, 160, 76, .16);
+	--mz-color-danger: #ef6a70;
+	--mz-color-danger-soft: rgba(239, 106, 112, .16);
+	--mz-color-info: #57c8f0;
+	--mz-color-info-soft: rgba(87, 200, 240, .16);
+
+	--mz-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+	--mz-shadow-md: 0 4px 12px rgba(0, 0, 0, .40);
+	--mz-shadow-lg: 0 12px 32px rgba(0, 0, 0, .50);
+	/* Dark mode keeps a neutral offset shadow: a tinted one would read
+	   as a glow against the dark plate. */
+	--mz-lift-card: 4px 5px rgba(0, 0, 0, .34);
+	--mz-lift-card-hover: 6px 7px rgba(0, 0, 0, .46);
+	--mz-lift-chip: 2px 3px rgba(0, 0, 0, .30);
+
+	/* ----------------------------------------------------------------
+	   Glass tokens - DARK ("deep grey glass"). Dark mode never loads a
+	   wallpaper, so these surfaces only have to stay legible over the
+	   flat #10151f page. They are deliberately MORE opaque than the
+	   light ones: a heavily transparent dark card would let the page
+	   bleed through and smear the text.
+	   Elevation order: background < surface < strong < dropdown < modal.
+	   ---------------------------------------------------------------- */
+	--mz-glass-bg: rgba(29, 33, 41, .84);
+	--mz-glass-bg-light: rgba(25, 29, 36, .88);
+	--mz-glass-bg-strong: rgba(38, 43, 52, .92);
+	--mz-glass-border: rgba(255, 255, 255, .10);
+	--mz-glass-blur: 16px;
+	--mz-glass-blur-strong: 18px;
+	--mz-glass-saturate: 120%;
+	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .24);
+
+	--mz-input-bg: rgba(20, 24, 30, .92);
+	--mz-input-border: rgba(255, 255, 255, .16);
+	--mz-input-border-hover: rgba(255, 255, 255, .26);
+	--mz-input-placeholder: #7f8794;
+
+	--mz-dropdown-bg: rgba(39, 44, 53, .96);
+	--mz-modal-bg: rgba(32, 37, 45, .97);
+
+	color-scheme: dark;
+}
+
+/* Elevated surfaces stay noticeably more opaque than the cards behind
+   them: a menu or dialog the user cannot parse is worse than no menu. */
+html:not([data-theme="dark"]) {
+	--mz-dropdown-bg: rgba(255, 255, 255, .96);
+	--mz-modal-bg: rgba(255, 255, 255, .97);
+}

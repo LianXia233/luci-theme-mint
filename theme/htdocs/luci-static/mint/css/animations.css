@@ -1,0 +1,122 @@
+/*
+ * mint - motion
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Every animation in the theme is defined here and referenced by name
+ * from the other layers. Only transform / opacity / filter are animated
+ * so the compositor can run them without layout work, and nothing loops
+ * forever except the spinner.
+ */
+
+@keyframes mz-page-in {
+	0% { opacity: .65; transform: translateY(10px); }
+	100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mz-reveal {
+	0% { opacity: .5; translate: 0 16px; }
+	100% { opacity: 1; translate: 0 0; }
+}
+
+@keyframes mz-pop-in {
+	0% { opacity: 0; transform: scale(.97) translateY(-4px); }
+	100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes mz-overlay-in {
+	0% { opacity: 0; }
+	100% { opacity: 1; }
+}
+
+@keyframes mz-modal-in {
+	0% { opacity: 0; transform: translateY(12px) scale(.985); }
+	100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mz-drawer-in {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(0); }
+}
+
+@keyframes mz-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+@keyframes mz-fade-in {
+	0% { opacity: 0; }
+	100% { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------- */
+/* Entrance                                                           */
+/* ---------------------------------------------------------------- */
+
+.mz-view {
+	animation: mz-page-in var(--mz-dur-panel) var(--mz-ease);
+}
+
+/* Cards fade up one step after the page shell. */
+.cbi-section,
+.cbi-section-node,
+.cbi-map,
+.mz-info-card,
+.mz-ring-card,
+.mz-port-card,
+.mz-net-card,
+.mz-card {
+	animation: mz-reveal var(--mz-dur-panel) var(--mz-ease) both;
+}
+
+.fade-in {
+	animation: mz-fade-in var(--mz-dur-panel) var(--mz-ease);
+}
+
+/* ---------------------------------------------------------------- */
+/* Wallpaper cross-fade                                               */
+/* ---------------------------------------------------------------- */
+/* The wallpaper lives on a body pseudo-element, which cannot be
+   transitioned per-image. Instead the whole layer is faded in once the
+   JS reports the image decoded, so a swap never flashes the old
+   picture. */
+
+body.mz-wp-swapping::after {
+	animation: mz-fade-in var(--mz-dur-panel) var(--mz-ease);
+}
+
+/* ---------------------------------------------------------------- */
+/* Reduced motion                                                     */
+/* ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.mz-view,
+	.cbi-section,
+	.cbi-section-node,
+	.cbi-map,
+	.mz-info-card,
+	.mz-ring-card,
+	.mz-port-card,
+	.mz-net-card,
+	.mz-card,
+	.fade-in,
+	body.mz-wp-swapping::after {
+		animation: none !important;
+	}
+
+	.mz-sidebar,
+	.mz-overlay,
+	.btn,
+	.cbi-button,
+	.mz-icon-btn,
+	.mz-menu a,
+	input,
+	select,
+	textarea {
+		transition-duration: .01ms !important;
+	}
+
+	.mz-spinner {
+		animation: mz-spin 1.2s linear infinite;
+	}
+}

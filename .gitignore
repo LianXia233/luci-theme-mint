@@ -5,3 +5,12 @@ __pycache__/
 # Local packaging scratch / output
 build/
 dist/
+
+# Local device screenshots (contain LAN/WAN addresses - never push)
+docs/shots/
+render-dump.html
+
+# Audit artifacts (screenshots contain LAN/WAN addresses - never push)
+docs/audit/
+scripts/audit-report.json
+scripts/menu-tree.json

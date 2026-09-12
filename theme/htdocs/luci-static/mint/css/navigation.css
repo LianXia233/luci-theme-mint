@@ -1,0 +1,273 @@
+/*
+ * mint - navigation
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * Sidebar menu, submenu folding, page tabs and breadcrumbs.
+ * Icon slots are injected by menu-mint.js (decorateMenuIcons) as a
+ * decorative inline <svg>; this file only styles the slot, so a missing
+ * icon never changes the layout.
+ */
+
+.mz-menu,
+.mz-menu ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.mz-menu li {
+	position: relative;
+}
+
+.mz-menu a {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 40px;
+	padding: 7px 12px;
+	margin: 2px 0;
+	border-radius: var(--mz-radius-chip);
+	color: var(--mz-color-text-muted);
+	font-size: .9rem;
+	font-weight: 550;
+	line-height: 1.35;
+	transition: background var(--mz-dur-control) var(--mz-ease),
+		color var(--mz-dur-control) var(--mz-ease),
+		transform var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-menu a:hover {
+	background: var(--mz-color-surface-2);
+	color: var(--mz-color-text);
+	transform: translateX(2px);
+}
+
+.mz-menu a:active {
+	transform: translateX(0) scale(.98);
+}
+
+/* Active item: soft brand wash plus a left edge bar in the cyan accent,
+   the same "cut sheet" cue the cards use. */
+.mz-menu li.active > a,
+.mz-menu a.active {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+	font-weight: 700;
+	position: relative;
+}
+
+.mz-menu li.active > a::before,
+.mz-menu a.active::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: var(--mz-accent-bar-w);
+	height: 22px;
+	border-radius: 0 var(--mz-radius-xs) var(--mz-radius-xs) 0;
+	background: var(--mz-accent);
+}
+
+/* Decorative icon slot injected by menu-mint.js. */
+.mz-menu-icon {
+	flex: 0 0 18px;
+	width: 18px;
+	height: 18px;
+	color: currentColor;
+	opacity: .78;
+}
+
+.mz-menu li.active > a .mz-menu-icon,
+.mz-menu a.active .mz-menu-icon {
+	opacity: 1;
+}
+
+.mz-menu-label {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- */
+/* Submenu                                                            */
+/* ---------------------------------------------------------------- */
+
+.mz-menu ul {
+	padding-left: 14px;
+	margin: 2px 0 2px 14px;
+	border-left: 1px solid var(--mz-color-border);
+}
+
+.mz-menu ul a {
+	font-size: .86rem;
+	font-weight: 500;
+	min-height: 36px;
+	padding: 5px 10px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Collapsible group                                                  */
+/* ---------------------------------------------------------------- */
+
+.mz-menu-group > a {
+	font-weight: 700;
+	color: var(--mz-color-text);
+	letter-spacing: .01em;
+}
+
+/* Fold caret - an inline SVG injected by menu-mint.js#mzCaret(). It is
+   a flex item of the link, so `align-items: center` on `.mz-menu a`
+   keeps it on the same optical line as the icon and the label, and
+   `margin-left: auto` pins it to the trailing edge. No absolute
+   positioning, no magic top offset: it cannot be misaligned. */
+.mz-menu-caret {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	margin-left: auto;
+	opacity: .5;
+	transition: transform var(--mz-dur-control) var(--mz-ease),
+		opacity var(--mz-dur-control) var(--mz-ease);
+}
+
+.mz-menu-caret svg {
+	display: block;
+}
+
+/* compat.css still draws its own triangle caret with a::after. Without
+   this the group link shows TWO arrows (the legacy CSS triangle next to
+   the injected SVG). One caret only, and it is the SVG one. */
+.mz-menu .mz-menu-group > a::after {
+	content: none;
+}
+
+.mz-menu-group.mz-collapsed > a .mz-menu-caret {
+	transform: rotate(-90deg);
+}
+
+.mz-menu-group > a:hover .mz-menu-caret {
+	opacity: 1;
+}
+
+.mz-menu-group > ul > li > a {
+	color: var(--mz-color-text-muted);
+}
+
+.mz-menu-group > ul > li > a:hover,
+.mz-menu-group > ul > li.active > a {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+	font-weight: 650;
+}
+
+/* ---------------------------------------------------------------- */
+/* Page tabs (LuCI #tabmenu)                                          */
+/* ---------------------------------------------------------------- */
+/* Reference-site chip tabs: a 1px outline, tight opposite corners,
+   a 44px hit area on touch devices and a solid ink chip for the
+   selected entry. */
+
+#tabmenu {
+	margin: 0 0 var(--mz-spacing-lg);
+}
+
+#tabmenu .tabs,
+.cbi-tabmenu {
+	display: flex;
+	gap: 8px;
+	padding: 0 0 4px;
+	margin: 0;
+	list-style: none;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scrollbar-width: thin;
+	-webkit-overflow-scrolling: touch;
+}
+
+#tabmenu .tabs::-webkit-scrollbar,
+.cbi-tabmenu::-webkit-scrollbar {
+	height: 6px;
+}
+
+#tabmenu .tabs li,
+.cbi-tabmenu li {
+	flex: 0 0 auto;
+	margin: 0;
+}
+
+#tabmenu .tabs a,
+.cbi-tabmenu a,
+.cbi-tabmenu > li > a {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 40px;
+	padding: 8px 16px;
+	border: 1px solid var(--mz-color-border);
+	border-radius: var(--mz-radius-chip);
+	background: var(--mz-panel-bg);
+	color: var(--mz-color-text-muted);
+	font-size: .88rem;
+	font-weight: 650;
+	white-space: nowrap;
+	transition: border-color var(--mz-dur-control) var(--mz-ease),
+		background var(--mz-dur-control) var(--mz-ease),
+		color var(--mz-dur-control) var(--mz-ease);
+}
+
+#tabmenu .tabs a:hover,
+.cbi-tabmenu a:hover,
+.cbi-tabmenu > li > a:hover {
+	border-color: var(--mz-color-primary);
+	background: var(--mz-color-surface-2);
+	color: var(--mz-color-text);
+}
+
+#tabmenu .tabs li.active a,
+.cbi-tabmenu li.active a,
+.cbi-tabmenu > li.active > a,
+.cbi-tabmenu > li > a.active {
+	background: var(--mz-color-primary);
+	border-color: var(--mz-color-primary);
+	color: #fff;
+	font-weight: 700;
+}
+
+html[data-theme="dark"] #tabmenu .tabs li.active a,
+html[data-theme="dark"] .cbi-tabmenu li.active a,
+html[data-theme="dark"] .cbi-tabmenu > li.active > a {
+	background: var(--mz-color-primary-soft);
+	border-color: var(--mz-color-primary);
+	color: var(--mz-color-primary);
+}
+
+/* ---------------------------------------------------------------- */
+/* Breadcrumb                                                         */
+/* ---------------------------------------------------------------- */
+
+.mz-breadcrumb {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	font-size: .82rem;
+	color: var(--mz-color-text-muted);
+	margin-bottom: var(--mz-spacing-md);
+}
+
+.mz-breadcrumb a {
+	color: var(--mz-color-text-muted);
+}
+
+.mz-breadcrumb a:hover {
+	color: var(--mz-color-primary);
+}
+
+.mz-breadcrumb .sep {
+	opacity: .45;
+}
