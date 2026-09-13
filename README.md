@@ -36,6 +36,12 @@
 - 第三方应用设计变量桥接（--brand/--surface/--text 等，兼容 taygedo 等应用）；h5000m_netmode 网络出口页对比度适配
 - **壁纸设置已拆分为独立包 `luci-app-mint-wallpaper`**（2026-09-11）：主题包只提供 UI 与模板，壁纸设置页、rpcd 后端、缓存 cron 与 UCI 配置归该包所有，可单独安装/升级/卸载。侧栏入口位于「系统」分组下的「Mint 壁纸」；并自带独立翻译包 `luci-i18n-mint-wallpaper-zh-cn`
 
+## 预览
+
+| 亮色概览 | 暗色概览 | 壁纸设置 | 登录页 |
+| --- | --- | --- | --- |
+| ![](docs/previews/light-overview.jpg) | ![](docs/previews/dark-overview.jpg) | ![](docs/previews/wallpaper-settings.jpg) | ![](docs/previews/login.jpg) |
+
 ## 目录结构
 
 ```
