@@ -432,7 +432,12 @@ return view.extend({
 		/* Library files */
 		for (let i = 0; i < list.length; i++) {
 			const w = list[i];
-			const isActive = cur.enabled && ((cur.pc === w.name) || (cur.mobile === w.name));
+			/* Mark a library card active only for the device currently being
+			   viewed, so PC and Mobile selections stay visually independent —
+			   a file used by one device must not light up as "active" while
+			   the other device's grid is shown. */
+			const t = targetOf();
+			const isActive = cur.enabled && (t === 'mobile' ? cur.mobile === w.name : cur.pc === w.name);
 			const side = (cur.pc === w.name ? 'pc' : '') + (cur.mobile === w.name ? (cur.pc === w.name ? '+' : '') + 'mobile' : '');
 			nodes.push(E('div', {
 				'class': 'mz-wp-card' + (isActive ? ' is-active' : ''),
@@ -506,31 +511,19 @@ return view.extend({
 				/* Gradient fallback: turn the wallpaper feature off (global).
 				   Library selections are left in place so re-enabling later
 				   restores the previous choice. */
-				return callMintSave({
-					config: 'mint',
-					section: 'wallpaper',
-					values: [['enabled', '0']]
-				}).then(function () {
+				return callMintSave('mint', 'wallpaper', [['enabled', '0']]).then(function () {
 					uci.unload('mint');
 					return uci.load('mint');
 				}).then(resolve, resolve);
 			}
 			if (value === 'random') {
-				return callMintWpSet({ target: target, value: 'random' }).then(function () {
+				return callMintWpSet(target, 'random').then(function () {
 					/* Re-enable in case a previous “none” turned it off. */
-					return callMintSave({
-						config: 'mint',
-						section: 'wallpaper',
-						values: [['enabled', '1']]
-					});
+					return callMintSave('mint', 'wallpaper', [['enabled', '1']]);
 				}).then(resolve, resolve);
 			}
-			return callMintWpSet({ target: target, value: value }).then(function () {
-				return callMintSave({
-					config: 'mint',
-					section: 'wallpaper',
-					values: [['enabled', '1']]
-				});
+			return callMintWpSet(target, value).then(function () {
+				return callMintSave('mint', 'wallpaper', [['enabled', '1']]);
 			}).then(resolve, resolve);
 		}).then(function () {
 			uci.unload('mint');
@@ -573,7 +566,7 @@ return view.extend({
 		if (!window.confirm(_('Delete wallpaper “%s”? This cannot be undone.').format(name)))
 			return Promise.resolve();
 
-		return callMintWpDelete({ name: name }).then(function () {
+		return callMintWpDelete(name).then(function () {
 			uci.unload('mint');
 			return uci.load('mint').catch(function () {});
 		}).then(function () {
@@ -599,7 +592,7 @@ return view.extend({
 		const kind = (document.querySelector('input[name="mz-wp-target"]:checked') || {}).value || 'pc';
 		const label = kind === 'mobile' ? _('Mobile') : _('Desktop');
 		this.setStatus(_('Refreshing random wallpaper cache (%s)…').format(label), 'busy');
-		return callMintWpRefresh({ kind: kind }).then(function (res) {
+		return callMintWpRefresh(kind).then(function (res) {
 			return self.reloadGrid().then(function (data) {
 				const cur = activeNames(data);
 				const mode = kind === 'mobile' ? cur.mobile_mode : cur.pc_mode;

@@ -448,6 +448,9 @@ mint_wp_set() {
 			uci -q set "mint.wallpaper.${target}_mode=custom"
 			# A library selection replaces any stale remote URL fallback.
 			uci -q delete "mint.wallpaper.${target}_url"
+			# cgi-io lands uploaded files as 600 root:root; relax so the
+			# non-root uhttpd worker can serve the image (avoids HTTP 403).
+			chmod 0644 "$WP_DIR/$value" 2>/dev/null
 			uci -q commit mint
 			logger -t mint-wallpaper "set $target -> $value"
 			printf '{"ok":true,"target":"%s","value":"%s"}\n' "$target" "$(json_escape "$value")"
