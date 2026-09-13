@@ -7,6 +7,19 @@
 
 ---
 
+## [1.3.1] - 2026-09-13
+
+### Fixed（保存并应用整链失效 + 手机菜单压扁 + 登录页记住我）
+
+- **「保存并应用」点击无任何效果、下拉菜单打不开（根因：给已绑定的原生控件又套了一层自制 fallback）**：`mz-ui.js` 的 `mzDropdownFallback` 用 `CBI.Dropdown` 判断「原生下拉 widget 是否存在」，但现代 LuCI / ImmortalWrt 的 widget 是 `L.ui.Dropdown`（Save & Apply 拆分按钮是其子类 `L.ui.ComboButton`），`CBI` 全局在这类构建上根本不存在 → 误判为「无原生」，在**已绑定原生实例**的每个 `.cbi-dropdown` 上再装一套 handler。两个直接后果：① caret 上的 `stopPropagation()` 拦掉了原生 `openDropdown()`，菜单 `<ul>` 拿不到 `dropdown` 类，按现有样式规则整个不可见（「下拉菜单失效 / 显示异常」）；② 主按钮路径的 `preventDefault()` 抢在原生 `ComboButton.handleClick`（`options.click` → form 的 `handleActions('apply')`）之前，把真正的保存动作吞掉（「点击保存与应用实际无任何效果」）。修法：新增 `mzNativeDD()` 惰性检测（`L.dom.findClassInstance` + `instanceof L.ui.Dropdown` + 鸭子类型兜底），检测在**每次事件时**执行（多数页面 LuCI 从异步 `L.require()` 绑定 widget，晚于本文件的首轮 DOM 扫描），每个 handler 在 `preventDefault / stopPropagation` 之前先让路给原生；fallback 只在原生缺席时接管。`submitAction` 同时修掉一个自吞递归：无 form 时兜底的 `btn.click()` 会选中拆分按钮自己（它自带 `.cbi-button-apply`），无限递归直到爆栈；现在排除 `dd.contains(btn)` 并优先真实提交按钮
+- **实机 A/B 对照（H5000M / ImmortalWrt SNAPSHOT，浏览器抓包）**：修复前点击「保存并应用」只发出一个仅含 `token` + `cbi.submit` 的表单 POST，无任何后续调用，服务端无事可做；修复后完整跑通 apply 链（`rc init` → `uci write` 会话鉴权 → `uci/apply_rollback`），并出现应用反馈通知
+- **手机端下拉菜单被压成一条（只看得见第一项）**：`compat.css` 三个 `@media (max-width:768px)` 块（`height:100%` 链、`30px` 链、`32px !important` 链）的选择器少了文件末尾权威块同款的 `:not(.dropdown)` 限定 → 手机上把**打开后的浮层菜单** `ul.dropdown` 一并钉死在 32px，`overflow-y: auto` 让第二项藏进内部滚动区；桌面因媒体查询不命中而幸免，与此前「手机操作栏异常、桌面正常」的缺陷同构。三个块的选择器全部补上 `:not(.dropdown)`（与 ~6930 行 "Combo buttons: ONE height" 块的既有约定对齐）。实测 390px 视口菜单高 32 → 100px，两个选项全部可见、`clientHeight == scrollHeight`（无内部滚动）
+- **登录页「记住我」勾选框居中**：`login.css` 的 `.mz-remember` 用了 `justify-content: center`，在两张左对齐的输入框下面悬一行居中内容，视觉断裂。改 `flex-start` 并加 `text-align: left`，勾选框与用户名输入框左缘对齐（PC / 手机实测 delta = 0）
+- **新增 `scripts/verify-save-apply-device.py`（实机，需 `MZ_BASE` / `MZ_PASS`）**：断言本组修复 —— 拆分按钮展开出 `ul.dropdown`、全部选项可见、菜单不被压扁（`clientHeight == scrollHeight`）且完整落在视口内、可再关闭；主按钮点击触发提交（默认 `route.fulfill` 拦截 CGI 写请求只验证动作，`--real` 放行并要求 `apply_rollback` 被调用）；选择「强制应用」后 hidden 值写入且按钮切换 negative 态；普通表单下拉不受影响；登录页「记住我」与输入框左对齐（PC + 手机）；无横向溢出、无未捕获异常
+- 缓存戳 `MINT_ASSET_REV` `20260913i` → `20260913m`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）
+
+---
+
 ## [1.3.0] - 2026-09-13
 
 ### Added（四态角色背景系统：PC / Mobile × Light / Dark）
@@ -81,15 +94,6 @@
 - **新增 `scripts/verify-dropdown.py`（离线，无需路由器）**：夹具挂真实 `cascade.css`，**同时**渲染两种标记形态（完整构建的 `ul.dropdown` 与精简构建的裸 `ul`），断言 ①浅色模式下两种形态的弹层背景相对亮度 ≥ 0.75（即必须是浅色玻璃）②打开态左右内边距对称 ③完整构建下 7 个选项全部可见。加 `--css <url>` 可直接对**已部署**的样式表复测同一组契约
 - **实测（A/B 对照，同一夹具）**：修复前精简分支弹层 = `rgb(28,39,54)`（与用户截图采样值逐位一致）、`padding = 4px 4px 4px 20px`；修复后两种分支背景均 = `rgba(255,255,255,.9)`、`padding = 4px 4px 4px 4px`
 - 缓存戳 `MINT_ASSET_REV` `20260913g` → `20260913h`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）；本轮同时修复了本地仓库 `.git` 对象库缺 `HEAD` 指向提交的问题（`git fetch` 后 `update-ref` 复位）
-
-### Fixed（同日午后：保存并应用整链失效 + 手机菜单压扁 + 登录页记住我）
-
-- **「保存并应用」点击无任何效果、下拉菜单打不开（根因：给已绑定的原生控件又套了一层自制 fallback）**：`mz-ui.js` 的 `mzDropdownFallback` 用 `CBI.Dropdown` 判断「原生下拉 widget 是否存在」，但现代 LuCI / ImmortalWrt 的 widget 是 `L.ui.Dropdown`（Save & Apply 拆分按钮是其子类 `L.ui.ComboButton`），`CBI` 全局在这类构建上根本不存在 → 误判为「无原生」，在**已绑定原生实例**的每个 `.cbi-dropdown` 上再装一套 handler。两个直接后果：① caret 上的 `stopPropagation()` 拦掉了原生 `openDropdown()`，菜单 `<ul>` 拿不到 `dropdown` 类，按现有样式规则整个不可见（「下拉菜单失效 / 显示异常」）；② 主按钮路径的 `preventDefault()` 抢在原生 `ComboButton.handleClick`（`options.click` → form 的 `handleActions('apply')`）之前，把真正的保存动作吞掉（「点击保存与应用实际无任何效果」）。修法：新增 `mzNativeDD()` 惰性检测（`L.dom.findClassInstance` + `instanceof L.ui.Dropdown` + 鸭子类型兜底），检测在**每次事件时**执行（多数页面 LuCI 从异步 `L.require()` 绑定 widget，晚于本文件的首轮 DOM 扫描），每个 handler 在 `preventDefault / stopPropagation` 之前先让路给原生；fallback 只在原生缺席时接管。`submitAction` 同时修掉一个自吞递归：无 form 时兜底的 `btn.click()` 会选中拆分按钮自己（它自带 `.cbi-button-apply`），无限递归直到爆栈；现在排除 `dd.contains(btn)` 并优先真实提交按钮
-- **实机 A/B 对照（H5000M / ImmortalWrt SNAPSHOT，浏览器抓包）**：修复前点击「保存并应用」只发出一个仅含 `token` + `cbi.submit` 的表单 POST，无任何后续调用，服务端无事可做；修复后完整跑通 apply 链（`rc init` → `uci write` 会话鉴权 → `uci/apply_rollback`），并出现应用反馈通知
-- **手机端下拉菜单被压成一条（只看得见第一项）**：`compat.css` 三个 `@media (max-width:768px)` 块（`height:100%` 链、`30px` 链、`32px !important` 链）的选择器少了文件末尾权威块同款的 `:not(.dropdown)` 限定 → 手机上把**打开后的浮层菜单** `ul.dropdown` 一并钉死在 32px，`overflow-y: auto` 让第二项藏进内部滚动区；桌面因媒体查询不命中而幸免，与此前「手机操作栏异常、桌面正常」的缺陷同构。三个块的选择器全部补上 `:not(.dropdown)`（与 ~6930 行 "Combo buttons: ONE height" 块的既有约定对齐）。实测 390px 视口菜单高 32 → 100px，两个选项全部可见、`clientHeight == scrollHeight`（无内部滚动）
-- **登录页「记住我」勾选框居中**：`login.css` 的 `.mz-remember` 用了 `justify-content: center`，在两张左对齐的输入框下面悬一行居中内容，视觉断裂。改 `flex-start` 并加 `text-align: left`，勾选框与用户名输入框左缘对齐（PC / 手机实测 delta = 0）
-- **新增 `scripts/verify-save-apply-device.py`（实机，需 `MZ_BASE` / `MZ_PASS`）**：断言本组修复 —— 拆分按钮展开出 `ul.dropdown`、全部选项可见、菜单不被压扁（`clientHeight == scrollHeight`）且完整落在视口内、可再关闭；主按钮点击触发提交（默认 `route.fulfill` 拦截 CGI 写请求只验证动作，`--real` 放行并要求 `apply_rollback` 被调用）；选择「强制应用」后 hidden 值写入且按钮切换 negative 态；普通表单下拉不受影响；登录页「记住我」与输入框左对齐（PC + 手机）；无横向溢出、无未捕获异常
-- 缓存戳 `MINT_ASSET_REV` `20260913i` → `20260913m`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）
 
 ---
 
@@ -980,8 +984,9 @@ ImmortalWrt SNAPSHOT 192.168.88.1 上以真实浏览器（Chromium）验证，�
 
 ---
 
+[1.3.1]: https://github.com/LianXia233/luci-theme-mint/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/LianXia233/luci-theme-mint/compare/v1.0.2...v1.3.0
 [1.0.2]: https://github.com/LianXia233/luci-theme-mint/compare/v0.2.0...v1.0.2
-[Unreleased]: https://github.com/LianXia233/luci-theme-mint/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/LianXia233/luci-theme-mint/compare/v1.3.1...HEAD
 [0.2.0]: https://github.com/LianXia233/luci-theme-mint/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/LianXia233/luci-theme-mint/releases/tag/v0.1.0
