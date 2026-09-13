@@ -275,6 +275,7 @@ sysauth.ut       同一段 IIFE（登录页是 blank_page，footer.ut 那个 ver
 - 配套 `wallpaper.css` 的样式兜底：`html[data-wp-random="0"]` 时用 `content: none` 摘除 `body::after` 壁纸伪元素（特异性 0,3,2 压过角色层的 0,3,1，`:not(.mz-wp-custom)` 保留显式壁纸）
 - `header.ut` 的 `<html>` 上同时带 `data-wp-random="0|1"`，让样式层能独立于 JS 判断「随机壁纸是否该出场」
 - 回归测试：`scripts/verify-cache-conflict.py`（模拟残留旧构建写入壁纸变量，断言登录层 `display:none`、`body::after` `content:none`、管理页无壁纸伪元素）
+- 操作栏回归测试（一组契约，两个入口）：`scripts/verify-action-bar.py` 不需要路由器，本地夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；`scripts/verify-action-bar-device.py` 登录实机对**已部署**资源复测同一组契约（需 `MZ_BASE`/`MZ_PASS`）。断言：关闭态拆分按钮仅 1 个可见选项、`⋯` 不绘制、`dd/ul/li/.open` 高度一致、桌面侧栏→内容间距 ≤ 24px、无横向溢出
 
 ## 壁纸设置
 
