@@ -204,9 +204,18 @@
 	box-shadow: none;
 }
 .mint-ovd-sys-title { font-size: .9rem; font-weight: 650; margin: 0 0 var(--mz-spacing-sm); }
+/* 3 columns, not 4. The grid holds exactly NINE items (hostname, model,
+   arch, temperature, target, firmware, kernel, openwrt, luci - see
+   overview-dashboard.js buildDom()). With 4 columns that is 4+4+1, so the
+   last row carried one item and THREE empty tracks - ~958px of blank on a
+   1536px desktop, the "右边空着一大片" report. 9 = 3x3 exactly, so 3 columns
+   leaves no ragged row at ANY width (1, 3 and 9 are the only divisors of 9).
+   It also lines the System Information block up with the 3-column rhythm of
+   .mint-ovd-stats and .mint-ovd-charts above it. Do not "restore" 4 without
+   also changing the item list to a multiple of 4. */
 .mint-ovd-sys-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	gap: 10px var(--mz-spacing-md);
 }
 .mint-ovd-sys-item {
@@ -236,7 +245,6 @@
 	.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
 	.mint-ovd-charts { grid-template-columns: repeat(2, 1fr); }
 	.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: 1 / -1; }
-	.mint-ovd-sys-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 767px) {

@@ -10,7 +10,7 @@
 
 - **单层视觉容器架构（2026-09-13）**：每页**只有一个**视觉容器——`.mz-view` 是全站唯一允许绘制 background / border / radius / shadow 的元素（容器令牌 `--mz-container-*` 单一真源）；内部 Section / CBI / 表格 / 卡片全部透明扁平化，只负责布局、间距与排版，**禁止 Card 套 Card、多重边框/圆角/阴影**。Action Bar 为独立功能层（底部 sticky、全出血、不做完整卡片）。壁纸在最底层，每页只做一次模糊（body::before），容器自身禁用 backdrop-filter——避免创建层叠上下文困住 cbi-dropdown（z 1000）被侧栏（z 400）遮挡，也是路由器唯一可承受的模糊预算
 - **分层 CSS 架构（2026-09-13）**：`cascade.css` 只做 `@import` 编排，规则按职责拆为 `css/compat | tokens | base | layout | navigation | container | components | wallpaper | background | dark | animations | responsive | login` 十三层；旧样式整体保留为兼容底座，新设计系统按级联顺序覆盖，功能零回退。`background` 排在 `wallpaper` 之后——让角色背景能撤销壁纸层的兜底渐变。全站静态资源带 `?v=<MINT_ASSET_REV>` 缓存戳（header.ut 常量 + cascade.css @import 同步更新），且该戳经 `<meta name="mz-asset-rev">` 注入 `L.env.resource_version`，**JS 模块同享一套缓存键**，升级后浏览器不会残留旧样式或旧脚本
-- **容器几何只有一个所有者（2026-09-13 修正）**：`.mz-view` 的 width / max-width / padding / margin **只由 `layout.css` + `container.css` 配合 tokens 决定**，`compat.css` 不得再声明它们。此前 compat 里残留一条 `#mz-view { max-width:1280px; margin:0 auto; padding:24px 28px }`，因为是 **ID 选择器**而击败了类选择器 `.mz-view`，把 `--mz-content-max`(1680px) 钳到 1280px、`--mz-container-pad`(22px) 换成 24/28px，并强制居中——改 tokens 完全无效。桌面端不再居中：**≥855px 时容器左锚**（`margin-left: var(--mz-container-margin); margin-right: auto`），富余宽度全部留给右侧角色通道，避免在侧栏与内容之间裂出空洞（1920px 下曾达 219px、2560px 下 539px，现恒为 13px）
+- **容器几何只有一个所有者（2026-09-13 修正）**：`.mz-view` 的 width / max-width / padding / margin **只由 `layout.css` + `container.css` 配合 tokens 决定**，`compat.css` 不得再声明它们。此前 compat 里残留一条 `#mz-view { max-width:1280px; margin:0 auto; padding:24px 28px }`，因为是 **ID 选择器**而击败了类选择器 `.mz-view`，把 `--mz-content-max`(1680px) 钳到 1280px、`--mz-container-pad`(22px) 换成 24/28px，并强制居中——改 tokens 完全无效。现行契约是**两侧留白对称**：容器用 `margin: var(--mz-container-margin) auto`，富余宽度平均分到两侧，任何宽度都不出现单边空洞（1920px 下左右各 13/14px）。**「左锚」与「右侧预留角色通道」两种改法都已被实测否掉**——它们只是把空洞从一侧搬到另一侧（先出现 219px 左侧空洞，后出现约 260px 右侧空白条）。角色立绘本就由 `fixed` 图层（`z-index:-2`）透过容器可见，无需为它独占宽度。宽度上限 `--mz-content-max` 为 1920px，详见「布局与容器几何」
 - **四态角色背景系统（2026-09-13）**：每页默认背景是一套**四态独立**的角色立绘层——PC×亮色 Arona、PC×暗色 Plana、Mobile×亮色 / Mobile×暗色各一张**独立 3:4 竖版构图**（不是把 PC 方图缩放）。四张图真不同源，**没有一态是另一态的 CSS 滤镜副本**。设备由 media query 判定、明暗由 `<html data-theme>` 判定，**纯 CSS、首帧即正确**，JS 不参与；切换只翻转 `data-theme`，两层立绘以 opacity 交叉淡入（两张图同规则集引用 → 均已解码，切换零请求、不闪白）。层为 `.mint-background`（`fixed; inset:0; z-index:-2; pointer-events:none; overflow:clip`），不参与文档流、不接收指针事件，全站零横向溢出。手机只下载两张移动图、桌面只下载两张 PC 图。用户配置的自定义壁纸优先于角色背景
 - **登录页角色背景（Plana，2026-09-13）**：登录页是单屏单一身份，不套四态，而是自己一套 `.mint-background.mz-login-char`，只含**一个**立绘节点（Plana，亮暗同一角色）；桌面右锚 `contain`、手机底部锚定 `cover` 全幅。登录页图层**自己绘制**参考站渐变，因此完全不透明——下方的东西透不过来。登录页只有两种状态：角色背景（默认）与显式选择的壁纸（`mz-wp-custom`），不存在"随机缓存照片"这第三种
 - 基于 CSS 变量（Design Tokens）的现代设计系统：色彩、间距、圆角、阴影、字体、**层叠层级（`--mz-z-*`）**、**玻璃参数（`--mz-glass-*`）**、**容器令牌（`--mz-container-*`）**、**动效曲线（`--mz-ease` / `--mz-dur-*`）**
@@ -275,7 +275,38 @@ sysauth.ut       同一段 IIFE（登录页是 blank_page，footer.ut 那个 ver
 - 配套 `wallpaper.css` 的样式兜底：`html[data-wp-random="0"]` 时用 `content: none` 摘除 `body::after` 壁纸伪元素（特异性 0,3,2 压过角色层的 0,3,1，`:not(.mz-wp-custom)` 保留显式壁纸）
 - `header.ut` 的 `<html>` 上同时带 `data-wp-random="0|1"`，让样式层能独立于 JS 判断「随机壁纸是否该出场」
 - 回归测试：`scripts/verify-cache-conflict.py`（模拟残留旧构建写入壁纸变量，断言登录层 `display:none`、`body::after` `content:none`、管理页无壁纸伪元素）
-- 操作栏回归测试（一组契约，两个入口）：`scripts/verify-action-bar.py` 不需要路由器，本地夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；`scripts/verify-action-bar-device.py` 登录实机对**已部署**资源复测同一组契约（需 `MZ_BASE`/`MZ_PASS`）。断言：关闭态拆分按钮仅 1 个可见选项、`⋯` 不绘制、`dd/ul/li/.open` 高度一致、桌面侧栏→内容间距 ≤ 24px、无横向溢出
+- 操作栏回归测试（一组契约，两个入口）：`scripts/verify-action-bar.py` 不需要路由器，本地夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；`scripts/verify-action-bar-device.py` 登录实机对**已部署**资源复测同一组契约（需 `MZ_BASE`/`MZ_PASS`）。断言：关闭态拆分按钮仅 1 个可见选项、`⋯` 不绘制、`dd/ul/li/.open` 高度一致、**桌面容器两侧留白对称（|左 − 右| ≤ 20px；`--mz-content-max` 未咬合时每侧 ≤ 40px）**、无横向溢出
+- 容器几何专测：`scripts/verify-geometry.py`（需 `MZ_BASE`/`MZ_PASS`）扫 1366/1536/1600/1920/2560/3440 六档，断言留白对称、上限未咬合时两侧无空洞、无横向溢出、概览页系统信息网格末行无残缺轨道；可选 `MZ_SHOT_DIR` 顺便出图。详见上方「布局与容器几何」
+
+## 布局与容器几何
+
+主题全站只有 `.mz-view` 一个视觉容器（单层容器架构），它的几何由三个令牌独占，改宽度 / 间距只需动 `tokens.css`：
+
+| 令牌 | 值 | 作用 |
+|---|---|---|
+| `--mz-content-max` | `1920px` | 容器宽度上限。常见桌面（1366 / 1536 / 1600 / 1920）都不咬合，直接铺满；仅超宽屏收口 |
+| `--mz-container-margin` | `14px` | 容器与页面列两侧的间距（**两侧对称**） |
+| `--mz-container-pad` | `22px` | 容器内边距；同时是全出血动作条负 margin 的基准 |
+
+摆放规则只有一条基础声明，`container.css` 与 `background.css` 都**刻意不再覆盖它**：
+
+```css
+.mz-view { margin: var(--mz-container-margin) auto; }
+```
+
+`auto` 把富余宽度**对称**分摊到两侧，因此任何宽度下都不会出现单边空洞。这条契约的由来值得记一笔 —— 同一处几何被反向报告过两次：
+
+| 版本 | 做法 | 实测结果 |
+|---|---|---|
+| 旧（bug） | `compat.css` 残留 ID 规则 `#mz-view{max-width:1280px;margin:0 auto;padding:24px 28px}`，以 ID 特异性压掉整套令牌 | 1920px 下菜单与内容之间 **219px** 空洞（2560px 下 539px） |
+| `20260913f`（修错方向） | 删掉 ID 规则，但改成「左锚 + 右侧预留 260/320px 角色通道」 | 左侧空洞消失，右侧长出约 **260px** 空白条 |
+| `20260913g`（现行） | 两处覆盖全删，回归 `margin: … auto`；`--mz-content-max` 由 1680 上调至 1920px | 两侧对称：1920px 各 13/14px，2560px 各 219/220px（上限生效） |
+
+角色立绘不依赖预留通道：`.mint-background` 是 `fixed` 独立图层（`z-index:-2`、`pointer-events:none`），透过 `.mz-view` 的半透明填充可见，所以把宽度还给内容不会丢立绘。
+
+页面内部另有一处独立空洞：概览页系统信息网格共 **9** 项，排 4 列会变成 4+4+1（末行右侧约 958px 空白），故固定 **3 列**（9 = 3×3，任意宽度都不会残缺）。改动 `.mint-ovd-sys-grid` 列数前，请先确认项数仍是该列数的整数倍。
+
+回归测试见「缓存戳」小节末尾（`verify-geometry.py` + `verify-action-bar*.py`）。
 
 ## 壁纸设置
 

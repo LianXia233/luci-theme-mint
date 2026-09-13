@@ -288,32 +288,26 @@ html[data-theme="dark"] body.mz-char-bg:not(.mz-wp-custom) .mz-view {
 }
 
 /* ---------------------------------------------------------------- */
-/* 8. Wide screens: give the artwork a lane of its own                */
+/* 8. Wide screens: no reserved lane                                  */
 /* ---------------------------------------------------------------- */
-/* On a 1366px laptop the sheet already fills the column, so the
-   artwork only reads through the glass. From 1700px up there is real
-   slack, and the container is anchored to the left with an explicit
-   lane reserved on the right - the reference site's own composition
-   (content left, character right), applied to the app shell.
+/* Two earlier rules reserved 260px (>=1700px) / 320px (>=2100px) on the
+   right for the artwork and anchored the sheet to the left edge. That only
+   traded one void for another: on a 1920px desktop the menu-to-content gap
+   dropped to 14px but a ~260px blank strip opened on the right - the
+   "菜单和内容不留白了，但是右边空着一大片" report. The surplus is now left
+   SPLIT: container.css centres the sheet inside the page column with
+   --mz-container-margin on both sides, so a 1920px screen gets ~20px per
+   side instead of 14px + 260px.
+ *
+ * The artwork is not lost. `.mint-background` is a fixed layer behind the
+ * glass, so the character still reads through the container's translucent
+ * fill (--mz-container-background) exactly as it does on a 1366px laptop,
+ * and the wide-screen grids below can use the width they just regained.
  *
  * Width only; padding, radius and the full-bleed action-bar contract
  * stay on --mz-container-pad, untouched. */
 
-@media (min-width: 1700px) {
-	body.mz-char-bg:not(.mz-wp-custom) .mz-view {
-		width: min(var(--mz-content-max),
-			calc(100% - var(--mz-container-margin) - 260px));
-		margin-left: var(--mz-container-margin);
-		margin-right: auto;
-	}
-}
-
-@media (min-width: 2100px) {
-	body.mz-char-bg:not(.mz-wp-custom) .mz-view {
-		width: min(var(--mz-content-max),
-			calc(100% - var(--mz-container-margin) - 320px));
-	}
-}
+/* (No width override here on purpose - see the note above.) */
 
 /* ---------------------------------------------------------------- */
 /* 9. Motion                                                          */

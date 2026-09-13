@@ -32,8 +32,16 @@ Invariants asserted
 3. the whole height chain (wrapper / caption ul / caption li / caret) is ONE
    height - no 38/36/32/36 mismatch
 4. no horizontal overflow at any tested viewport
-5. on desktop the container is anchored to the LEADING edge, with the surplus
-   width on the trailing side - not split into two voids
+5. on desktop the container keeps a SMALL, EQUAL gutter on both sides.
+   `margin: var(--mz-container-margin) auto` + --mz-content-max is the whole
+   contract. Two real reports bracket this from opposite sides: an ID rule
+   `#mz-view{max-width:1280px;margin:0 auto}` put 219px of dead space
+   between the menu and the page at 1920px ("菜单栏和内容之间留白太多"), and
+   the first fix for it - left-anchoring the sheet plus a reserved 260px
+   character lane on the right in background.css - simply moved that void
+   to the trailing edge ("右边空着一大片"). A one-sided void IS the defect,
+   whichever edge it lands on, so this asserts SYMMETRY, and only demands
+   small gutters when the cap is not the thing bounding the sheet.
 
 Usage
 -----
@@ -119,6 +127,8 @@ PROBE = """
     heights: {dd: box(dd).h, ul: box(ul).h, li: box(lis[0]).h, caret: box(open).h,
               moreDisplay: more ? cs(more).display : null, moreAttr: dd.hasAttribute('more'),
               save: box(bar.querySelector('.cbi-button-save')).h},
+    viewW: Math.round(view.width),
+    contentMax: parseFloat(cs(document.querySelector('.mz-view')).maxWidth) || 0,
     gap: Math.round(view.left - sv.right),
     leftSlack: Math.round(view.left - main.left),
     rightSlack: Math.round(main.right - view.right),
@@ -167,10 +177,27 @@ def main() -> int:
             check(d['scrollW'] <= w, f'no horizontal overflow (scrollW={d["scrollW"]} vs {w})')
 
             if w >= 855:
-                check(d['gap'] <= 20, f'container anchored, sidebar gap {d["gap"]}px <= 20px')
-                check(d['leftSlack'] <= 20, f'left slack {d["leftSlack"]}px <= 20px')
-                check(d['rightSlack'] >= d['leftSlack'],
-                      f'surplus on trailing side ({d["rightSlack"]} >= {d["leftSlack"]})')
+                # --mz-content-max "binds" when the sheet is already exactly as
+                # wide as the cap. Only then is a wide gutter legal - and even
+                # then it must be the SAME on both sides. Below that the cap is
+                # not the constraint, so the gutters must be the container
+                # margin (14px) and nothing more.
+                cap_binds = (d['contentMax'] > 0 and
+                             abs(d['viewW'] - d['contentMax']) <= 2)
+                check(abs(d['rightSlack'] - d['leftSlack']) <= 20,
+                      f'gutters symmetric (lead {d["leftSlack"]}px vs trail '
+                      f'{d["rightSlack"]}px; |delta| <= 20px)')
+                if cap_binds:
+                    print(f'  ..  cap binds (viewW={d["viewW"]} == contentMax='
+                          f'{d["contentMax"]:.0f}); wide gutters allowed but '
+                          f'must stay symmetric')
+                else:
+                    check(d['gap'] <= 20,
+                          f'sidebar->container gap {d["gap"]}px <= 20px')
+                    check(d['leftSlack'] <= 40,
+                          f'no leading void ({d["leftSlack"]}px <= 40px)')
+                    check(d['rightSlack'] <= 40,
+                          f'no trailing void ({d["rightSlack"]}px <= 40px)')
 
         browser.close()
 

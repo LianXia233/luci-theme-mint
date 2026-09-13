@@ -2532,8 +2532,13 @@ table.cbi-section-table tbody tr:hover td {
    report. It also defeated the documented single source of truth, since
    container.css/tokens.css could change the numbers and nothing moved.
    `.mz-view` in layout.css + container.css now owns width, padding and
-   margins; the desktop anchoring lives in container.css. Do not reinstate
-   geometry here - compat.css is a legacy base, not the container's owner. */
+   margins, with the numbers coming from tokens.css. The container is
+   CENTRED with an equal margin on both sides
+   (`margin: var(--mz-container-margin) auto`) - do not reinstate geometry
+   here, and do not re-anchor it to one edge either: that was tried, and it
+   only moved the void from the leading edge to the trailing one (see
+   container.css section 1b). compat.css is a legacy base, not the
+   container's owner. */
 /* (Removed 2026-09-07: .mz-topbar-inner has no matching element in header.ut.) */
 
 /* Overview panels: wider grids on desktop */

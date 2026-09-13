@@ -27,10 +27,16 @@ Invariants (all three reported defects are encoded here):
      only paint .more for [multiple][more] / [multiple][empty].
   3. dd / ul / li / .open must all share ONE height (36px desktop, 34px
      <=768px). A chain like 38/36/32 means the button wraps to two rows.
-  4. Desktop: the gap between the sidebar and the content box stays small
-     (<= 24px) and the surplus width falls on the TRAILING side. The legacy
-     `#mz-view{max-width:1280px;margin:0 auto}` used to centre the container
-     and burn 219px at 1920 / 539px at 2560.
+  4. Desktop: the container keeps a small EQUAL gutter on both sides. The
+     legacy `#mz-view{max-width:1280px;margin:0 auto}` is an ID selector, so
+     it beat `.mz-view` and the token system, pinning the sheet to 1280px
+     centred - 219px of void between the menu and the page at 1920px. The
+     first fix then left-anchored the sheet (and reserved a 260px character
+     lane on the right in background.css), which opened the same void on the
+     trailing edge instead. Both are the same defect: a ONE-SIDED void. This
+     therefore asserts |leading - trailing| <= 24px, and additionally
+     requires small gutters whenever --mz-content-max is not the binding
+     constraint on the width.
   5. No horizontal overflow at any width.
 """
 import os
@@ -72,11 +78,16 @@ PROBE = r"""
   }
   const side = document.querySelector('#mainmenu, .mz-sidebar, #mz-menu');
   const view = document.querySelector('#mz-view, .mz-view');
+  const main = document.querySelector('.mz-main, #maincontent');
   if (side && view) {
     const a = side.getBoundingClientRect(), b = view.getBoundingClientRect();
     out.gap = Math.round(b.left - a.right);
-    out.surplus = Math.round(window.innerWidth - b.right);
+    out.leading = Math.round(b.left -
+      (main ? main.getBoundingClientRect().left : a.left));
+    out.trailing = Math.round(window.innerWidth - b.right);
+    out.surplus = out.trailing;
     out.viewW = Math.round(b.width);
+    out.contentMax = parseFloat(getComputedStyle(view).maxWidth) || 0;
   }
   out.scrollW = document.documentElement.scrollWidth;
   out.clientW = document.documentElement.clientWidth;
@@ -88,7 +99,8 @@ VIEWPORTS = [(390, 844, "phone"), (768, 1024, "tablet"),
              (1440, 900, "desktop"), (1920, 1080, "wide"),
              (2560, 1440, "ultrawide")]
 
-GAP_MAX = 24
+GAP_MAX = 24      # sidebar -> container gap, and the leading/trailing tolerance
+GUTTER_MAX = 40   # page-edge gutter cap when --mz-content-max is NOT binding
 
 
 def main():
@@ -131,8 +143,21 @@ def main():
             if r.get("scrollW", 0) > r.get("clientW", 0):
                 problems.append(
                     f"horizontal overflow {r['scrollW']}>{r['clientW']}")
-            if w >= 1440 and "gap" in r and r["gap"] > GAP_MAX:
-                problems.append(f"sidebar->content gap {r['gap']}px")
+            if w >= 1440 and "leading" in r:
+                cap_binds = (r.get("contentMax", 0) > 0 and
+                             abs(r.get("viewW", 0) - r["contentMax"]) <= 2)
+                # A one-sided void is the defect, on either edge.
+                if abs(r["leading"] - r["trailing"]) > GAP_MAX:
+                    problems.append(
+                        f"asymmetric gutter leading={r['leading']}px "
+                        f"trailing={r['trailing']}px")
+                if not cap_binds:
+                    if r["gap"] > GAP_MAX:
+                        problems.append(f"sidebar->content gap {r['gap']}px")
+                    if r["leading"] > GUTTER_MAX:
+                        problems.append(f"leading void {r['leading']}px")
+                    if r["trailing"] > GUTTER_MAX:
+                        problems.append(f"trailing void {r['trailing']}px")
 
             status = "PASS" if not problems else "FAIL"
             if problems:
@@ -142,8 +167,9 @@ def main():
                 extra = (f" opts={r['liVisible']} more={r['moreDisplay']} "
                          f"h={r['h']} dd={r['ddBox']}")
             if "gap" in r:
-                extra += (f" gap={r['gap']} surplus={r['surplus']} "
-                          f"viewW={r['viewW']}")
+                extra += (f" gap={r['gap']} lead={r.get('leading')} "
+                          f"trail={r.get('trailing')} viewW={r['viewW']} "
+                          f"max={r.get('contentMax')}")
             print(f"[{tag} {w}x{h}] {status}{extra}")
             for pb in problems:
                 print(f"      - {pb}")

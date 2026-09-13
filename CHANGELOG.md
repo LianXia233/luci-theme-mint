@@ -27,7 +27,7 @@
 - 登录页基线由图层**自己**绘制（`background-image` = 参考站渐变），因此图层完全不透明——下方任何东西都透不过来（这是"随机壁纸缓存透出"的根治手段之一）
 - 新增 `data-wp-random` 状态：`header.ut` 把 `mint.wallpaper.ui_random` 的答案写在 `<html data-wp-random="0|1">` 上，让**样式表**（随 `MINT_ASSET_REV` 走）对"能不能画随机照片"有最终裁定权，见下方 Fixed
 - 新增 `scripts/verify-cache-conflict.py`：回归测试"缓存里的旧构建不能把随机壁纸带上登录页"，含旧构建行为模拟
-- 宽屏（≥1700px / ≥2100px）给容器让出右侧 260/320px 角色通道，容器左锚，形成参考站的「内容在左、立绘在右」构图；只改宽度，不动 `--mz-container-pad`、圆角与全出血动作条契约
+- 宽屏给容器让出右侧 260/320px 角色通道、容器左锚 —— **该做法已于同日回退**：实测它只是把左侧的留白换成了右侧约 260px 的空白条，即「右边空着一大片」报告的直接成因。详见下方 Fixed（同日再晚：右侧一大片留白）
 - 角色背景激活时 `.mz-view`（唯一页面容器）从 0.78/0.84 降到 **0.70/0.74**，让立绘可见而正文仍清晰；只改 `--mz-container-background`，侧栏/顶栏/下拉继续用 `--mz-panel-bg*`，导航与菜单可读性完全不变
 - 新增 `scripts/verify-background.py`：Playwright 四态矩阵（PC 1366/1920/2560 + Mobile 360/390/412，× 明暗两态）校验解析到的图片名、横向溢出、图层几何、明暗图层 opacity 互换，再做 9 个后台页面扫描与 6 个资源可用性断言；登录页检查在**独立的未登录上下文**中执行（在已登录页面上访问 `/cgi-bin/luci/` 只会被重定向到概览页，那是上一版脚本误报"登录页发射角色层"的原因）
 
@@ -57,9 +57,20 @@
 - **手机端「保存并应用」拆分按钮漏出第二个选项**：`compat.css` 中 `@media (max-width: 768px)` 内的一条 `.cbi-page-actions .cbi-dropdown.cbi-button > ul > li { display: flex }` 与关闭态所有者 `.cbi-dropdown:not([open]) > ul > li:not([selected])` **特异性完全相同（0,3,2）**，而它位于文件更靠后约 300 行、且包在只有手机命中的媒体查询里 —— 源序取胜，于是「强制应用」被一起画进了关闭态按钮，形成「保存并应用 强制应用 ⋯ ▾」的怪样子。桌面端因为媒体查询不命中而一直正常，这正是缺陷表现为「只有手机异常」的原因。修法：删除那条 `display: flex`（它原本想管的 height / line-height 早已被后面带 `!important` 的块覆盖，是纯冗余），显示权归关闭态规则独占
 - **`⋯` 溢出指示器无条件绘制**：`#mz-view .cbi-dropdown.cbi-button > .more { display: inline-flex }`（以及通用版 `.cbi-dropdown > .more`）让它永远可见，但 `ui.js UIDropdown.bind()` 只在 `ndisplay < 0` 时才写 `more` 属性；ComboButton 永远非 multiple，实际结果恒为 `removeAttribute('more')` —— 属性没有、`⋯` 却常驻，还白占 26px 按钮宽度。现与 upstream bootstrap 同构：默认 `display: none`，只有 `.cbi-dropdown[multiple][more] > .more` 与 `[multiple][empty] > .more` 才显示
 - **拆分按钮高度链「四个盒子四个高度」**：wrapper 38px、caption `<ul>` 36px、caption `<li>` 32px、`▾` 36px，文字因此在自己的胶囊里偏 1~3px，手机上更明显（38px 胶囊套 32px 文字盒）。新增 compat.css 末尾的 "Combo buttons: ONE height for the whole chain" 块，用 (1,3,1) + `!important` 且置于文件最末的统一权威接管整链：桌面 36px、≤768px 34px；`> ul` 一律带 `:not(.dropdown)`，避免把打开后的浮层菜单也钉死。实测手机按钮宽 256→126px、操作栏高 109→59px（由两行收为一行）
-- **桌面「菜单栏与内容之间留白太多」的根因：一条残留 ID 规则压掉了整个令牌系统**。`compat.css` 的旧块 `#mz-view { max-width: 1280px; margin: 0 auto; padding: 24px 28px }` 是 **ID 选择器**，击败 `.mz-view`（类），于是 `--mz-content-max`（1680px）被钳到 1280px、`--mz-container-pad`（22px）被换成 24/28px，且 `margin: 0 auto` 强制居中。实测 1920px 宽屏下侧栏与内容之间左右各 219px 空洞（2560px 下 539px），而且改 tokens 毫无反应 —— 与「tokens 单一真源」的架构直接矛盾。已删除该块，几何归还 layout.css / container.css；新增 container.css「1b. Desktop: anchor the container, never centre it」：≥855px 改为左锚（`margin-left: var(--mz-container-margin); margin-right: auto`），富余宽度全部留给右侧角色通道，不再劈成左右两个空洞。实测 1920/2560px 的留白由 219/539px 降到 13px
-- **两个回归测试脚本，一个离线一个实机**：`scripts/verify-action-bar.py` 不需要路由器（本地夹具直接挂真实 `cascade.css`，用 Playwright 读计算样式），改 CSS 时随手就能跑；`scripts/verify-action-bar-device.py` 则用浏览器登录实机、对**已部署**的资源复测同一组不变量，用来证明推送真的落地。两者断言同一套契约：关闭态拆分按钮只能有 1 个可见选项、`⋯` 不得绘制、`dd/ul/li/.open` 高度必须一致、桌面侧栏→内容间距 ≤ 24px、任意视口无横向溢出。实机实测（ImmortalWrt SNAPSHOT，`MINT_ASSET_REV=20260913f`）：五档视口全 PASS，手机 34px / 桌面 36px 高度链齐平，`⋯` 均为 `none`，1920px 留白 13px、2560px 13px，容器宽 1446/1680px（令牌已生效），375/390/412px 横向滚动为 0
+- **桌面「菜单栏与内容之间留白太多」的根因：一条残留 ID 规则压掉了整个令牌系统**。`compat.css` 的旧块 `#mz-view { max-width: 1280px; margin: 0 auto; padding: 24px 28px }` 是 **ID 选择器**，击败 `.mz-view`（类），于是 `--mz-content-max`（1680px）被钳到 1280px、`--mz-container-pad`（22px）被换成 24/28px，且 `margin: 0 auto` 强制居中。实测 1920px 宽屏下侧栏与内容之间左右各 219px 空洞（2560px 下 539px），而且改 tokens 毫无反应 —— 与「tokens 单一真源」的架构直接矛盾。已删除该块，几何归还 layout.css / container.css，宽度与间距重新由 tokens 单一真源决定。**要紧的是：第一版修法本身也是错的**——它用「≥855px 左锚 + 右侧预留角色通道」把左侧留白搬到了右侧，同一处几何问题于是被报告了两次。最终修法见下方 Fixed（同日再晚：右侧一大片留白）
+- **两个回归测试脚本，一个离线一个实机**：`scripts/verify-action-bar.py` 不需要路由器（本地夹具直接挂真实 `cascade.css`，用 Playwright 读计算样式），改 CSS 时随手就能跑；`scripts/verify-action-bar-device.py` 则用浏览器登录实机、对**已部署**的资源复测同一组不变量，用来证明推送真的落地。两者断言同一套契约：关闭态拆分按钮只能有 1 个可见选项、`⋯` 不得绘制、`dd/ul/li/.open` 高度必须一致、**桌面容器两侧留白对称（|左 − 右| ≤ 20px；上限未咬合时每侧 ≤ 40px，咬合时仅要求对称）**、任意视口无横向溢出。实机实测（ImmortalWrt SNAPSHOT，`MINT_ASSET_REV=20260913f`）：五档视口全 PASS，手机 34px / 桌面 36px 高度链齐平，`⋯` 均为 `none`，375/390/412px 横向滚动为 0；该版的 1920px 留白 13px 是**左锚**产生的（左右不对称），已被下一版取代
 - 缓存戳 `MINT_ASSET_REV` `20260913e` → `20260913f`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）
+
+### Fixed（同日再晚：右侧一大片留白 —— 左锚修法的反噬）
+
+- **现象**：上一轮刚把「菜单栏与内容之间的留白」修掉，用户随即回图指出 **「右边空着一大片」**。同一处几何问题，两次报告方向相反
+- **根因一（容器被推到左边）**：上一轮用的是「左锚 + 右侧预留角色通道」——`container.css` 里一条 `@media (min-width:855px) { .mz-view { margin-left: var(--mz-container-margin); margin-right: auto } }`，叠加 `background.css` 第 8 节给 ≥1700px / ≥2100px 分别预留 260px / 320px 的右侧立绘通道。左侧空洞确实没了（14px），但富余宽度**全部**堆到右侧，1920px 下就是一条约 260px 的空白条。**把留白从一侧挪到另一侧不算修复**。两处覆盖一并删除，几何归还 container.css 的基础规则 `margin: var(--mz-container-margin) auto` —— 留白**对称**分摊，两侧各约 20px
+- **根因二（容器宽度上限偏小）**：`--mz-content-max` 是 1680px。容器重新居中后这条上限在 1920px 屏上开始咬合（1920 页面列宽 1720px，减去上限只剩 40px 富余，视觉上仍像"没铺满"）。上调 **1680px → 1920px**：1366 / 1536 / 1600 / 1920 四档常见桌面直接铺满（每侧 14~20px），超宽屏仍由这一个令牌收口。数值改动只落在 `tokens.css` 一处
+- **根因三（页面内部还有第二处空洞）**：概览页 `.mint-ovd-sys-grid` 共 **9 个**系统信息项（hostname / model / arch / temperature / target / firmware / kernel / openwrt / luci），却排成 **4 列** → 4+4+1，末行只有 1 项、右侧 3 条轨道全空，1536px 下量到约 **958px** 空白。9 = 3×3，改为 **3 列**后任意宽度都不可能出残缺行（9 的约数只有 1 / 3 / 9），顺带与上方同为 3 列的 `mint-ovd-stats` / `mint-ovd-charts` 对齐节奏；同时删掉 `@media (max-width:1199px)` 里那条重复的 3 列声明
+- **角色立绘没有丢**：`.mint-background` 是 `fixed` 的独立图层（z −2），仍透过 `.mz-view` 的半透明填充可见，观感与 1366px 笔记本上一致；只是不再为它独占一条 260px 通道。宽屏网格也因此拿回了刚刚还给它的宽度
+- **新增 `scripts/verify-geometry.py`**：容器几何专测。扫 1366 / 1536 / 1600 / 1920 / 2560 / 3440 六档，断言 ①左右留白对称（|左 − 右| ≤ 20px）②上限**未**咬合时每侧 ≤ 40px ③无横向溢出 ④系统信息网格末行在内容盒内空白 ≤ 420px。「上限是否咬合」由探针实测 `max-width` 与容器实宽比较得出，**不硬编码断点**，因此改 `--mz-content-max` 或 `--mz-sidebar-width` 后脚本不会失真
+- **实测（ImmortalWrt SNAPSHOT，`MINT_ASSET_REV=20260913g`）**：1366/1536/1600/1920/2560/3440 六档全 PASS —— 1920px 容器宽 1692px、左右各 13/14px；2560px 容器宽 1920px（上限生效）、左右各 219/220px **完全对称**；系统信息网格 9 项 / 3 轨、末行 3 项、空白 1px；六档横向溢出均为 0。离线夹具侧 `verify-action-bar.py` 五档（390/768/1440/1920/2560）亦全 PASS
+- 缓存戳 `MINT_ASSET_REV` `20260913f` → `20260913g`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）
 
 ---
 

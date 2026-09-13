@@ -83,13 +83,16 @@ Mobile / PC 的图片规则分别位于 `@media` 块内与块外，浏览器**�
 
 ### 宽屏构图
 
+**不再为立绘预留通道。** 早期版本在 ≥ 1700px / ≥ 2100px 分别给容器让出右侧 260px / 320px，并把容器左锚，用以复刻参考站「内容在左、角色在右」的构图。该做法**已回退** —— 实测它只是把留白从左侧搬到了右侧，在 1920px 上形成约 260px 的空白条，正是用户报告的「右边空着一大片」。
+
 | 断点 | 行为 |
 | --- | --- |
-| < 1700px | 容器按原有规则铺满列宽，立绘透过玻璃隐约可见 |
-| ≥ 1700px | 容器左锚，右侧预留 **260px** 角色通道 |
-| ≥ 2100px | 右侧通道加宽到 **320px** |
+| 任意宽度 | 容器居中，两侧各留 `--mz-container-margin`（14px），宽度上限 `--mz-content-max`（1920px） |
+| 超宽屏（如 2560px） | 上限生效，两侧各留一份**对称**余量（2560px 下约 219/220px） |
 
-只改 `width` / `margin`，不动 `--mz-container-pad`、圆角，以及全出血 Action Bar 的契约。这复刻了参考站「内容在左、角色在右」的英雄区构图。
+立绘不需要专属通道：`.mint-background` 是 `fixed` 图层（`z-index:-2`、`pointer-events:none`），透过 `.mz-view` 的半透明填充可见，因此把宽度还给内容不会让立绘消失 —— 观感与 1366px 笔记本上一致。
+
+`--mz-container-pad`、圆角与全出血 Action Bar 的契约始终不变。几何契约与回归测试见 README 的「布局与容器几何」。
 
 ---
 
@@ -121,10 +124,10 @@ Mobile / PC 的图片规则分别位于 `@media` 块内与块外，浏览器**�
 
 ```js
 // theme/ucode/template/themes/mint/header.ut
-const MINT_ASSET_REV = '20260913c';
+const MINT_ASSET_REV = '20260913g';
 // theme/ucode/template/themes/mint/footer.ut
-{% const MINT_ASSET_REV = '20260913c'; %}
-/* theme/htdocs/luci-static/mint/cascade.css —— 全部 12 条 @import 的 ?v= */
+{% const MINT_ASSET_REV = '20260913g'; %}
+/* theme/htdocs/luci-static/mint/cascade.css —— 全部 13 条 @import 的 ?v= */
 ```
 
 **改动 `htdocs/luci-static/mint/` 下任何文件（包括 `images/`）都必须同步 bump 这三处。** 路由器对静态资源的长缓存头会让浏览器在新版本安装后继续使用旧样式，bump 是唯一可靠的手段。
@@ -154,6 +157,8 @@ const MINT_ASSET_REV = '20260913c';
 
 > 脚本已知缺陷：登录页断言在「先登录再访问 `/cgi-bin/luci/`」时会因被重定向到概览页而误报。需要复核登录页时，应在**独立的未登录浏览器上下文**中访问，或使用 `scripts/_probe_bg.py` 形态的探针。
 
+**容器几何**（与角色层强相关的另一半）由 `scripts/verify-geometry.py` 覆盖：扫 1366 / 1536 / 1600 / 1920 / 2560 / 3440 六档，断言容器两侧留白**对称**、`--mz-content-max` 未咬合时两侧无空洞、无横向溢出，以及概览页系统信息网格末行无残缺轨道。需要 `MZ_BASE` / `MZ_PASS`。
+
 ---
 
 ## 9. 修改指引（速查）
@@ -164,7 +169,7 @@ const MINT_ASSET_REV = '20260913c';
 | 底座色 / wedge / scrim | `background.css` 的 `--mz-char-base` / `--mz-char-wedge` / `--mz-char-scrim`（暗色在同名的 `html[data-theme="dark"]` 块） |
 | 桌面/移动分界 | `background.css` 的 `@media (max-width: 854px)` —— **必须与侧栏抽屉断点保持同一个值** |
 | 立绘位置 | `.mint-bg-character` 的 `background-position`（PC `right center`，移动 `bottom center`） |
-| 容器让位宽度 | `@media (min-width: 1700px)` / `(min-width: 2100px)` 的 `calc(100% - var(--mz-container-margin) - Npx)` |
+| 容器让位宽度 | ~~`@media (min-width: 1700px)` / `(min-width: 2100px)` 的 `calc(100% - var(--mz-container-margin) - Npx)`~~ —— **已删除**，立绘不再占用容器宽度；宽度只说给 `tokens.css` 的 `--mz-content-max`（1920px），摆放交给 `container.css` 的 `margin: … auto` |
 | 毛玻璃透明度 | `body.mz-char-bg:not(.mz-wp-custom) .mz-view` 的 `--mz-container-background` |
 
 ### 不要做的事

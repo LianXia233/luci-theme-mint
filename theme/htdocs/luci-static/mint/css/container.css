@@ -59,25 +59,31 @@
 }
 
 /* ---------------------------------------------------------------- */
-/* 1b. Desktop: anchor the container, never centre it                 */
+/* 1b. Desktop geometry: small margins on BOTH sides                  */
 /* ---------------------------------------------------------------- */
-/* `margin: ... auto` splits every unused pixel evenly, which turns the
-   surplus into a void on BOTH sides: measured 219px between the sidebar and
-   the page at 1920px wide, 539px at 2560px - the "PC 菜单栏和内容之间留白
-   太多" report. The surplus belongs on the TRAILING edge only, where it is
-   the character artwork's lane (see background.css section 8), not dead
-   space next to the menu.
-   Below 855px the sidebar is an off-canvas drawer and the container is
-   already full-bleed, so this only applies where a sidebar is visible.
-   Width is untouched - the >=1700px character-lane rules in background.css
-   still narrow it where a lane is warranted. */
+/* Two consecutive reports taught the same lesson from opposite ends.
+ *
+ * 1. "PC 菜单栏和内容之间留白太多" - caused by a leftover
+ *    `#mz-view { max-width: 1280px; margin: 0 auto }` block in
+ *    compat.css. It is an ID selector, so it beat `.mz-view` and the
+ *    token system and pinned the sheet to 1280px, centred - 219px of
+ *    void between the menu and the page at 1920px (539px at 2560px).
+ *    That block is deleted; the numbers now come from tokens again.
+ * 2. "右边空着一大片" - the fix for (1) had anchored the sheet to the
+ *    left, and background.css additionally reserved a 260px/320px lane
+ *    on the right for the artwork. Trading a leading void for a trailing
+ *    one is not a fix either.
+ *
+ * The surplus is therefore split evenly by the base rule above
+ * (`margin: var(--mz-container-margin) auto`): a 1920px desktop gets
+ * ~20px per side, and no edge grows a dead strip. There is no
+ * left-anchor override and no reserved lane any more.
+ *
+ * Below 855px the sidebar is an off-canvas drawer, so the sheet is
+ * full-bleed there and this is moot either way. Width is untouched -
+ * --mz-content-max still caps very wide screens in one place, tokens.css. */
 
-@media (min-width: 855px) {
-	.mz-view {
-		margin-left: var(--mz-container-margin);
-		margin-right: auto;
-	}
-}
+/* (No placement override here on purpose - see the note above.) */
 
 /* ---------------------------------------------------------------- */
 /* 2. Inner components are transparent                               */

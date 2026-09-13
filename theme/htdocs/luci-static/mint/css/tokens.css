@@ -101,12 +101,15 @@
 
 	/* Layout */
 	/* Layout. The page container fills the viewport up to a generous
-	   ceiling: a 1680px cap keeps text measures sane on ultrawide
-	   monitors while leaving only a small gutter on common sizes, so
-	   the content no longer floats in the middle of an empty page. */
+	   ceiling. 1920px (was 1680px): the 1680 cap started to bite on a
+	   1920px desktop once the sheet was centred again - a 1720px page
+	   column minus the cap left 340px of gutter on BOTH sides at 2560px
+	   and looked like the content had given up on the width. 1920 keeps
+	   common 1366/1536/1600/1920 screens edge-to-edge (14-20px per side)
+	   and still caps text measures on ultrawides. */
 	--mz-sidebar-width: 200px;
 	--mz-topbar-height: 60px;
-	--mz-content-max: 1680px;
+	--mz-content-max: 1920px;
 
 	/* ----------------------------------------------------------------
 	   THE SINGLE VISUAL CONTAINER.
