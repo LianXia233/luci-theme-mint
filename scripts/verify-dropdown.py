@@ -34,7 +34,10 @@ Invariants asserted here, in LIGHT theme with body.mz-has-wallpaper:
 
 The fixture loads the REAL cascade.css, so the @import layering and
 specificity that produced the bug are all genuine. Point it at a live router
-with --css to run the identical assertions against deployed CSS:
+with --css to run the identical assertions against deployed CSS; in that mode
+the fixture injects a <base href> equal to the cascade.css directory so the
+relative @import chain (css/compat.css, ...) resolves on the live server
+instead of dangling against the set_content document base:
 
     python scripts/verify-dropdown.py
     python scripts/verify-dropdown.py --css http://192.168.88.1/luci-static/mint/cascade.css
@@ -54,7 +57,7 @@ REL = "theme/htdocs/luci-static/mint/cascade.css"
 
 FIXTURE = """<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><link rel="stylesheet" href="__CSS__"></head>
+<head><base href="__BASE__"><meta charset="utf-8"><link rel="stylesheet" href="__CSS__"></head>
 <body class="mz-has-wallpaper">
 <div id="mz-view">
   <div class="cbi-dropdown" id="dd-modern" open>
@@ -139,8 +142,16 @@ def main():
         httpd, port = start_server()
         css_url = "http://127.0.0.1:%d/%s" % (port, REL)
 
-    html = FIXTURE.replace("__CSS__", css_url)
-    base = ("http://127.0.0.1:%d/" % httpd.socket.getsockname()[1]) if httpd else "about:blank"
+    # The fixture's relative @import chain (css/compat.css, css/tokens.css, ...)
+    # must resolve against the DIRECTORY that hosts cascade.css, NOT against the
+    # document base (about:blank, the default for set_content). Inject that
+    # directory as <base href> so the full layered stylesheet loads - this makes
+    # the --css live-router path resolve identically to the local-server path
+    # (the previous bug left relative @imports dangling against about:blank, so
+    # every token layer was dropped and the popup fell back to UA defaults).
+    css_base = css_url.rsplit("/", 1)[0] + "/"
+    html = FIXTURE.replace("__CSS__", css_url).replace("__BASE__", css_base)
+    base = css_base
     with sync_playwright() as p:
         br = p.chromium.launch()
         pg = br.new_page(viewport={"width": 1000, "height": 900})
