@@ -2519,12 +2519,21 @@ table.cbi-section-table tbody tr:hover td {
 	display: block !important;
 }
 
-/* Main content: centered max-width on desktop */
-#mz-view {
-	max-width: 1280px;
-	margin: 0 auto;
-	padding: 24px 28px;
-}
+/* Main content geometry: REMOVED 2026-09-13.
+   This block used to be:
+       #mz-view { max-width: 1280px; margin: 0 auto; padding: 24px 28px; }
+   Because it is an ID selector it out-ranks `.mz-view` (a class), so it
+   silently overrode the whole token system:
+     - `--mz-content-max` (1680px) was capped to 1280px, and
+     - `--mz-container-pad` (22px) was replaced by 24px/28px,
+   and `margin: 0 auto` force-CENTERED the container. Measured on a 1920px
+   desktop that produced a 219px void between the sidebar and the content
+   on BOTH sides (539px at 2560px) - the "PC 菜单栏和内容之间留白太多"
+   report. It also defeated the documented single source of truth, since
+   container.css/tokens.css could change the numbers and nothing moved.
+   `.mz-view` in layout.css + container.css now owns width, padding and
+   margins; the desktop anchoring lives in container.css. Do not reinstate
+   geometry here - compat.css is a legacy base, not the container's owner. */
 /* (Removed 2026-09-07: .mz-topbar-inner has no matching element in header.ut.) */
 
 /* Overview panels: wider grids on desktop */
@@ -3749,10 +3758,20 @@ html[data-theme="dark"] {
 
 /* dropdown li: fill height, center content so the split button matches
    the plain buttons exactly */
+/* Mobile: match the split button's inner li metrics to the plain buttons.
+   `display: flex` USED TO LIVE HERE and it was the reason the phone action
+   bar leaked BOTH options into the closed button ("保存并应用 强制应用").
+   This selector and the closed-state owner,
+   `.cbi-dropdown:not([open]) > ul > li:not([selected])` (line ~3449), have
+   IDENTICAL specificity (0,3,2), so source order decides - and this block
+   sits ~300 lines later INSIDE a max-width:768px query, so the leak could
+   only ever happen on a phone. Desktop was always correct, which is why the
+   defect looked device-specific.
+   Display is owned by that closed-state rule alone; this block may set
+   metrics only. Removing `display:flex` here is the whole fix. */
 @media (max-width: 768px) {
 	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
 		height: 100%;
-		display: flex;
 		align-items: center;
 		line-height: 1;
 	}
@@ -5983,10 +6002,14 @@ body.mz-has-wallpaper .cbi-section-descr {
 	cursor: default;
 }
 
-/* Arrow / more affordances. */
+/* Arrow / more affordances.
+   `.more` is opt-in: ui.js only sets the `more` attribute when the selection
+   overflows `display-items` (or `empty` when nothing is selected in a
+   multiple dropdown). Drawing it unconditionally added a permanent "···"
+   to every combo button - see the note on the #mz-view block near the end
+   of this file. */
 .cbi-dropdown > .open,
 .cbi-dropdown > .more {
-	display: inline-flex;
 	flex: 0 0 auto;
 	align-items: center;
 	justify-content: center;
@@ -6000,7 +6023,17 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 .cbi-dropdown > .open {
+	display: inline-flex;
 	border-left: 1px solid var(--mz-color-border);
+}
+
+.cbi-dropdown > .more {
+	display: none;
+}
+
+.cbi-dropdown[multiple][more] > .more,
+.cbi-dropdown[multiple][empty] > .more {
+	display: inline-flex;
 }
 
 /* Combo button (Save & Apply) outer shell. */
@@ -6540,12 +6573,21 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	white-space: nowrap;
 }
 
-/* the ··· and ▾ affordances: full height, equal size, hairline-separated */
+/* the ··· and ▾ affordances: full height, equal size, hairline-separated.
+   NOTE there is deliberately no `display` in this shared block.
+   `display: inline-flex` used to be here for BOTH spans, which made the "···"
+   show up on the Save & Apply button even though that widget never marks
+   itself as overflowing. ui.js UIDropdown.bind() only sets the `more`
+   attribute when `ndisplay < 0`, i.e. when the selected items outnumber
+   `display-items`; a ComboButton is never `multiple`, so it always ends up
+   with `removeAttribute('more')` - and yet the ⋯ drew anyway, stealing ~26px
+   of button width next to the ▾. Upstream bootstrap gates it the same way
+   (`.cbi-dropdown[multiple][more] > .more, .cbi-dropdown[multiple][empty] > .more`).
+   The ▾ (.open) is unconditional; the ⋯ is opt-in. */
 #mz-view .cbi-dropdown.btn > .more,
 #mz-view .cbi-dropdown.btn > .open,
 #mz-view .cbi-dropdown.cbi-button > .more,
 #mz-view .cbi-dropdown.cbi-button > .open {
-	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
@@ -6560,9 +6602,20 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	border-left: 1px solid rgba(127, 127, 127, .35);
 }
 
+#mz-view .cbi-dropdown.btn > .open,
+#mz-view .cbi-dropdown.cbi-button > .open {
+	display: inline-flex;
+}
+
 #mz-view .cbi-dropdown.btn > .more,
 #mz-view .cbi-dropdown.cbi-button > .more {
+	display: none;
 	margin-left: 2px !important;
+}
+
+#mz-view .cbi-dropdown[multiple][more] > .more,
+#mz-view .cbi-dropdown[multiple][empty] > .more {
+	display: inline-flex;
 }
 /* The action bar itself can host an open combo menu (Save & Apply). It is
    sticky with z-index 100, which walls the menu off from the rest of the
@@ -6811,5 +6864,96 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 
 	.mz-wp-mgr-toolbar .btn {
 		width: 100%;
+	}
+}
+
+/* ================================================================
+ * Combo buttons: ONE height for the whole chain (final layer)
+ * ================================================================
+ * The Save & Apply split button nests four boxes, and each carried its
+ * height from a DIFFERENT rule: the wrapper 38px (#mz-view block), its
+ * caption <ul> 36px, the caption <li> 32px (a max-width:768px !important
+ * block) and the ▾ 36px. The caption therefore sat 1-3px off centre inside
+ * its own pill, and on a phone the pill was 38px tall around a 32px text
+ * box - the "手机端按钮排版异常" report.
+ *
+ * This block owns the metrics of the whole chain at a specificity above
+ * every earlier declaration (1,3,1 + !important, and it is the last rule in
+ * the file), so no media query added before or after it can desynchronise
+ * the parts again.
+ *
+ * `:not(.dropdown)` is mandatory: when the menu opens, ui.js adds the
+ * `dropdown` class to the caption <ul>, which then becomes the floating
+ * panel - pinning ITS height would squash the menu. The closed caption list
+ * is exactly the one without that class.
+ *
+ * Display is deliberately NOT set here. The visible/hidden state of each
+ * <li> belongs to `.cbi-dropdown:not([open]) > ul > li:not([selected])`
+ * alone; that is the rule the phone media query out-ranked by source order.
+ */
+
+#mz-view .cbi-page-actions .cbi-dropdown.btn,
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button,
+#mz-view .cbi-section-actions .cbi-dropdown.btn,
+#mz-view .cbi-section-actions .cbi-dropdown.cbi-button,
+#mz-view .cbi-dropdown.btn,
+#mz-view .cbi-dropdown.cbi-button {
+	height: 36px !important;
+	min-height: 36px !important;
+	max-height: 36px !important;
+}
+
+#mz-view .cbi-dropdown.btn > ul:not(.dropdown),
+#mz-view .cbi-dropdown.cbi-button > ul:not(.dropdown),
+#mz-view .cbi-dropdown.btn > ul:not(.dropdown) > li,
+#mz-view .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+	height: 36px !important;
+	min-height: 36px !important;
+	max-height: 36px !important;
+	line-height: 36px !important;
+}
+
+#mz-view .cbi-dropdown.btn > .open,
+#mz-view .cbi-dropdown.cbi-button > .open,
+#mz-view .cbi-dropdown.btn > .more,
+#mz-view .cbi-dropdown.cbi-button > .more {
+	height: 36px !important;
+	min-height: 36px !important;
+	max-height: 36px !important;
+}
+
+@media (max-width: 768px) {
+	/* Phone: one height for the pill AND its parts, one step below desktop
+	   so a 4-button bar still fits 390px without wrapping. */
+	#mz-view .cbi-page-actions .cbi-dropdown.btn,
+	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button,
+	#mz-view .cbi-page-actions .cbi-dropdown.btn > ul:not(.dropdown),
+	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
+	#mz-view .cbi-page-actions .cbi-dropdown.btn > ul:not(.dropdown) > li,
+	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li,
+	#mz-view .cbi-page-actions .cbi-dropdown.btn > .open,
+	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > .open {
+		height: 34px !important;
+		min-height: 34px !important;
+		max-height: 34px !important;
+		line-height: 34px !important;
+	}
+
+	/* 保存 / 重置 share the pill's baseline exactly. */
+	#mz-view .cbi-page-actions .cbi-button,
+	#mz-view .cbi-page-actions .btn {
+		min-height: 34px !important;
+		height: 34px !important;
+	}
+
+	/* A 4-button bar must fit one phone row: tighten the inner text padding
+	   rather than letting the bar wrap into a second line. */
+	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) {
+		padding-left: 10px !important;
+	}
+
+	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+		padding-left: 0 !important;
+		padding-right: 10px !important;
 	}
 }

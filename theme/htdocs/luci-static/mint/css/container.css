@@ -59,6 +59,27 @@
 }
 
 /* ---------------------------------------------------------------- */
+/* 1b. Desktop: anchor the container, never centre it                 */
+/* ---------------------------------------------------------------- */
+/* `margin: ... auto` splits every unused pixel evenly, which turns the
+   surplus into a void on BOTH sides: measured 219px between the sidebar and
+   the page at 1920px wide, 539px at 2560px - the "PC 菜单栏和内容之间留白
+   太多" report. The surplus belongs on the TRAILING edge only, where it is
+   the character artwork's lane (see background.css section 8), not dead
+   space next to the menu.
+   Below 855px the sidebar is an off-canvas drawer and the container is
+   already full-bleed, so this only applies where a sidebar is visible.
+   Width is untouched - the >=1700px character-lane rules in background.css
+   still narrow it where a lane is warranted. */
+
+@media (min-width: 855px) {
+	.mz-view {
+		margin-left: var(--mz-container-margin);
+		margin-right: auto;
+	}
+}
+
+/* ---------------------------------------------------------------- */
 /* 2. Inner components are transparent                               */
 /* ---------------------------------------------------------------- */
 /* Anything that only groups content must stop painting itself. This

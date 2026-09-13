@@ -52,6 +52,14 @@
 - 暗色模式下壁纸层被 `content:none` 整体关掉、页面只剩纯色底的问题：角色背景在暗色下有独立立绘与配色，不再是「深色什么都看不见」
 - 登录页此前会按设备类型拉取远程随机图（含 UA 检测与多源轮询），现默认不再发生
 
+### Fixed（同日晚些：手机操作栏 + 桌面留白）
+
+- **手机端「保存并应用」拆分按钮漏出第二个选项**：`compat.css` 中 `@media (max-width: 768px)` 内的一条 `.cbi-page-actions .cbi-dropdown.cbi-button > ul > li { display: flex }` 与关闭态所有者 `.cbi-dropdown:not([open]) > ul > li:not([selected])` **特异性完全相同（0,3,2）**，而它位于文件更靠后约 300 行、且包在只有手机命中的媒体查询里 —— 源序取胜，于是「强制应用」被一起画进了关闭态按钮，形成「保存并应用 强制应用 ⋯ ▾」的怪样子。桌面端因为媒体查询不命中而一直正常，这正是缺陷表现为「只有手机异常」的原因。修法：删除那条 `display: flex`（它原本想管的 height / line-height 早已被后面带 `!important` 的块覆盖，是纯冗余），显示权归关闭态规则独占
+- **`⋯` 溢出指示器无条件绘制**：`#mz-view .cbi-dropdown.cbi-button > .more { display: inline-flex }`（以及通用版 `.cbi-dropdown > .more`）让它永远可见，但 `ui.js UIDropdown.bind()` 只在 `ndisplay < 0` 时才写 `more` 属性；ComboButton 永远非 multiple，实际结果恒为 `removeAttribute('more')` —— 属性没有、`⋯` 却常驻，还白占 26px 按钮宽度。现与 upstream bootstrap 同构：默认 `display: none`，只有 `.cbi-dropdown[multiple][more] > .more` 与 `[multiple][empty] > .more` 才显示
+- **拆分按钮高度链「四个盒子四个高度」**：wrapper 38px、caption `<ul>` 36px、caption `<li>` 32px、`▾` 36px，文字因此在自己的胶囊里偏 1~3px，手机上更明显（38px 胶囊套 32px 文字盒）。新增 compat.css 末尾的 "Combo buttons: ONE height for the whole chain" 块，用 (1,3,1) + `!important` 且置于文件最末的统一权威接管整链：桌面 36px、≤768px 34px；`> ul` 一律带 `:not(.dropdown)`，避免把打开后的浮层菜单也钉死。实测手机按钮宽 256→126px、操作栏高 109→59px（由两行收为一行）
+- **桌面「菜单栏与内容之间留白太多」的根因：一条残留 ID 规则压掉了整个令牌系统**。`compat.css` 的旧块 `#mz-view { max-width: 1280px; margin: 0 auto; padding: 24px 28px }` 是 **ID 选择器**，击败 `.mz-view`（类），于是 `--mz-content-max`（1680px）被钳到 1280px、`--mz-container-pad`（22px）被换成 24/28px，且 `margin: 0 auto` 强制居中。实测 1920px 宽屏下侧栏与内容之间左右各 219px 空洞（2560px 下 539px），而且改 tokens 毫无反应 —— 与「tokens 单一真源」的架构直接矛盾。已删除该块，几何归还 layout.css / container.css；新增 container.css「1b. Desktop: anchor the container, never centre it」：≥855px 改为左锚（`margin-left: var(--mz-container-margin); margin-right: auto`），富余宽度全部留给右侧角色通道，不再劈成左右两个空洞。实测 1920/2560px 的留白由 219/539px 降到 13px
+- 缓存戳 `MINT_ASSET_REV` `20260913e` → `20260913f`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）
+
 ---
 
 ## [1.2.0] - 2026-09-13
