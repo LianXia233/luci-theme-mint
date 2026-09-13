@@ -113,56 +113,66 @@ return baseclass.extend({
 		if (document.getElementById('mz-login'))
 			return;
 
-		/* Dark mode: deep grey glass, no wallpaper.
-		   The early return below skips every network path, so a dark page
-		   never requests a wallpaper API; the inline --mz-wallpaper*
+		const root = document.documentElement;
+		const body = document.body;
+
+		/* The frosted component layer is always on: it is the switch the
+		   whole Glass system keys off, and it is independent of which image
+		   (if any) ends up behind it. */
+		body.classList.add('mz-has-wallpaper');
+
+		/* Dark mode paints no photographic wallpaper. It keeps the flat
+		   page colour with the built-in character artwork (Plana) behind the
+		   glass. The early return below skips every network path, so a dark
+		   page never requests a wallpaper; the inline --mz-wallpaper*
 		   properties are cleared so a stale light-mode URL can never leak
-		   through; and cascade.css removes BOTH wallpaper pseudo-elements
-		   from the box tree (`content: none`), so nothing is composited.
-		   The mz-has-wallpaper class is still applied on purpose - it is
-		   the switch that enables the whole glass component layer, and only
-		   the wallpaper layers are meant to disappear in dark mode.
+		   through; and mz-wp-custom is dropped, otherwise a wallpaper chosen
+		   in light mode would leave the character layer hidden on a dark
+		   page that paints no wallpaper at all.
 		   The user's UCI wallpaper settings are never modified: switching
 		   back to light re-runs this method and reloads them. */
-		if (document.documentElement.getAttribute('data-theme') === 'dark') {
-			document.documentElement.style.removeProperty('--mz-wallpaper');
-			document.documentElement.style.removeProperty('--mz-wallpaper-overlay');
-			document.documentElement.style.removeProperty('--mz-wallpaper-blur');
-			document.body.classList.add('mz-has-wallpaper');
+		if (root.getAttribute('data-theme') === 'dark') {
+			root.style.removeProperty('--mz-wallpaper');
+			root.style.removeProperty('--mz-wallpaper-overlay');
+			root.style.removeProperty('--mz-wallpaper-blur');
+			body.classList.remove('mz-wp-custom');
 			return;
 		}
 
 		const cfg = window.mintWallpaper;
-		/* NOTE: ui_random is deliberately NOT tested here any more. It only
-		   governs per-navigation remote randomisation; the server-side
-		   cached image (cron -> /luci-static/mint/wallpaper-<kind>.img) is
-		   a LOCAL file and must stay usable with ui_random off. Testing it
-		   here is what produced the "random wallpaper stopped working"
-		   report: the shipped default is ui_random=0, so the cached
-		   wallpaper was never applied at all. */
 		if (!cfg || cfg.enabled === false) {
-			/* Wallpaper switched off entirely: still run the global
-			   frosted-glass layer. --mz-wallpaper stays "none", so the
-			   CSS ::after paints the soft gradient fallback and every
-			   admin page gets glass cards + soft shadow regardless
-			   (2026-09-09). */
-			document.body.classList.add('mz-has-wallpaper');
+			/* Wallpaper feature switched off: the built-in character
+			   background is the backdrop (header.ut keys mz-char-bg off the
+			   very same flag), so there is nothing left to resolve here. */
 			return;
 		}
 
 		const mobile = this.isMobileUA();
 		const grp = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
-		/* OT-35: 5-minute wallpaper cache, two layers deep.
-		   Layer 1 (server): the random APIs 302-redirect to a different
-		   image on EVERY request, so no browser-side trick can pin one
-		   picture. A cron job fetches a random image into
-		   /luci-static/mint/wallpaper-<kind>.img every 5 minutes; while
-		   that local file exists the admin UI points at it and uhttpd
-		   answers repeat views with 304 - the browser keeps ONE image for
-		   the whole window and it never changes between navigations.
-		   Layer 2 (browser sessionStorage): remembers the last URL for 5
-		   minutes as before - it covers the window where the cron file
-		   changed mid-session and keeps the fallback path identical. */
+
+		/* 1. An EXPLICIT selection - library upload, legacy upload or a
+		   direct link. This is the only path that replaces the built-in
+		   character artwork, and it works whether or not ui_random is on. */
+		if (grp.mode === 'custom' && grp.url) {
+			this.applyPhotoWallpaper([grp.url], null);
+			return;
+		}
+
+		/* 2. The automatic random wallpaper. Default OFF (OT-09).
+		   The old code auto-applied the cron-cached proxy file even with
+		   ui_random=0, which is precisely the "old admin wallpaper" the
+		   character background replaces. The random list is still honoured
+		   in full - local proxy cache and all - once the administrator opts
+		   in with ui_random=1. */
+		if (cfg.ui_random !== true)
+			return;
+
+		/* OT-35: 5-minute wallpaper cache. The random APIs 302-redirect to a
+		   different image on EVERY request, so no browser-side trick can pin
+		   one picture; the cron job fetches a random image into
+		   /luci-static/mint/wallpaper-<kind>.img every 5 minutes and uhttpd
+		   answers repeat views with 304. The sessionStorage layer below
+		   covers the window where that file changed mid-session. */
 		const CACHE_KEY = 'mz-wp-url-' + (mobile ? 'mobile' : 'pc');
 		const CACHE_TTL = 5 * 60 * 1000;
 		let cached = null;
@@ -170,28 +180,14 @@ return baseclass.extend({
 		const cacheFresh = cached && cached.url && (Date.now() - (cached.ts || 0)) < CACHE_TTL;
 
 		let urls;
-		if (grp.mode === 'custom' && grp.url) {
-			urls = [grp.url];
-		}
-		else if (grp.mode === 'custom') {
-			return;
-		}
-		else if (grp.proxy) {
+		if (grp.proxy) {
 			/* Server-side cached random image: stable URL, real HTTP
-			   caching, refreshed by cron every 5 minutes. No per-navigation
-			   cache-busting stamp - stamping would defeat the 304 reuse. */
+			   caching, refreshed by cron. No cache-busting stamp on this
+			   path - a stamp would defeat the 304 reuse. */
 			urls = [grp.proxy];
 		}
 		else if (cacheFresh) {
 			urls = [cached.url];
-		}
-		else if (cfg.ui_random === false) {
-			/* Nothing cached anywhere and the admin has not opted in to
-			   per-navigation remote randomisation (OT-09): keep the soft
-			   gradient fallback rather than firing an API request on every
-			   page view. The glass layer still switches on. */
-			document.body.classList.add('mz-has-wallpaper');
-			return;
 		}
 		else {
 			/* Random multi-source: shuffle the configured list and try each
@@ -200,17 +196,30 @@ return baseclass.extend({
 			urls = shuffle(sources).map((u) => u + (u.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now());
 		}
 
-		/* Carry the client-side cache-busting version on every URL. A
-		   changed selection (apply / upload / delete / force refresh)
-		   bumps it, so the browser can never answer with the picture it
-		   cached under the previous version. See mzWpUtil.stamp(). */
+		this.applyPhotoWallpaper(urls, CACHE_KEY);
+	},
+
+	/* Preload, then paint. Shared by both flows above.
+	   `cacheKey` is the sessionStorage slot for the random 5-minute reuse
+	   window; an explicit selection passes null because its URL is stable.
+	   The moment the photo is painted the built-in character layer is stood
+	   down (mz-wp-custom), which saves a composited layer and guarantees
+	   nothing bleeds through a semi-transparent image. */
+	applyPhotoWallpaper(urls, cacheKey) {
+		const cfg = window.mintWallpaper || {};
+		const root = document.documentElement;
+		/* Carry the client-side cache-busting version on every URL. A changed
+		   selection (apply / upload / delete / force refresh) bumps it, so the
+		   browser can never answer with the picture it cached under the
+		   previous version. See mzWpUtil.stamp(). */
 		urls = urls.map((u) => mzWp.stamp(u));
 
 		let imgRef = null;
 		const timer = window.setTimeout(() => { if (imgRef) imgRef.src = ''; }, 16000);
+
 		const tryNext = (i) => {
 			if (i >= urls.length) {
-				window.clearTimeout(timer); /* all sources failed -> gradient stays */
+				window.clearTimeout(timer);   /* every source failed: artwork stays */
 				return;
 			}
 			const img = new Image();
@@ -218,16 +227,14 @@ return baseclass.extend({
 			img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
 			img.onload = () => {
 				window.clearTimeout(timer);
-				document.documentElement.style.setProperty('--mz-wallpaper', 'url("' + urls[i] + '")');
+				root.style.setProperty('--mz-wallpaper', 'url("' + urls[i] + '")');
 				if (cfg.overlay != null)
-					document.documentElement.style.setProperty('--mz-wallpaper-overlay', String(cfg.overlay));
+					root.style.setProperty('--mz-wallpaper-overlay', String(cfg.overlay));
 				if (cfg.blur && parseInt(cfg.blur) > 0)
-					document.documentElement.style.setProperty('--mz-wallpaper-blur', parseInt(cfg.blur) + 'px');
-				document.body.classList.add('mz-has-wallpaper');
-				/* remember the working URL for the 5-minute reuse window;
-				   custom URLs are stable and skip the cache on purpose */
-				if (grp.mode !== 'custom') {
-					try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ url: urls[i], ts: Date.now() })); } catch (e) {}
+					root.style.setProperty('--mz-wallpaper-blur', parseInt(cfg.blur) + 'px');
+				document.body.classList.add('mz-wp-custom');
+				if (cacheKey) {
+					try { sessionStorage.setItem(cacheKey, JSON.stringify({ url: urls[i], ts: Date.now() })); } catch (e) {}
 				}
 			};
 			img.onerror = () => { img.src = ''; tryNext(i + 1); };
@@ -692,20 +699,12 @@ return baseclass.extend({
 		});
 	},
 
-	/* Keep glass/wallpaper state in sync whenever the effective color
-	   scheme changes (toggle button or OS preference flip in system mode):
-	   dark = glass on pure black without a wallpaper, light = glass over
-	   the wallpaper (re-initialized from cache). */
+	/* Keep glass/wallpaper state in sync whenever the effective color scheme
+	   changes (toggle button or OS preference flip in system mode). Both
+	   directions are handled by initGlobalWallpaper: dark clears the photo
+	   and restores the character artwork, light re-resolves the wallpaper
+	   from the live configuration. */
 	syncWallpaperTheme() {
-		if (document.getElementById('mz-login'))
-			return;
-		if (document.documentElement.getAttribute('data-theme') === 'dark') {
-			document.documentElement.style.removeProperty('--mz-wallpaper');
-			document.documentElement.style.removeProperty('--mz-wallpaper-overlay');
-			document.documentElement.style.removeProperty('--mz-wallpaper-blur');
-			document.body.classList.add('mz-has-wallpaper');
-			return;
-		}
 		this.initGlobalWallpaper();
 	},
 

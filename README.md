@@ -9,11 +9,13 @@
 ## 功能特性
 
 - **单层视觉容器架构（2026-09-13）**：每页**只有一个**视觉容器——`.mz-view` 是全站唯一允许绘制 background / border / radius / shadow 的元素（容器令牌 `--mz-container-*` 单一真源）；内部 Section / CBI / 表格 / 卡片全部透明扁平化，只负责布局、间距与排版，**禁止 Card 套 Card、多重边框/圆角/阴影**。Action Bar 为独立功能层（底部 sticky、全出血、不做完整卡片）。壁纸在最底层，每页只做一次模糊（body::before），容器自身禁用 backdrop-filter——避免创建层叠上下文困住 cbi-dropdown（z 1000）被侧栏（z 400）遮挡，也是路由器唯一可承受的模糊预算
-- **分层 CSS 架构（2026-09-13）**：`cascade.css` 只做 `@import` 编排，规则按职责拆为 `css/compat | tokens | base | layout | navigation | container | components | wallpaper | dark | animations | responsive | login` 十二层；旧样式整体保留为兼容底座，新设计系统按级联顺序覆盖，功能零回退。全站静态资源带 `?v=<MINT_ASSET_REV>` 缓存戳（header.ut 常量 + cascade.css @import 同步更新），升级后浏览器不会残留旧样式
+- **分层 CSS 架构（2026-09-13）**：`cascade.css` 只做 `@import` 编排，规则按职责拆为 `css/compat | tokens | base | layout | navigation | container | components | wallpaper | background | dark | animations | responsive | login` 十三层；旧样式整体保留为兼容底座，新设计系统按级联顺序覆盖，功能零回退。`background` 排在 `wallpaper` 之后——让角色背景能撤销壁纸层的兜底渐变。全站静态资源带 `?v=<MINT_ASSET_REV>` 缓存戳（header.ut 常量 + cascade.css @import 同步更新），且该戳经 `<meta name="mz-asset-rev">` 注入 `L.env.resource_version`，**JS 模块同享一套缓存键**，升级后浏览器不会残留旧样式或旧脚本
+- **四态角色背景系统（2026-09-13）**：每页默认背景是一套**四态独立**的角色立绘层——PC×亮色 Arona、PC×暗色 Plana、Mobile×亮色 / Mobile×暗色各一张**独立 3:4 竖版构图**（不是把 PC 方图缩放）。四张图真不同源，**没有一态是另一态的 CSS 滤镜副本**。设备由 media query 判定、明暗由 `<html data-theme>` 判定，**纯 CSS、首帧即正确**，JS 不参与；切换只翻转 `data-theme`，两层立绘以 opacity 交叉淡入（两张图同规则集引用 → 均已解码，切换零请求、不闪白）。层为 `.mint-background`（`fixed; inset:0; z-index:-2; pointer-events:none; overflow:clip`），不参与文档流、不接收指针事件，全站零横向溢出。手机只下载两张移动图、桌面只下载两张 PC 图。用户配置的自定义壁纸优先于角色背景
+- **登录页角色背景（Plana，2026-09-13）**：登录页是单屏单一身份，不套四态，而是自己一套 `.mint-background.mz-login-char`，只含**一个**立绘节点（Plana，亮暗同一角色）；桌面右锚 `contain`、手机底部锚定 `cover` 全幅。登录页图层**自己绘制**参考站渐变，因此完全不透明——下方的东西透不过来。登录页只有两种状态：角色背景（默认）与显式选择的壁纸（`mz-wp-custom`），不存在"随机缓存照片"这第三种
 - 基于 CSS 变量（Design Tokens）的现代设计系统：色彩、间距、圆角、阴影、字体、**层叠层级（`--mz-z-*`）**、**玻璃参数（`--mz-glass-*`）**、**容器令牌（`--mz-container-*`）**、**动效曲线（`--mz-ease` / `--mz-dur-*`）**
 - **Glass & Layered 视觉语言（2026-09-13）**：不对称容器圆角（14/4/22/4px）、品牌色偏移阴影、节标题 2px 下边线 + 强调色条、侧栏毛玻璃、菜单线性 SVG 图标（menu-mint.js 按 LuCI 节点名注入，纯装饰不触碰链接与折叠逻辑）+ SVG 折叠箭头（flex 对齐、垂直居中）
-- 浅色 / 深色 / 跟随系统三种配色（默认跟随系统，尊重 `prefers-color-scheme`；侧栏按钮可覆盖）。浅色为白色微透毛玻璃（0.64–0.86 / blur 16–18px），深色为深灰毛玻璃（0.88–0.92）且**完全不加载壁纸**（不渲染壁纸层、不请求壁纸 API、不修改用户壁纸配置）
-- 随机壁纸全屏登录页（按设备类型自动选择图源，带渐变兜底）；支持自定义壁纸（上传图片或填写图片直链）。壁纸设置入口：系统 → Mint 壁纸 → 壁纸设置
+- 浅色 / 深色 / 跟随系统三种配色（默认跟随系统，尊重 `prefers-color-scheme`；侧栏按钮可覆盖）。浅色为白色微透毛玻璃（0.64–0.86 / blur 16–18px），深色为深灰毛玻璃（0.88–0.92）。两种配色各配一张角色立绘与一套底色（亮色 `#f6fbfd` / 暗色 `#102433`），暗色**不再是纯色空底**
+- 登录页默认使用**角色背景（Plana）**——桌面右锚立绘、手机底部锚定全幅，亮暗两套底色（`#e7f4fb→#f6fbfd→#dbedfa` / `#0b1a26→#102433→#153a4d`）；后台旧「随机壁纸」默认**关闭**，由角色背景顶替。两者都只影响默认值——用户显式配置的自定义壁纸（上传图片或 http(s) 直链）依旧生效并覆盖角色背景。壁纸设置入口：系统 → Mint 壁纸 → 壁纸设置
 - **壁纸客户端缓存版本戳（2026-09-13）**：设置页每次应用 / 上传 / 删除 / 强制刷新都会递增 `mz-wp-ver`，所有壁纸 URL 追加 `_mzv` 参数并预加载解码后再绘制，切换壁纸不再命中旧缓存；删除壁纸后立即回退渐变背景
 - 服务端壁纸缓存：cron 每 5 分钟把随机图落到 `/luci-static/mint/wallpaper-<kind>.img`，后台优先使用这份本地缓存（可 304 复用、零外部请求）。「后台随机壁纸」开关只控制是否每次导航重新拉取远程随机图，关闭时本地缓存仍会生效
 - 壁纸与布局解耦：壁纸层为 body 伪元素并置于**负 z-index**，因此内容区不需要抬升层级，弹出层永远不会被侧栏或卡片压住
@@ -51,10 +53,12 @@ theme/                          # 主题包源码（luci-theme-mint，纯 UI）
 │   │   ├── container.css       # 单层视觉容器（.mz-view 唯一容器 + 内部扁平化）
 │   │   ├── components.css      # 按钮 / 表单 / 表格 / 弹窗 / 徽章 / 提示
 │   │   ├── wallpaper.css       # 壁纸 -> 遮罩 -> 玻璃 -> 内容 层级栈
+│   │   ├── background.css      # 四态角色背景层（PC/Mobile × Light/Dark 立绘 + 网格 + wedge + scrim）
 │   │   ├── dark.css            # 深色模式结构差异
 │   │   ├── animations.css      # 关键帧与入场动效（含 reduced-motion）
 │   │   ├── responsive.css      # 断点（854 抽屉+横向 Tab 滑动条 / 640 手机+动作条单行 / 400 窄屏）
 │   │   └── login.css           # 登录页
+│   ├── images/                 # 角色背景资源（四态立绘 + 亮/暗三角网格，共 6 张 webp）
 │   ├── overview-dashboard.js   # PC 端总览仪表盘（仅桌面端 Status > Overview 加载）
 │   ├── overview-mobile.js      # 移动端总览增强（仅手机/平板 Status > Overview 加载）
 │   ├── mz-ui.js                # 设备无关通用 UI 辅助（全后台页面加载）
@@ -178,31 +182,98 @@ uci commit luci
 /etc/init.d/rpcd reload
 ```
 
-## 壁纸机制
+## 背景与壁纸机制
+
+### 默认背景：四态角色层（无需任何配置）
+
+```
+html[data-theme]  ──>  亮色 / 暗色        （属性选择器，纯 CSS）
+@media ≤854px     ──>  Mobile / PC        （媒体查询，纯 CSS）
+        |
+        v
+.mint-background（fixed / inset:0 / z-index:-2 / pointer-events:none / overflow:clip）
+  ├── background-color      亮 #f6fbfd  ·  暗 #102433
+  ├── .mint-bg-panel        对角 wedge（clip-path，亮「右半」/ 移动端「下半」）
+  ├── .mint-bg-grid         三角网格平铺（亮 / 暗各一张成品图，运行时零 filter）
+  ├── .mint-bg-character-light  Arona（PC 方图 / Mobile 3:4 竖版）
+  ├── .mint-bg-character-dark   Plana（PC 方图 / Mobile 3:4 竖版）
+  └── ::after               侧向（移动端纵向）scrim，压在立绘之上、内容之下
+        |
+        v
+body.mz-wp-custom::after  用户壁纸（配置了才存在，位于角色层之上）
+        |
+        v
+.mz-view                  唯一页面容器（毛玻璃片）
+```
+
+登录页是**同一套机制的单角色变体**——`sysauth.ut` 自己注入 `.mint-background.mz-login-char`（只含 Plana 一个节点），复用上面的 wedge / 网格 / 手机取景，差异（立绘、配色、veil）全在 `login.css`：
+
+```
+.mint-background.mz-login-char
+  ├── background-image      参考站渐变（亮 #e7f4fb→#f6fbfd→#dbedfa / 暗 #0b1a26→#102433→#153a4d）
+  ├── .mint-bg-panel / .mint-bg-grid     同上（wedge 改为半透明，让渐变透气）
+  ├── .mz-login-char-art    Plana（桌面 right center + contain / 手机 bottom center + cover）
+  └── ::after               自上而下的轻 veil（卡片居中，不用侧向）
+```
+
+- 四态资源在 `theme/htdocs/luci-static/mint/images/`，共 6 张 `.webp`：4 张四态立绘 + 2 张三角网格（登录页复用同一批资源，不额外增图）
+- 明暗两态是**两张不同插画**（Arona / Plana），不是同一张图的滤镜或透明度变体；Mobile 是**独立 3:4 竖版重新取景**，不是 PC 方图缩放
+- 设备与模式判定全部在 CSS 内完成，JS 不参与，**首帧即正确**；切换明暗只翻转 `data-theme`，两层立绘 opacity 交叉淡入（两张图都已解码，**零请求、零解码、不闪白**）
+- 该层 `fixed` + 负 z-index + 不接收指针事件 → 不在文档流内、不可能被命中测试选中，任何页面（状态 / 系统 / 网络 / 服务 / 防火墙 / 软件包 / 实时图表）的布局、表格、表单、下拉都不会受影响；`overflow:clip` 保证立绘永远不撑出文档盒，**任何断点横向滚动条恒为 0**
+- 登录页图层**不透明**（渐变画在图层自身）且 `.mz-login-bg` 在无 `mz-wp-custom` 时 `display: none`：随机壁纸缓存即使在浏览器里残留，也没有任何路径能透到角色之上
+
+### 用户壁纸（可选，覆盖角色层）
 
 ```
 第三方随机图 API（浏览器直连，不经路由器代理；多源随机，失败自动切换下一源）
   桌面端：api.paugram.com/wallpaper/、t.alcy.cc/bd
   移动端（UA 检测）：api.seaya.link/wap、t.alcy.cc/mp
         |   （源列表可在设置页增删，每行一个 URL；留空用内置默认）
-  自定义图片优先（已上传的 custom-pc.jpg / custom-mobile.jpg，或 http(s) 直链）
+  自定义图片优先（壁纸库上传，或 http(s) 直链）
         |
-  登录页/管理页 JS（随机打乱源列表逐个尝试、new Image() 预加载、淡入、referrer 抑制）
+  管理页 JS（new Image() 预加载 → 解码 → 绘制 → 加 mz-wp-custom 盖住角色层）
         v
-  内置 CSS 渐变兜底（永远可用）
+  四态角色背景兜底（永远可用）
 ```
 
-- 每次进入登录页、每次刷新管理页面都会随机选图（URL 带时间戳防缓存）；随机模式下**多个源随机打乱逐个尝试**，单源失败自动换下一源，全部失败才回退渐变
+- **登录页默认不加载随机壁纸**：只有 `mode='custom'`（用户显式配置的图片或直链）才绘制，随机源不参与；未配置时是**角色背景（Plana）**——`mz-login-char` 图层自绘参考站渐变，故完全不透明，随机缓存透不进来
+- **管理页随机壁纸默认关闭**（`ui_random '0'`）：显式打开后才会在每次导航重新拉取远程随机图；关闭时由角色背景相当
+- 配置了自定义壁纸后，`mz-wp-custom` 令角色层 `display:none`（图片已盖住它，没必要保留一层合成开销），容器透明度也恢复原值（照片亮度未知，不做减免）
 - 服务端**无壁纸缓存**（ucode 后端只读 UCI 配置 + 钳制数值），因此没有"刷新缓存"按钮
 - 图片来源标注在登录页右下角（本地自定义 / 实际命中的随机源域名），永不移除
+- 暗色模式不绘制照片壁纸：直接保留角色层（Plana）与深色底色，且不发起任何壁纸请求
 
 ### 离线行为
 
-API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染，按以下优先级兜底：
+API 不可达（无外网、DNS 失败、超时）时页面依然即时渲染，按以下优先级兜底：
 
-1. 自定义图片（如已上传或配置直链） -> 2. 内置 CSS 渐变
+1. 自定义图片（如已上传或配置直链） → 2. 四态角色背景
 
-壁纸加载绝不阻塞或破坏登录页。
+壁纸加载绝不阻塞或破坏任何页面。
+
+### 缓存戳
+
+`MINT_ASSET_REV` 常量同时存在于 `header.ut`、`footer.ut`，以及 `cascade.css` 全部 `@import` 的 `?v=`。**改动 `htdocs/luci-static/mint/` 下任何文件（含 `images/`）都必须同步 bump 三处**，否则路由器长缓存头会让浏览器继续用旧样式。
+
+#### JS 模块也吃这个戳（2026-09-13 修复）
+
+LuCI 的 `L.require(name)` 会把每个模块拼成 `<resource>/<name>.js?v=<env.resource_version>`，而 `env.resource_version` **不是**主题的 `MINT_ASSET_REV`，是 LuCI 自身从 `luci.js` 那个 `<script>` 的 `?v=` 取到的**构建字符串**（形如 `26.246.30574~1df16f1-1789224237`）。它只在刷固件时变，跟主题升级毫无关系——于是主题自己的 JS（`menu-mint.js`、`view/mint/sysauth.js`）会被浏览器按一个**永远不变**的 key 长期缓存，会出现「明明部署了新主题，页面还在跑旧一轮的 JS」。这就是「登录页 Plana 背景被随机壁纸缓存透出」的真正根因：残留的旧 `sysauth.js` 把 cron 缓存的随机图刷到了登录层上。
+
+三层修法（缺一不可）：
+
+```
+header.ut        <meta name="mz-asset-rev" content="{{ MINT_ASSET_REV }}">   ← JS 侧唯一真源
+                        |
+footer.ut        IIFE：读 meta → L.env.resource_version = rev（仅当不同时改）
+sysauth.ut       同一段 IIFE（登录页是 blank_page，footer.ut 那个 version 脚本不执行）
+                        v
+            此后所有 L.require() 出来的模块 URL 都带主题戳
+```
+
+- `L.env` 就是模块闭包读取的那个对象，重写 `resource_version` 之后，**后续**每个 `require()` 出来的主题模块都会带上新戳，无需改 LuCI 本体
+- 配套 `wallpaper.css` 的样式兜底：`html[data-wp-random="0"]` 时用 `content: none` 摘除 `body::after` 壁纸伪元素（特异性 0,3,2 压过角色层的 0,3,1，`:not(.mz-wp-custom)` 保留显式壁纸）
+- `header.ut` 的 `<html>` 上同时带 `data-wp-random="0|1"`，让样式层能独立于 JS 判断「随机壁纸是否该出场」
+- 回归测试：`scripts/verify-cache-conflict.py`（模拟残留旧构建写入壁纸变量，断言登录层 `display:none`、`body::after` `content:none`、管理页无壁纸伪元素）
 
 ## 壁纸设置
 
@@ -210,18 +281,20 @@ API 不可达（无外网、DNS 失败、超时）时登录页依然即时渲染
 
 | 选项 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| enabled | 布尔 | 1 | 壁纸功能开关 |
-| ui_random | 布尔 | 1 | 管理页面也使用随机壁纸 |
+| enabled | 布尔 | 1 | 壁纸与角色背景总开关（0 时角色层也不注入） |
+| ui_random | 布尔 | **0** | 管理页面是否也使用随机壁纸（默认关闭，由角色背景顶替） |
 | pc_mode | 枚举 | random | 桌面端来源（random / custom） |
+| pc_wallpaper | 文件名 | 空 | 桌面端壁纸库选中的文件（优先级高于 pc_url 与随机源） |
 | pc_url | 直链 | 空 | 桌面端自定义图片 http(s) 直链 |
 | pc_sources | 列表 | paugram + t.alcy.cc/bd | 桌面随机源（每行一个 URL，随机选取、失败自动切换） |
 | mobile_mode | 枚举 | random | 移动端来源（random / custom） |
+| mobile_wallpaper | 文件名 | 空 | 移动端壁纸库选中的文件（规则同 pc_wallpaper） |
 | mobile_url | 直链 | 空 | 移动端自定义图片 http(s) 直链 |
 | mobile_sources | 列表 | seaya + t.alcy.cc/mp | 移动随机源（每行一个 URL，随机选取、失败自动切换） |
 | overlay | 浮点 | 0.45 | 深色遮罩不透明度（0.0 - 1.0） |
 | blur | 像素 | 0 | 背景模糊（0 禁用，最大 40） |
 
-上传的图片分别写入 `/www/luci-static/mint/custom-pc.jpg` 与 `custom-mobile.jpg`（≤3MB），卸载主题时自动清理。
+上传的图片写入 `/www/luci-static/mint/wallpapers/`（`pc_wallpaper` / `mobile_wallpaper` 指向库内文件名；旧版单槽 `custom-pc.jpg` / `custom-mobile.jpg` 会被 uci-defaults 一次性接管进库），卸载时自动清理。
 
 ## 兼容性
 

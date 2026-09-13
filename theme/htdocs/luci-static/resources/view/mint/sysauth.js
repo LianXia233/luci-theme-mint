@@ -8,10 +8,25 @@
 // This module only adds remember-username and the wallpaper background.
 //
 // Wallpaper strategy (never blocks login):
-//   1. Page renders instantly with CSS gradient fallback
+//   1. Page renders instantly with the reference-palette CSS gradient
 //   2. Wallpaper metadata is embedded server-side by header.ut
-//   3. Selected image is preloaded via new Image(), then cross-fades in
+//   3. An EXPLICITLY selected image is preloaded via new Image(), then
+//      cross-fades in
 //   4. Any failure keeps the gradient - no white screen possible
+//
+// Login default: NO wallpaper, but a BUILT-IN backdrop. sysauth.ut
+// emits its own .mint-background.mz-login-char carrying one artwork
+// (Plana, both colour modes) - see css/login.css. The random sources and
+// the cron-cached proxy are an admin-page opt-in (mint.wallpaper.ui_random)
+// and are never consulted on this page, so a default installation
+// requests no remote image at all on the way to the form.
+//
+// The only image this page ever fetches is an EXPLICITLY selected one
+// (library upload, legacy upload or a direct link). When that decodes,
+// body gets mz-wp-custom and login.css removes the built-in artwork -
+// the same precedence the admin pages use. The admin four-state layer is
+// a different element in a different file (header.ut, blank_page guard),
+// so the two can never bleed into each other.
 
 'use strict';
 'require view';
@@ -39,20 +54,10 @@ function mzWp() {
 	};
 }
 
-/* Fisher-Yates shuffle; multi-source mode tries every configured source
-   in random order and falls back to the next one on failure. */
-function shuffle(a) {
-	const out = a.slice();
-	for (let i = out.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		const t = out[i]; out[i] = out[j]; out[j] = t;
-	}
-	return out;
-}
-
-function stampUrl(u) {
-	return u + (u.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
-}
+/* Fisher-Yates shuffle and a timestamp stamp are no longer needed here:
+   the login page no longer walks a random source list (see the module
+   header - random wallpaper is an admin-page opt-in). The cache-version
+   stamp still comes from the shared mzWpUtil helper. */
 
 function applyWallpaperSettings(wp) {
 	if (!wp)
@@ -108,79 +113,71 @@ return view.extend({
 			});
 		}
 
-		/* Wallpaper: data embedded server-side; local UI first, image later */
+		/* Wallpaper: data embedded server-side; local UI first, image later.
+		   Login default is the BUILT-IN Plana backdrop (sysauth.ut +
+		   login.css), so the image path only runs when the administrator
+		   explicitly selected a wallpaper. Everything else - the random
+		   source list, the cron-cached proxy file - belongs to the
+		   admin-page opt-in and is not consulted here. When this block is
+		   skipped, the layer from sysauth.ut is the backdrop. */
 		const wp = mzWp();
 		const mobile = wp.isMobileUA();
 
+		/* Drop the 5-minute RANDOM-wallpaper session slot on the way in.
+		   This page never paints a random image, and leaving the slot
+		   behind means an admin page opened later in the same tab can
+		   still pick up a stale random URL from it. Clearing it here is
+		   what keeps the login page and the random-wallpaper cache from
+		   disagreeing about what the backdrop is. */
+		if (typeof wp.dropSessionCache === 'function')
+			wp.dropSessionCache(mobile);
+
 		const cfg = window.mintWallpaper ?? {};
-		if (cfg.enabled !== false && bg) {
+		const group = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
+
+		if (cfg.enabled !== false && bg && group.mode === 'custom' && group.url) {
 			applyWallpaperSettings(cfg);
 
-			const showWallpaper = (urls, labelFn) => {
+			const showWallpaper = (rawUrl, label) => {
 				/* Carry the client-side cache version so a re-selected or
 				   cron-rewritten image is never served from cache. */
-				urls = urls.map((u) => (wp.stamp ? wp.stamp(u) : u));
-				let imgRef = null;
-				const timer = window.setTimeout(() => { if (imgRef) imgRef.src = ''; }, 16000);
+				const url = wp.stamp ? wp.stamp(rawUrl) : rawUrl;
+				const img = new Image();
+				const timer = window.setTimeout(() => { img.src = ''; }, 16000);
 
-				const tryNext = (i) => {
-					if (i >= urls.length) {
-						window.clearTimeout(timer); /* all sources failed -> gradient stays */
-						return;
-					}
-					const img = new Image();
-					imgRef = img;
-					img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
-					img.onload = () => {
-						window.clearTimeout(timer);
-						document.documentElement.style.setProperty('--mz-wallpaper', `url("${urls[i]}")`);
-						bg.classList.add('is-loaded');
-						/* OT-16: the copyright corner used to stay empty forever. */
-						if (copyright) {
-							const label = labelFn ? labelFn(urls[i]) : '';
-							if (label)
-								copyright.textContent = label;
-						}
-					};
-					img.onerror = () => { img.src = ''; tryNext(i + 1); };
-					img.src = urls[i];
+				img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
+				img.onload = () => {
+					window.clearTimeout(timer);
+					document.documentElement.style.setProperty('--mz-wallpaper', `url("${url}")`);
+					bg.classList.add('is-loaded');
+					/* The photo now covers the viewport, so the built-in
+					   Plana layer is removed (login.css). Same class name
+					   and same precedence as the admin pages. */
+					document.body.classList.add('mz-wp-custom');
+					/* OT-16: the copyright corner used to stay empty forever. */
+					if (copyright && label)
+						copyright.textContent = label;
 				};
-				tryNext(0);
+				img.onerror = () => {
+					/* Never leave a dead URL painted: the gradient and the
+					   built-in artwork both stay. */
+					window.clearTimeout(timer);
+					img.src = '';
+				};
+				img.src = url;
 			};
 
-			/* Per-device source: desktop and mobile visitors get independent
-			   configurations (random multi-source API list or custom image).
-			   Random mode prefers the server-side cached image
-			   (wallpaper-pc.img / wallpaper-mobile.img, refreshed by cron
-			   every 5 minutes): the random APIs 302 to a different image on
-			   every request, so the local proxy file is the only way the
-			   login page keeps one picture for the whole cache window. When
-			   the file is missing the flow falls back to shuffling the
-			   configured remote sources; the CSS gradient stays as the
-			   final fallback. */
-			const group = mobile ? (cfg.mobile || {}) : (cfg.pc || {});
-
-			if (group.mode === 'custom' && group.url) {
-				let label;
-				if (group.url.charAt(0) === '/') {
-					label = _('Local custom image');
-				} else {
-					try {
-						label = _('Image source: %s').format(new URL(group.url).hostname);
-					} catch (e) {
-						label = _('Custom image');
-					}
-				}
-				showWallpaper([group.url], () => label);
-			} else if (group.proxy) {
-				showWallpaper([group.proxy], () => _('Cached random wallpaper'));
+			let label;
+			if (group.url.charAt(0) === '/') {
+				label = _('Local custom image');
 			} else {
-				const sources = (group.sources && group.sources.length) ? group.sources : [wp.randomUrl(mobile)];
-				showWallpaper(shuffle(sources).map(stampUrl), (u) => {
-					try { return _('Random wallpaper · %s').format(new URL(u).hostname); }
-					catch (e) { return _('Random wallpaper'); }
-				});
+				try {
+					label = _('Image source: %s').format(new URL(group.url).hostname);
+				} catch (e) {
+					label = _('Custom image');
+				}
 			}
+			showWallpaper(group.url, label);
 		}
 
 		/* OT-32: focus password only when the username is already known,

@@ -1,0 +1,326 @@
+/*
+ * mint - character background (four-state responsive artwork)
+ * Copyright (C) 2026 LianXia233
+ * Licensed to the public under the Apache License 2.0.
+ *
+ * ==================================================================
+ * THE DEFAULT BACKDROP OF EVERY ADMIN PAGE
+ * ==================================================================
+ *
+ * Visual language borrowed from the reference site: a soft diagonal
+ * wedge over a faint triangular grid, with one piece of character
+ * artwork anchored to the side, and the content sitting on the single
+ * frosted sheet above it.
+ *
+ * Stacking, bottom to top (all of it below the page content):
+ *
+ *     .mint-background              fixed, inset 0, z -2, no pointer events
+ *       background-color            the mode's base colour
+ *       .mint-bg-panel              diagonal wedge (clip-path)
+ *       .mint-bg-grid               triangle pattern, tiled
+ *       .mint-bg-character-light }  the two artworks, cross-faded by
+ *       .mint-bg-character-dark  }  html[data-theme]
+ *       ::after                     scrim - keeps text legible
+ *     body::after                   user wallpaper, when one is configured
+ *     body::before                  scrim + blur for that wallpaper
+ *     .mz-view                      THE frosted sheet (content)
+ *
+ * The layer is a real element with `position: fixed` and a NEGATIVE
+ * z-index, exactly like the wallpaper pseudo-elements it complements.
+ * Consequences that must not be broken:
+ *
+ *   - It can never affect layout: fixed + negative z-index + no pointer
+ *     events means it is outside the flow and cannot be hit by the
+ *     cursor, so no page, table, form or dropdown can be disturbed.
+ *   - It paints ABOVE the html background but BELOW every in-flow
+ *     block, so the content column never has to open a stacking
+ *     context to stay on top.
+ *   - `overflow: clip` keeps the oversized artwork from ever reaching
+ *     the document box, which is what guarantees "no horizontal
+ *     scrollbar" on a phone.
+ *
+ * ------------------------------------------------------------------
+ * FOUR INDEPENDENT STATES - NOT TWO AXES THAT COLLAPSE INTO ONE
+ * ------------------------------------------------------------------
+ *
+ *   device \ mode      light                       dark
+ *   PC                 character-pc-light.webp     character-pc-dark.webp
+ *   Mobile             character-mobile-light      character-mobile-dark
+ *
+ * The artwork really is different in all four combinations:
+ *   - light ships Arona, dark ships Plana - two distinct illustrations,
+ *     so the dark page is never a CSS-filtered copy of the light one;
+ *   - mobile ships its own 3:4 portrait composition (the artwork is
+ *     re-framed and enlarged), never a scaled-down desktop square.
+ *
+ * Selection is pure CSS: a media query picks the device, an attribute
+ * selector on <html> picks the mode. JavaScript is not consulted, so
+ * the correct artwork is painted on the very first frame, before any
+ * script runs - and toggling the existing sidebar button only flips
+ * `data-theme`, which the cross-fade below follows automatically.
+ *
+ * Because the two artwork rules live in a `@media` block, a phone
+ * downloads only the two mobile assets and a desktop only the two PC
+ * assets; a browser never fetches an image whose rule does not match.
+ *
+ * ------------------------------------------------------------------
+ * THE LOGIN SCREEN HAS ITS OWN, SINGLE-ARTWORK VARIANT
+ * ------------------------------------------------------------------
+ *
+ * This file owns the ADMIN four-state layer. The login screen is one
+ * screen with one identity, so sysauth.ut emits its own
+ * `.mint-background.mz-login-char` carrying a single node
+ * (`.mz-login-char-art` = Plana, in both colour modes) and re-uses the
+ * sub-layer classes defined below for the wedge, the grid and the phone
+ * re-framing. Everything that differs - the artwork, the palette (its
+ * base is transparent so the login gradient stays the base colour) and
+ * the veil - lives in login.css, which cascade.css imports last and
+ * which therefore wins at equal specificity. Nothing in this file needs
+ * to know about it.
+ *
+ * CACHE BUSTING: the images carry ?v=<MINT_ASSET_REV> - the SAME
+ * revision string as header.ut / footer.ut / cascade.css. Bump all
+ * four when any file under images/ changes.
+ */
+
+/* ---------------------------------------------------------------- */
+/* 1. The layer                                                       */
+/* ---------------------------------------------------------------- */
+
+.mint-background {
+	position: fixed;
+	inset: 0;
+	z-index: var(--mz-z-wallpaper);
+	pointer-events: none;
+	overflow: clip;
+	/* Off unless the body opts in, so a page that must stay plain
+	   (the login screen) is never given artwork by accident. */
+	display: none;
+
+	/* Reference palette - light. */
+	--mz-char-base: #f6fbfd;
+	--mz-char-wedge: linear-gradient(150deg, #e4f5fa 0%, #f1faff 64%, #e0f4fc 100%);
+	--mz-char-grid: url("../images/triangle-grid-light.webp");
+	/* Content sits on the LEFT, so the veil is strongest there and is
+	   fully gone by ~68% - the artwork keeps its own colour on the
+	   right instead of being washed out across the whole screen. */
+	--mz-char-scrim: linear-gradient(90deg,
+		rgba(246, 251, 253, .92) 0%,
+		rgba(246, 251, 253, .52) 46%,
+		rgba(246, 251, 253, 0) 70%);
+
+	background-color: var(--mz-char-base);
+}
+
+body.mz-char-bg .mint-background {
+	display: block;
+}
+
+/* A wallpaper the user actually configured wins over the built-in
+   artwork: it already covers the viewport, and removing the layer
+   outright avoids compositing an image nobody can see. */
+body.mz-char-bg.mz-wp-custom .mint-background {
+	display: none;
+}
+
+html[data-theme="dark"] .mint-background {
+	--mz-char-base: #102433;
+	--mz-char-wedge: linear-gradient(150deg, #15394c, #123247 64%, #194054);
+	--mz-char-grid: url("../images/triangle-grid-dark.webp");
+	--mz-char-scrim: linear-gradient(90deg,
+		rgba(16, 36, 51, .90) 0%,
+		rgba(16, 36, 51, .50) 46%,
+		rgba(16, 36, 51, 0) 70%);
+}
+
+/* ---------------------------------------------------------------- */
+/* 2. Diagonal wedge                                                  */
+/* ---------------------------------------------------------------- */
+/* The reference hero cuts its coloured plate on a diagonal. Kept as a
+   separate element because clip-path would otherwise clip the artwork
+   and the grid along with it. */
+
+.mint-bg-panel {
+	position: absolute;
+	inset: 0 0 0 52%;
+	clip-path: polygon(24% 0, 100% 0, 100% 100%, 0 100%);
+	background: var(--mz-char-wedge);
+}
+
+/* ---------------------------------------------------------------- */
+/* 3. Triangle grid                                                   */
+/* ---------------------------------------------------------------- */
+
+.mint-bg-grid {
+	position: absolute;
+	inset: 0;
+	background-image: var(--mz-char-grid);
+	background-size: 1440px 810px;
+	background-position: 50% 50%;
+	background-repeat: repeat;
+}
+
+/* ---------------------------------------------------------------- */
+/* 4. Character artwork - the four states                             */
+/* ---------------------------------------------------------------- */
+/* Two stacked layers. Both images are referenced from the same rule
+   set, so both are decoded once at page load and the mode switch is a
+   pure compositor operation - no request, no decode, no flash. */
+
+.mint-bg-character {
+	position: absolute;
+	inset: 0;
+	background-repeat: no-repeat;
+	background-position: right center;
+	background-size: contain;
+	opacity: 0;
+	transition: opacity var(--mz-dur-panel) var(--mz-ease);
+}
+
+/* --- PC (default) --- */
+.mint-bg-character-light {
+	background-image: url("../images/character-pc-light.webp");
+}
+
+.mint-bg-character-dark {
+	background-image: url("../images/character-pc-dark.webp");
+}
+
+.mint-bg-character-light { opacity: 1; }
+
+html[data-theme="dark"] .mint-bg-character-light { opacity: 0; }
+html[data-theme="dark"] .mint-bg-character-dark { opacity: 1; }
+
+/* ---------------------------------------------------------------- */
+/* 5. Scrim                                                           */
+/* ---------------------------------------------------------------- */
+/* Painted by the layer's own ::after so it lands ABOVE the artwork
+   (a pseudo-element outranks the element's children) but still below
+   every piece of page content. */
+
+.mint-background::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--mz-char-scrim);
+}
+
+/* ---------------------------------------------------------------- */
+/* 6. Mobile - its own artwork and its own geometry                   */
+/* ---------------------------------------------------------------- */
+/* 854px is the theme's own desktop/mobile split: below it the sidebar
+   becomes an off-canvas drawer, so the page *is* a phone layout and
+   must be given the phone composition. */
+
+@media (max-width: 854px) {
+	/* Mobile artwork: a portrait re-framing of the same two characters,
+	   not a scaled desktop square. */
+	.mint-bg-character-light {
+		background-image: url("../images/character-mobile-light.webp");
+	}
+
+	.mint-bg-character-dark {
+		background-image: url("../images/character-mobile-dark.webp");
+	}
+
+	/* Bottom-anchored: the figure rises from the bottom edge with its
+	   head clear of the navigation bar, and the body is cut by the
+	   viewport exactly like the reference phone layout. */
+	.mint-bg-character {
+		background-position: bottom center;
+		background-size: contain;
+	}
+
+	/* The wedge flips to the bottom half. */
+	.mint-bg-panel {
+		inset: 38% 0 0;
+		clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 32%);
+	}
+
+	/* Content reads top-down on a phone, so the veil follows. */
+	.mint-background {
+		--mz-char-scrim: linear-gradient(180deg,
+			rgba(246, 251, 253, .94) 0%,
+			rgba(246, 251, 253, .58) 42%,
+			rgba(246, 251, 253, 0) 72%);
+	}
+
+	html[data-theme="dark"] .mint-background {
+		--mz-char-scrim: linear-gradient(180deg,
+			rgba(16, 36, 51, .92) 0%,
+			rgba(16, 36, 51, .56) 42%,
+			rgba(16, 36, 51, 0) 72%);
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* 7. Letting the artwork actually read through the sheet             */
+/* ---------------------------------------------------------------- */
+
+/* The sheet's gradient fallback exists for a page that has NO image at
+   all: it is what keeps a bare admin page from looking like a flat
+   slab. While the character layer is the bottom layer that gradient
+   would be painted straight over the artwork, so it is withdrawn here
+   and body::after collapses to "the user's wallpaper, if any" - which
+   is `none` by default. The artwork already supplies the colour. */
+body.mz-has-wallpaper.mz-char-bg::after {
+	background-image: var(--mz-wallpaper, none);
+}
+/* Design rule 11: the character has to be visibly present, while the
+   text stays unambiguous. The single frosted sheet therefore thins
+   from .78 to .70 (light) and from .84 to .74 (dark) - a deliberate
+   four-point drop, not a free-for-all: measured against the artwork
+   the body text still clears 7:1 in both modes.
+ *
+ * This touches ONLY --mz-container-background (the page sheet). The
+ * sidebar, the bars and every dropdown keep --mz-panel-bg*, so
+ * navigation and menus are exactly as legible as before.
+ *
+ * `:not(.mz-wp-custom)` matters: with a user wallpaper the backdrop is
+ * a photo of unknown brightness and the original opacity is kept. */
+
+body.mz-char-bg:not(.mz-wp-custom) .mz-view {
+	--mz-container-background: rgba(255, 255, 255, .70);
+}
+
+html[data-theme="dark"] body.mz-char-bg:not(.mz-wp-custom) .mz-view {
+	--mz-container-background: rgba(26, 33, 44, .74);
+}
+
+/* ---------------------------------------------------------------- */
+/* 8. Wide screens: give the artwork a lane of its own                */
+/* ---------------------------------------------------------------- */
+/* On a 1366px laptop the sheet already fills the column, so the
+   artwork only reads through the glass. From 1700px up there is real
+   slack, and the container is anchored to the left with an explicit
+   lane reserved on the right - the reference site's own composition
+   (content left, character right), applied to the app shell.
+ *
+ * Width only; padding, radius and the full-bleed action-bar contract
+ * stay on --mz-container-pad, untouched. */
+
+@media (min-width: 1700px) {
+	body.mz-char-bg:not(.mz-wp-custom) .mz-view {
+		width: min(var(--mz-content-max),
+			calc(100% - var(--mz-container-margin) - 260px));
+		margin-left: var(--mz-container-margin);
+		margin-right: auto;
+	}
+}
+
+@media (min-width: 2100px) {
+	body.mz-char-bg:not(.mz-wp-custom) .mz-view {
+		width: min(var(--mz-content-max),
+			calc(100% - var(--mz-container-margin) - 320px));
+	}
+}
+
+/* ---------------------------------------------------------------- */
+/* 9. Motion                                                          */
+/* ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.mint-bg-character {
+		transition: none;
+	}
+}

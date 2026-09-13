@@ -9,7 +9,7 @@
 		   MINT_ASSET_REV in header.ut AND the ?v= of the @import lines in
 		   cascade.css. Bump whenever any file under htdocs/luci-static/mint
 		   changes. #}
-		{% const MINT_ASSET_REV = '20260913b'; %}
+		{% const MINT_ASSET_REV = '20260913e'; %}
 
 		{% if (!blank_page): %}
 			</main>
@@ -30,6 +30,41 @@
 				</span>
 			</footer>
 		</div>
+		<script>
+		/*
+		 * Stamp the theme's OWN class modules with the theme revision.
+		 *
+		 * L.require() builds each module URL as
+		 *     <resource>/<name>.js?v=<env.resource_version>
+		 * and LuCI takes env.resource_version from the ?v= on ITS OWN
+		 * luci.js <script> tag - the LuCI build string, NOT this theme's
+		 * revision. menu-mint.js and resources/view/mint/*.js were
+		 * therefore cached under a key that never changed when the theme
+		 * did, so a browser could keep running the previous build after an
+		 * upgrade. That is exactly how the OLD sysauth.js - which still
+		 * fetched the cron-cached random wallpaper onto the login page -
+		 * survived alongside the new character backdrop and showed
+		 * through it.
+		 *
+		 * L.env IS the very object require() reads (the LuCI class exposes
+		 * the module-closure env), so re-stamping it here makes every
+		 * module required from now on carry the theme revision. It is
+		 * deliberately emitted BEFORE the first theme require and never
+		 * restored: a view module is required after DOMContentLoaded, i.e.
+		 * after this script has run.
+		 *
+		 * LuCI's own modules are unaffected in practice - ui / rpc / form /
+		 * validation / uci / fs are already in the class registry by now,
+		 * and anything loaded later is simply fetched under the new
+		 * revision once.
+		 */
+		(function () {
+			var meta = document.querySelector('meta[name="mz-asset-rev"]');
+			var rev = meta && meta.getAttribute('content');
+			if (rev && window.L && L.env && L.env.resource_version !== rev)
+				L.env.resource_version = rev;
+		})();
+		</script>
 		<script>L.require('menu-mint')</script>
 		<script src="{{ media }}/mz-ui.js?v={{ MINT_ASSET_REV }}" defer></script>
 		{% if (join('-', length(ctx.request_path) ? ctx.request_path : ctx.path) == 'admin-status-overview'): %}

@@ -4,9 +4,31 @@
  * Licensed to the public under the Apache License 2.0.
  *
  * The login page uses the same card, control and motion vocabulary as
- * the admin UI so the two never look like separate products. The
- * wallpaper layer is re-used verbatim from wallpaper.css - only the
- * card on top of it is login-specific.
+ * the admin UI so the two never look like separate products.
+ *
+ * BACKDROP - one artwork, not four
+ *   The admin pages carry a FOUR-state character layer (device x mode,
+ *   emitted by header.ut). The login screen is one screen with one
+ *   identity, so it carries ONE artwork: Plana, in both colour modes.
+ *   sysauth.ut emits its own .mint-background.mz-login-char for that,
+ *   and this file supplies the three things that differ:
+ *
+ *     1. the palette - the layer's base is transparent so the login
+ *        gradient below it stays the base colour, and the wedge/scrim
+ *        are re-tuned to translucent values that let that gradient read
+ *        through instead of covering it;
+ *     2. the artwork  - Plana for every mode, in its own geometry
+ *        (desktop square anchored right, phone portrait anchored to the
+ *        bottom edge);
+ *     3. the veil     - a gentle top-down wash, since the card is
+ *        centred rather than left-aligned like the admin column.
+ *
+ * The layer is fixed / inset 0 / z-index:-2 / pointer-events:none, so it
+ * is outside the flow and cannot touch the form or the card.
+ *
+ * This file is imported LAST in cascade.css, so the overrides below win
+ * against background.css at equal specificity - which is exactly why the
+ * generic .mint-background rule can stay untouched for the admin pages.
  */
 
 .mz-login {
@@ -18,15 +40,19 @@
 	box-sizing: border-box;
 }
 
-/* Background layer: image plus a gradient fallback so a failed fetch
-   still produces a composed page rather than a flat colour. */
+/* Background layer: the base colour and the gradient fallback. It sits
+   BELOW the login character layer (same z-index, earlier in the DOM), so
+   it is what the character layer's transparent base reveals. Opacity 0
+   until an explicitly selected wallpaper has decoded - the gradient is
+   painted by the element's own background-image, not by opacity, so the
+   backdrop is composed on the very first frame. */
 .mz-login-bg {
 	position: fixed;
 	inset: 0;
 	z-index: var(--mz-z-wallpaper);
 	pointer-events: none;
 	background-image: var(--mz-wallpaper, none),
-		linear-gradient(160deg, #123c4a 0%, #1c5a63 55%, #2b7a7a 100%);
+		linear-gradient(160deg, #e7f4fb 0%, #f6fbfd 48%, #dbedfa 100%);
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
@@ -35,8 +61,132 @@
 	transition: opacity var(--mz-dur-panel) var(--mz-ease);
 }
 
+html[data-theme="dark"] .mz-login-bg {
+	background-image: var(--mz-wallpaper, none),
+		linear-gradient(160deg, #0b1a26 0%, #102433 52%, #153a4d 100%);
+}
+
 .mz-login-bg.is-loaded {
 	opacity: 1;
+}
+
+/* ---------------------------------------------------------------- */
+/* Login backdrop artwork (Plana)                                     */
+/* ---------------------------------------------------------------- */
+
+/* .mint-background is display:none unless the body opts in; the login
+   body carries no mz-char-bg (that is the admin flag), so the login
+   layer opts itself in here. */
+.mint-background.mz-login-char {
+	display: block;
+
+	/* The base is the LAYER'S OWN background-image, not
+	   .mz-login-bg's, so the layer is fully OPAQUE. Two reasons:
+	     1. nothing painted underneath can bleed through the wedge, the
+	        tiled grid or the translucent parts of the artwork. That is
+	        what used to happen with a transparent base: a leftover
+	        --mz-wallpaper URL - e.g. one written by a stale sysauth.js
+	        build that still applied the cron-cached random image - showed
+	        straight through the artwork as a second, conflicting
+	        backdrop;
+	     2. the gradient travels with the layer, so hiding .mz-login-bg
+	        (below) costs nothing visually.
+	   `background-color: transparent` keeps background.css's dark base
+	   colour from painting a slab under the gradient. */
+	--mz-char-base: transparent;
+	background-image: linear-gradient(160deg,
+		#e7f4fb 0%, #f6fbfd 48%, #dbedfa 100%);
+
+	/* Translucent wedge: keeps the diagonal of the reference hero while
+	   letting the gradient's three stops continue to read through. */
+	--mz-char-wedge: linear-gradient(150deg,
+		rgba(228, 245, 250, .62) 0%,
+		rgba(241, 250, 255, .34) 64%,
+		rgba(224, 244, 252, .58) 100%);
+
+	/* The card is CENTRED here, not left-aligned like the admin column,
+	   so the admin's left-to-right veil would darken the wrong side. This
+	   is a soft top-down wash instead; it eases the header area and the
+	   version/copyright lines without touching the artwork's own colour. */
+	--mz-char-scrim: linear-gradient(180deg,
+		rgba(231, 244, 251, .52) 0%,
+		rgba(246, 251, 253, .20) 46%,
+		rgba(231, 244, 251, 0) 80%);
+}
+
+html[data-theme="dark"] .mint-background.mz-login-char {
+	/* Repeated on purpose: background.css sets the dark base through
+	   `html[data-theme="dark"] .mint-background` (0,2,1), which outranks
+	   the bare `.mint-background.mz-login-char` (0,2,0) above. */
+	--mz-char-base: transparent;
+
+	background-image: linear-gradient(160deg,
+		#0b1a26 0%, #102433 52%, #153a4d 100%);
+
+	--mz-char-wedge: linear-gradient(150deg,
+		rgba(21, 57, 76, .64) 0%,
+		rgba(18, 50, 71, .36) 64%,
+		rgba(25, 64, 84, .60) 100%);
+
+	--mz-char-scrim: linear-gradient(180deg,
+		rgba(11, 26, 38, .50) 0%,
+		rgba(16, 36, 51, .18) 46%,
+		rgba(11, 26, 38, 0) 80%);
+}
+
+/* The photo layer is needed ONLY once an explicitly selected wallpaper has
+   decoded - and sysauth.js announces exactly that by adding mz-wp-custom.
+   Without the class there is no wallpaper to show, so the element is
+   removed instead of left sitting at opacity 0. This is also the second
+   half of the stale-build defence: an older sysauth.js (see the note in
+   footer.ut - LuCI versions these modules with its own build string) still
+   applied the cron-cached RANDOM image here, which used to show straight
+   through the artwork. Now that path is unreachable, whatever builds the
+   script. */
+body:not(.mz-wp-custom) .mz-login-bg {
+	display: none;
+}
+
+/* Plana, in both modes: one node, always opaque. .mint-bg-character sets
+   opacity 0 and background.css flips the two admin nodes by data-theme;
+   this single node is not one of them, so both of those are overridden
+   here rather than fought with. Re-uses the admin grid asset through
+   --mz-char-grid, which is inherited from .mint-background. */
+.mz-login-char-art {
+	background-image: url("../images/character-pc-dark.webp");
+	background-position: right center;
+	background-size: contain;
+	opacity: 1;
+}
+
+/* A wallpaper the administrator explicitly selected wins over the
+   built-in artwork - same contract as the admin pages (sysauth.js adds
+   mz-wp-custom once the image has decoded). The layer is removed rather
+   than covered: the photo already fills the viewport. */
+body.mz-wp-custom .mint-background.mz-login-char {
+	display: none;
+}
+
+/* Phones: the portrait re-framing of Plana, full-bleed and anchored to
+   the bottom edge. Same 854px split as the admin layer, so the login
+   page flips to the phone composition at exactly the same moment the
+   sidebar would have become a drawer.
+ *
+ * Why `cover` here and `contain` on the admin pages: on a phone the
+ * login card is ~487px tall inside an ~844px viewport, so it leaves only
+ * the band above and below it - there is no room for a portrait figure
+ * to be shown whole, whatever the sizing. `contain` would shrink her to
+ * a 390x520 cut-out sitting entirely behind the card (and cropped to a
+ * sliver below it); `cover` fills the viewport, so her colour, hair and
+ * silhouette stay visible around the card and read through the frosted
+ * glass, which is the point of the layer. Only the middle of the figure
+ * is behind the card, and only the outer 19% of each side is cropped. */
+@media (max-width: 854px) {
+	.mz-login-char-art {
+		background-image: url("../images/character-mobile-dark.webp");
+		background-position: bottom center;
+		background-size: cover;
+	}
 }
 
 .mz-login-overlay {
@@ -44,9 +194,17 @@
 	inset: 0;
 	z-index: var(--mz-z-wallpaper-overlay);
 	pointer-events: none;
+	/* A whisper of a veil so the card always has something to sit on,
+	   without dulling the backdrop into a flat wash. */
 	background: linear-gradient(180deg,
-		rgba(8, 12, 22, var(--mz-wallpaper-overlay)) 0%,
-		rgba(8, 12, 22, calc(var(--mz-wallpaper-overlay) + 0.15)) 100%);
+		rgba(255, 255, 255, .30) 0%,
+		rgba(255, 255, 255, .08) 100%);
+}
+
+html[data-theme="dark"] .mz-login-overlay {
+	background: linear-gradient(180deg,
+		rgba(8, 12, 20, .28) 0%,
+		rgba(8, 12, 20, .52) 100%);
 }
 
 /* ---------------------------------------------------------------- */

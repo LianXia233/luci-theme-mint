@@ -9,10 +9,60 @@
  enhancements (remember-username, wallpaper).
 -#}
 
+{%
+	import { getWallpapers } from 'luci.mint.wallpaper';
+
+	/* Mirror of the gate header.ut applies to the admin layer, so ONE
+	   setting (mint.wallpaper.enabled=0) turns the built-in artwork off
+	   on both screens. It has to be re-evaluated here instead of being
+	   passed down: a template include inherits its caller's scope, but
+	   not the other way round, so header.ut's own locals are not visible
+	   to this file. Keep the two expressions in step - both are
+	   `wp.enabled != '0' && wallpaper.enabled != false`. */
+	let login_bg = true;
+
+	try {
+		const wp = uci.get_all('mint', 'wallpaper') ?? {};
+		const wpc = getWallpapers();
+		login_bg = (wp.enabled != '0') && (wpc.enabled != false);
+	}
+	catch (e) {
+		/* Backend unavailable: header.ut defaults to "enabled" in the
+		   same situation, so stay consistent rather than dropping the
+		   backdrop on an error. */
+		login_bg = true;
+	}
+-%}
+
 {% include('header', { blank_page: true }) %}
 
 <div class="mz-login" id="mz-login">
 	<div class="mz-login-bg" id="mz-login-bg" aria-hidden="true"></div>
+
+	{% if (login_bg): %}
+	{#
+	  Login backdrop artwork. The admin pages emit the FOUR-state layer
+	  from header.ut (device x mode); the login screen is a single
+	  screen with a single identity, so it gets its own layer with ONE
+	  artwork: Plana. It re-uses the very same sub-layer classes
+	  (.mint-bg-panel / .mint-bg-grid / .mint-bg-character) so the wedge,
+	  the tiled triangle grid and the mobile re-framing all come from
+	  background.css; login.css only overrides the artwork, the palette
+	  and the veil.
+
+	  Deliberately NOT emitted from header.ut: that file's blank_page
+	  guard is what keeps the admin four-state layer off this page, and
+	  keeping the two in separate files means neither can leak into the
+	  other. The layer is fixed / inset 0 / z-index:-2 / pointer-events
+	  none, so it cannot touch the login form or the card.
+	#}
+	<div class="mint-background mz-login-char" aria-hidden="true">
+		<div class="mint-bg-panel"></div>
+		<div class="mint-bg-grid"></div>
+		<div class="mint-bg-character mz-login-char-art"></div>
+	</div>
+	{% endif %}
+
 	<div class="mz-login-overlay" aria-hidden="true"></div>
 
 	<div class="mz-login-card" role="main">
@@ -98,6 +148,27 @@
 <div id="view">
 	<div class="spinning">{{ _('Loading view…') }}</div>
 	<script>
+		/*
+		 * Stamp the theme revision onto LuCI's module loader - the same
+		 * thing footer.ut does for real pages, repeated here because the
+		 * login page IS a blank_page and footer.ut emits its version
+		 * script only for non-blank ones. Without it this view module
+		 * (resources/view/mint/sysauth.js) is fetched under LuCI's own
+		 * build string, which does not change when the theme does, so a
+		 * browser can keep running the previous login build - and the
+		 * previous build fetched the cron-cached RANDOM wallpaper onto
+		 * this page, straight through the character backdrop.
+		 *
+		 * Must run before the L.require('ui') below: the view module is
+		 * required inside its .then().
+		 */
+		(function () {
+			var meta = document.querySelector('meta[name="mz-asset-rev"]');
+			var rev = meta && meta.getAttribute('content');
+			if (rev && window.L && L.env && L.env.resource_version !== rev)
+				L.env.resource_version = rev;
+		})();
+
 		L.require('ui').then(function(ui) {
 			ui.instantiateView('mint.sysauth');
 		});

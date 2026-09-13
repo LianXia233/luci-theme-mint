@@ -71,6 +71,32 @@ html[data-theme="dark"] body.mz-has-wallpaper::before {
 }
 
 /* ---------------------------------------------------------------- */
+/* The random wallpaper is an OPT-IN, enforced HERE as well as in JS  */
+/* ---------------------------------------------------------------- */
+/* header.ut states mint.wallpaper.ui_random on <html data-wp-random>.
+   The frontends already honour it, but menu-mint.js is a LuCI class
+   module: LuCI's loader versions those with its OWN build string (the
+   ?v= on its luci.js tag), not with MINT_ASSET_REV, so a browser can
+   still be running a previous theme build after an upgrade - and that
+   build auto-applied the cron-cached random image. Since the markup and
+   the sheet DO move together, the sheet gets the last word: with
+   data-wp-random="0" the wallpaper pseudo-elements are removed from the
+   box tree outright, exactly like the dark-mode rule above.
+ *
+ * `:not(.mz-wp-custom)` keeps an EXPLICIT selection working: library
+   upload, legacy upload and direct links all set mz-wp-custom, which is
+   also what stands the character layer down. So the rule can only ever
+   suppress the random photo, never a wallpaper the administrator chose.
+ *
+ * Specificity (0,3,2) deliberately beats both body.mz-has-wallpaper::after
+ * (0,2,1) and the character sheet's
+ * body.mz-has-wallpaper.mz-char-bg::after (0,3,1). */
+html[data-wp-random="0"] body.mz-has-wallpaper:not(.mz-wp-custom)::after,
+html[data-wp-random="0"] body.mz-has-wallpaper:not(.mz-wp-custom)::before {
+	content: none;
+}
+
+/* ---------------------------------------------------------------- */
 /* Glass tokens - light ("white glassmorphism")                       */
 /* ---------------------------------------------------------------- */
 

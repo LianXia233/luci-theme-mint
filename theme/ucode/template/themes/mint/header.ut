@@ -35,6 +35,26 @@
 		try { wallpaper_error = e.message ?? type(e); } catch (e2) { wallpaper_error = type(e); }
 	}
 
+	/* Built-in character backdrop (css/background.css).
+	   This is the ADMIN four-state layer (device x mode). The login
+	   screen is included with blank_page and therefore never emits this
+	   element, so it can never inherit the admin artwork; sysauth.ut
+	   emits its own single-artwork variant (.mz-login-char) instead.
+	   `enabled=0` is the one existing switch that turns the whole
+	   wallpaper feature off, so it turns the artwork off with it. */
+	const char_bg = !blank_page && wp.enabled != '0' && wallpaper.enabled != false;
+
+	/* Random-wallpaper opt-in (mint.wallpaper.ui_random), stated on <html>
+	   as data-wp-random. The frontends honour it, but they are class
+	   modules loaded through LuCI's loader, which versions them with
+	   LuCI's OWN build string - so a browser can keep an older theme build
+	   for a while after an upgrade. Stating the flag in the MARKUP lets
+	   the stylesheet - which IS versioned by MINT_ASSET_REV - have the
+	   last word: wallpaper.css refuses to paint the random photo while
+	   this is "0". Without it, a stale menu-mint.js would paint the
+	   cron-cached random image straight over the character backdrop. */
+	const wp_random = (wallpaper.enabled != false && (wallpaper.ui_random ?? '0') != '0');
+
 	http.prepare_content('text/html; charset=UTF-8');
 
 	/* Asset cache revision. MUST match the ?v= of the @import lines in
@@ -42,11 +62,11 @@
 	   headers, so a revision bump is the only reliable way to make
 	   browsers pick up an updated stylesheet. Bump it whenever any file
 	   under htdocs/luci-static/mint changes. */
-	const MINT_ASSET_REV = '20260913b';
+	const MINT_ASSET_REV = '20260913e';
 -%}
 
 <!DOCTYPE html>
-<html lang="{{ dispatcher.lang }}" data-theme="{{ themepref }}">
+<html lang="{{ dispatcher.lang }}" data-theme="{{ themepref }}" data-wp-random="{{ wp_random ? '1' : '0' }}">
 	<head>
 		<meta charset="utf-8">
 		<title>{{ striptags(`${boardinfo.hostname ?? '?'}${dispatched?.title ? ` | ${_(dispatched.title)}` : ''}`) }}</title>
@@ -80,6 +100,17 @@
 		{% else %}
 		<meta name="theme-color" content="#0f172a">
 		{% endif %}
+		{#
+		  The theme revision, published to JavaScript.
+		  LuCI versions every L.require()'d class module with its OWN build
+		  string (the ?v= on its luci.js tag), so menu-mint.js and
+		  resources/view/mint/*.js would keep their old build in a browser
+		  cache across a theme upgrade. footer.ut / sysauth.ut read this
+		  value and push it into L.env.resource_version, which is the object
+		  LuCI's require() actually reads. Publishing it here keeps ONE
+		  source of truth instead of a copy per template.
+		#}
+		<meta name="mz-asset-rev" content="{{ MINT_ASSET_REV }}">
 		<link rel="stylesheet" href="{{ media }}/cascade.css?v={{ MINT_ASSET_REV }}">
 		<link rel="icon" href="{{ media }}/favicon/favicon.svg" sizes="any" type="image/svg+xml">
 		<link rel="icon" href="{{ media }}/favicon/favicon-48.png" sizes="48x48">
@@ -218,7 +249,23 @@
 		{% endif %}
 	</head>
 
-	<body class="lang_{{ dispatcher.lang }}" data-page="{{ entityencode(join('-', length(ctx.request_path) ? ctx.request_path : ctx.path), true) }}">
+	<body class="lang_{{ dispatcher.lang }}{% if (char_bg): %} mz-char-bg{% endif %}" data-page="{{ entityencode(join('-', length(ctx.request_path) ? ctx.request_path : ctx.path), true) }}">
+		{% if (char_bg): %}
+		{#
+		  Built-in character backdrop (css/background.css). A dedicated,
+		  independent layer: fixed, inset 0, negative z-index, no pointer
+		  events, so it sits BELOW the page column and can never disturb
+		  the layout of any LuCI page. The two artwork nodes are the light
+		  and dark states; `data-theme` on <html> cross-fades between them
+		  and a media query swaps in the phone composition below 854px.
+		#}
+		<div class="mint-background" aria-hidden="true">
+			<div class="mint-bg-panel"></div>
+			<div class="mint-bg-grid"></div>
+			<div class="mint-bg-character mint-bg-character-light"></div>
+			<div class="mint-bg-character mint-bg-character-dark"></div>
+		</div>
+		{% endif %}
 		{% if (!blank_page): %}
 		<a class="mz-skip-link" href="#maincontent">{{ _('Skip to main content') }}</a>
 

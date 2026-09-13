@@ -45,6 +45,8 @@ FILES = [
      '/www/luci-static/mint/css/components.css'),
     (os.path.join(THEME_HTDOCS, 'mint', 'css', 'wallpaper.css'),
      '/www/luci-static/mint/css/wallpaper.css'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'css', 'background.css'),
+     '/www/luci-static/mint/css/background.css'),
     (os.path.join(THEME_HTDOCS, 'mint', 'css', 'dark.css'),
      '/www/luci-static/mint/css/dark.css'),
     (os.path.join(THEME_HTDOCS, 'mint', 'css', 'animations.css'),
@@ -53,6 +55,20 @@ FILES = [
      '/www/luci-static/mint/css/responsive.css'),
     (os.path.join(THEME_HTDOCS, 'mint', 'css', 'login.css'),
      '/www/luci-static/mint/css/login.css'),
+    # Built-in character backdrop: four states (device x mode) plus the two
+    # decorative grid patterns.
+    (os.path.join(THEME_HTDOCS, 'mint', 'images', 'character-pc-light.webp'),
+     '/www/luci-static/mint/images/character-pc-light.webp'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'images', 'character-pc-dark.webp'),
+     '/www/luci-static/mint/images/character-pc-dark.webp'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'images', 'character-mobile-light.webp'),
+     '/www/luci-static/mint/images/character-mobile-light.webp'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'images', 'character-mobile-dark.webp'),
+     '/www/luci-static/mint/images/character-mobile-dark.webp'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'images', 'triangle-grid-light.webp'),
+     '/www/luci-static/mint/images/triangle-grid-light.webp'),
+    (os.path.join(THEME_HTDOCS, 'mint', 'images', 'triangle-grid-dark.webp'),
+     '/www/luci-static/mint/images/triangle-grid-dark.webp'),
     (os.path.join(THEME_HTDOCS, 'resources', 'menu-mint.js'),
      '/www/luci-static/resources/menu-mint.js'),
     (os.path.join(THEME_HTDOCS, 'resources', 'view', 'mint', 'sysauth.js'),
@@ -61,6 +77,8 @@ FILES = [
      '/usr/share/ucode/luci/template/themes/mint/header.ut'),
     (os.path.join(REPO, 'theme', 'ucode', 'template', 'themes', 'mint', 'footer.ut'),
      '/usr/share/ucode/luci/template/themes/mint/footer.ut'),
+    (os.path.join(REPO, 'theme', 'ucode', 'template', 'themes', 'mint', 'sysauth.ut'),
+     '/usr/share/ucode/luci/template/themes/mint/sysauth.ut'),
     (WP_JS,
      '/www/luci-static/resources/view/mint/wallpaper.js'),
 ]
@@ -130,7 +148,8 @@ def deploy():
             'cp -a /www/luci-static/resources/menu-mint.js /tmp/mint-bak-%s/ 2>/dev/null; '
             'cp -a /usr/share/ucode/luci/template/themes/mint/header.ut /tmp/mint-bak-%s/ 2>/dev/null; '
             'cp -a /usr/share/ucode/luci/template/themes/mint/footer.ut /tmp/mint-bak-%s/ 2>/dev/null; '
-            'echo /tmp/mint-bak-%s' % (stamp, stamp, stamp, stamp, stamp, stamp))
+            'cp -a /usr/share/ucode/luci/template/themes/mint/sysauth.ut /tmp/mint-bak-%s/ 2>/dev/null; '
+            'echo /tmp/mint-bak-%s' % (stamp, stamp, stamp, stamp, stamp, stamp, stamp))
         print('backup:', out.strip())
 
         sftp = c.open_sftp()
