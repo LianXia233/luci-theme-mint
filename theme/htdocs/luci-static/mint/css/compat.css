@@ -3789,8 +3789,16 @@ html[data-theme="dark"] {
    defect looked device-specific.
    Display is owned by that closed-state rule alone; this block may set
    metrics only. Removing `display:flex` here is the whole fix. */
+/* Every height-pinning rule below targets the CLOSED caption list only:
+   `:not(.dropdown)` is load-bearing. Without it the phone media queries
+   also pinned `ul.dropdown` - the floating menu ui.js opens - to the
+   pill's 32px, so only the first option was visible and the rest hid
+   behind `overflow-y: auto` (the "menu shows one squashed entry" report
+   on phones; desktop was immune because its blocks carry :not(.dropdown)
+   or no height at all). The EOF block (~line 6930) already follows this
+   convention; these three blocks were missed. */
 @media (max-width: 768px) {
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		height: 100%;
 		align-items: center;
 		line-height: 1;
@@ -3801,10 +3809,10 @@ html[data-theme="dark"] {
 	.cbi-page-actions .cbi-dropdown.cbi-button {
 		height: 32px;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul {
+	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) {
 		height: 30px;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		height: 28px;
 		max-height: 28px;
 		line-height: 28px;
@@ -3814,8 +3822,8 @@ html[data-theme="dark"] {
 /* Final: normalize apply split-button height chain (dropdown > ul > li) */
 @media (max-width: 768px) {
 	.cbi-page-actions .cbi-dropdown.cbi-button,
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul,
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
+	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		height: 32px !important;
 		min-height: 32px !important;
 		max-height: 32px !important;
@@ -3826,7 +3834,7 @@ html[data-theme="dark"] {
 	.cbi-page-actions .cbi-dropdown.cbi-button {
 		border-width: 1px;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		line-height: 28px !important;
 	}
 }

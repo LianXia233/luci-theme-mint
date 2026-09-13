@@ -245,45 +245,97 @@
 		});
 	}
 
+	/* Detect a *native* LuCI dropdown widget on a given node.
+
+	   Modern LuCI / ImmortalWrt expose the widget as L.ui.Dropdown, with
+	   L.ui.ComboButton as the subclass used for the Save & Apply split
+	   button; only very old builds defined CBI.Dropdown. Probing
+	   CBI.Dropdown alone therefore reports "no native widget" on builds
+	   that had ALREADY bound one, and the fallback below then installed a
+	   second set of handlers on top of it. Two failures followed:
+
+	     1. the caret handler called stopPropagation(), so LuCI's own
+	        openDropdown() never ran - the <ul> never received its
+	        `dropdown` class and the menu stayed invisible;
+	     2. the main-button handler called preventDefault() before
+	        ComboButton's own click action (options.click -> form
+	        handleActions('apply')) could run, so "Save & Apply" did
+	        nothing at all.
+
+	   The lookup is deliberately lazy (per event, not per node): on most
+	   pages LuCI binds its widgets from an async L.require(), i.e. after
+	   this file has executed and after the first pass over the DOM. */
+	function mzNativeDD(dd) {
+		try {
+			if (typeof L === 'undefined' || !L.dom || !L.ui || !L.ui.Dropdown)
+				return null;
+			var inst = L.dom.findClassInstance(dd);
+			if (!inst)
+				return null;
+			if (typeof L.ui.Dropdown === 'function' && inst instanceof L.ui.Dropdown)
+				return inst;
+			/* Duck-typing for builds whose class registry was rebuilt:
+			   anything exposing the Dropdown surface counts as native. */
+			if (typeof inst.openDropdown === 'function' ||
+			    typeof inst.toggleItem === 'function')
+				return inst;
+		} catch (e) {}
+		return null;
+	}
+
 	function mzDropdownFallback(root) {
-		/* On full LuCI builds the CBI.Dropdown widget wires up .cbi-dropdown
-		   interactivity (open/close, item select, apply/force submit). Some
-		   ImmortalWrt/OpenWrt snapshot builds ship a stripped cbi.js that leaves
-		   a bare .cbi-dropdown in the DOM with NO widget JS, so the menu is
-		   completely inert - clicking the caret does nothing and the <ul> just
-		   renders its items inline. That is exactly the "mobile Save&Apply split
-		   dropdown shows abnormally / does not function" symptom.
-		   Provide a minimal, dependency-free fallback that activates ONLY when the
-		   native widget is missing, so full builds keep their own handler and we
-		   never double-toggle (which would cancel the open/close). */
-		if (typeof CBI !== 'undefined' && CBI && CBI.Dropdown)
-			return;
-	
+		/* On full LuCI builds the CBI/L.ui.Dropdown widget wires up
+		   .cbi-dropdown interactivity (open/close, item select, apply/force
+		   submit). Some ImmortalWrt/OpenWrt snapshot builds ship a stripped
+		   cbi.js that leaves a bare .cbi-dropdown in the DOM with NO widget
+		   JS, so the menu is completely inert - clicking the caret does
+		   nothing and the <ul> just renders its items inline. That is
+		   exactly the "mobile Save&Apply split dropdown shows abnormally /
+		   does not function" symptom.
+		   Provide a minimal, dependency-free fallback that activates ONLY
+		   when the native widget is missing, so full builds keep their own
+		   handler and we never double-toggle (which would cancel the
+		   open/close). */
+
+		/* Submit the surrounding form. When LuCI's own widget is present it
+		   owns the action (options.click -> handleActions('apply')); the
+		   fallback must never impersonate it. */
 		function submitAction(dd) {
+			if (mzNativeDD(dd))
+				return;
 			var form = dd.closest('form');
 			if (form) {
 				try { if (form.requestSubmit) form.requestSubmit(); else form.submit(); }
 				catch (e) { try { form.submit(); } catch (e2) {} }
 				return;
 			}
-			var btn = document.querySelector('.cbi-button-apply, button.cbi-button-apply, input.cbi-button-apply');
-			if (btn) btn.click();
+			/* No surrounding form - click a real button instead. Never
+			   click the dropdown itself: it carries .cbi-button-apply and
+			   would recurse until the call stack blew. */
+			var btns = document.querySelectorAll(
+				'button.cbi-button-apply, input.cbi-button-apply, .cbi-button-save');
+			for (var i = 0; i < btns.length; i++) {
+				if (!dd.contains(btns[i])) {
+					btns[i].click();
+					return;
+				}
+			}
 		}
-	
+
 		(root || document).querySelectorAll('.cbi-dropdown').forEach(function (dd) {
-			if (dd.getAttribute('data-mint-dd'))
+			if (dd.getAttribute('data-mint-dd') === '1')
 				return;
 			dd.setAttribute('data-mint-dd', '1');
-	
+
 			var isAction = /\bcbi-button-(apply|save|important)\b/.test(dd.className);
 			var ul = dd.querySelector(':scope > ul');
 			if (!ul)
 				return;
 			var items = Array.prototype.slice.call(ul.querySelectorAll(':scope > li'));
 			var hidden = dd.querySelector(':scope > div > input[type=hidden]');
-	
+
 			function close() { dd.removeAttribute('open'); }
-	
+
 			function select(li) {
 				items.forEach(function (o) { o.removeAttribute('selected'); });
 				li.setAttribute('selected', '');
@@ -293,17 +345,24 @@
 				close();
 				try { dd.dispatchEvent(new Event('cbi-dropdown-change', { bubbles: true })); } catch (e) {}
 			}
-	
+
 			dd.querySelectorAll(':scope > .open, :scope > .more').forEach(function (c) {
 				c.addEventListener('click', function (ev) {
+					/* Hand the event to LuCI's widget when there is one:
+					   it must add the `dropdown` class and the preview
+					   clone, otherwise the menu renders but stays hidden. */
+					if (mzNativeDD(dd))
+						return;
 					ev.preventDefault();
 					ev.stopPropagation();
 					if (dd.hasAttribute('open')) close();
 					else dd.setAttribute('open', '');
 				});
 			});
-	
+
 			dd.addEventListener('click', function (ev) {
+				if (mzNativeDD(dd))
+					return;
 				var t = ev.target;
 				if (t && t.closest && t.closest('li'))
 					return;
@@ -315,9 +374,11 @@
 				if (isAction) submitAction(dd);
 				else dd.setAttribute('open', '');
 			});
-	
+
 			items.forEach(function (li) {
 				li.addEventListener('click', function (ev) {
+					if (mzNativeDD(dd))
+						return;
 					ev.preventDefault();
 					ev.stopPropagation();
 					select(li);
@@ -325,14 +386,18 @@
 				});
 			});
 		});
-	
-		/* Close any open dropdown when clicking elsewhere (install once). */
+
+		/* Close any open dropdown when clicking elsewhere (install once).
+		   Skipped for nodes owned by LuCI's widget - it runs its own
+		   closeAllDropdowns() and removing [open] behind its back would
+		   leave a stale preview clone in the button. */
 		if (!document.getElementById('mz-dd-outside')) {
 			document.addEventListener('click', function (ev) {
 				var t = ev.target;
 				if (!(t && t.closest && t.closest('.cbi-dropdown')))
 					document.querySelectorAll('.cbi-dropdown[open]').forEach(function (d) {
-						d.removeAttribute('open');
+						if (!mzNativeDD(d))
+							d.removeAttribute('open');
 					});
 			});
 			var tag = document.createElement('div');

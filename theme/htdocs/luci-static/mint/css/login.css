@@ -308,11 +308,14 @@ html[data-theme="dark"] .mz-field input {
 .mz-remember {
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	/* Left-aligned like the two fields above it: a centred checkbox row
+	   under left-aligned inputs reads as a layout break. */
+	justify-content: flex-start;
 	gap: 8px;
 	font-size: .84rem;
 	color: var(--mz-color-text-muted);
 	min-height: 44px;
+	text-align: left;
 }
 
 /* Submit: full width, brand solid. */

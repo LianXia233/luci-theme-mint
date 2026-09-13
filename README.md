@@ -278,6 +278,7 @@ sysauth.ut       同一段 IIFE（登录页是 blank_page，footer.ut 那个 ver
 - 操作栏回归测试（一组契约，两个入口）：`scripts/verify-action-bar.py` 不需要路由器，本地夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；`scripts/verify-action-bar-device.py` 登录实机对**已部署**资源复测同一组契约（需 `MZ_BASE`/`MZ_PASS`）。断言：关闭态拆分按钮仅 1 个可见选项、`⋯` 不绘制、`dd/ul/li/.open` 高度一致、**桌面容器两侧留白对称（|左 − 右| ≤ 20px；`--mz-content-max` 未咬合时每侧 ≤ 40px）**、无横向溢出
 - 容器几何专测：`scripts/verify-geometry.py`（需 `MZ_BASE`/`MZ_PASS`）扫 1366/1536/1600/1920/2560/3440 六档，断言留白对称、上限未咬合时两侧无空洞、无横向溢出、概览页系统信息网格末行无残缺轨道；可选 `MZ_SHOT_DIR` 顺便出图。详见上方「布局与容器几何」
 - 下拉菜单回归测试：`scripts/verify-dropdown.py` 不需要路由器，夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；加 `--css <url>` 可对**已部署**的样式表复测。夹具**同时**渲染两种标记形态 —— 完整 LuCI 的 `ul.dropdown`（含 `ul.preview`）与精简构建的裸 `ul` —— 断言：①浅色模式下两种形态的弹层背景相对亮度 ≥ 0.75（必须是浅色玻璃，不得是硬编码深色）②打开态左右内边距对称 ③完整构建下全部选项可见。详见「暗色 / 壁纸模式与下拉菜单」
+- 保存并应用链路实机回归：`scripts/verify-save-apply-device.py`（需 `MZ_BASE`/`MZ_PASS`）。断言：caret 展开出 `ul.dropdown` 且全部选项可见、菜单不被手机高度链压扁（`clientHeight == scrollHeight`）并完整落在视口内、可再关闭；主按钮点击触发提交（默认拦截 CGI 写请求只验证动作，`--real` 放行并要求 `apply_rollback` 被调用）；「强制应用」切换 negative 态；普通表单下拉不受影响；登录页「记住我」与输入框左对齐（PC + 手机）；无横向溢出、无未捕获异常
 
 ## 布局与容器几何
 
