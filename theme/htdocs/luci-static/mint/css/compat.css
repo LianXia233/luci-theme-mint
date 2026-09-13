@@ -1705,6 +1705,21 @@ table.cbi-section-table th {
 #mz-view ol {
 	padding-left: 20px;
 }
+
+/* ...but NOT inside a dropdown control. `#mz-view` is an ID, so this prose
+   indent out-ranked every class-based popup rule and handed the floating
+   menu an asymmetric padding (computed 4px 4px 4px 20px): the option text
+   was shoved 20px to the right while the right edge stayed flush, which is
+   the "misaligned" half of the dropdown bug. Restore the control's own
+   padding - 4px while the popup is open, 0 for the closed value strip. */
+#mz-view .cbi-dropdown > ul,
+#mz-view .mz-dropdown > ul {
+	padding-left: 0;
+}
+
+#mz-view .cbi-dropdown[open] > ul {
+	padding-left: 4px;
+}
 #mz-view li {
 	margin: 2px 0;
 }
@@ -4422,22 +4437,38 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
+/* TOKENISED DELIBERATELY. This block used to hard-code background:#1c2736 on
+   the assumption that `mz-has-wallpaper` implied "dark mode". It does not:
+   menu-mint.js sets the class on EVERY admin page, light theme included, so a
+   light-themed page was handed a dark navy popup that nothing could undo.
+   Worse, on the stripped LuCI builds (cbi.js ships without CBI.Dropdown) the
+   floating <ul> never receives the `.dropdown` class, so the later rule keyed
+   on `ul.dropdown` - the one that resolves the panel token - could not
+   override it either, and the hard-coded navy won on every page.
+   Resolve through the panel token instead: the token already flips between
+   white glass (light) and deep grey glass (dark), so one declaration is
+   correct in both modes and for both markup shapes. */
 body.mz-has-wallpaper .cbi-dropdown[open] > ul,
 body.mz-has-wallpaper .cbi-button-apply .dropdown,
 body.mz-has-wallpaper .cbi-button-apply + .dropdown-menu,
 body.mz-has-wallpaper .btn + .dropdown-menu {
-	background: #1c2736; /* solid enough to stay readable over any wallpaper */
-	backdrop-filter: none;
-	-webkit-backdrop-filter: none;
+	background: var(--mz-panel-bg-strong);
+	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
+	border-color: var(--mz-color-border);
 }
 
-body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li:hover {
+/* A white hover wash is only legible on the dark glass. In light mode it was
+   invisible (white on white), so the hover feedback silently disappeared.
+   Keep it for dark only; light inherits the token rule above. */
+html[data-theme="dark"] .cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: rgba(255, 255, 255, 0.1);
 }
 
-/* Native select option lists pick up the dark scheme so the OS popup is
-   not blinding white in dark / wallpaper mode. */
-body.mz-has-wallpaper select option,
+/* Native select option lists pick up the dark scheme so the OS popup is not
+   blinding white in dark mode. `body.mz-has-wallpaper` must NOT appear here:
+   it is set in light mode too, which dyed every <option> navy on a light
+   page - the same bug as the popup above, in the native control. */
 html[data-theme="dark"] select option {
 	background-color: #1c2736;
 	color: #eef2f8;
@@ -6092,7 +6123,6 @@ html[data-theme="dark"] .cbi-dropdown:not(.btn):not(.cbi-button) {
 	border-color: rgba(148, 163, 184, .45);
 }
 
-body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li:hover,
 html[data-theme="dark"] .cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: rgba(255, 255, 255, .1);
 }

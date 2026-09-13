@@ -72,6 +72,16 @@
 - **实测（ImmortalWrt SNAPSHOT，`MINT_ASSET_REV=20260913g`）**：1366/1536/1600/1920/2560/3440 六档全 PASS —— 1920px 容器宽 1692px、左右各 13/14px；2560px 容器宽 1920px（上限生效）、左右各 219/220px **完全对称**；系统信息网格 9 项 / 3 轨、末行 3 项、空白 1px；六档横向溢出均为 0。离线夹具侧 `verify-action-bar.py` 五档（390/768/1440/1920/2560）亦全 PASS
 - 缓存戳 `MINT_ASSET_REV` `20260913f` → `20260913g`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）
 
+### Fixed（同日深夜：下拉菜单颜色与排版全面异常）
+
+- **现象**：用户回图指出 **「所有的下拉菜单颜色和排版异常」** —— 展开的候选列表整片变成深蓝黑底白字，且选项文字被推向右、形似错位。对截图逐点采样，弹层底色为 **`rgb(28,39,54)`**，与下面第一条规则的硬编码值逐位吻合
+- **根因一（颜色，`compat.css` 硬编码 `#1c2736`）**：`body.mz-has-wallpaper .cbi-dropdown[open] > ul { background: #1c2736 }` 这条旧规则的前提是「有壁纸 = 深色模式」。但 `mz-has-wallpaper` 由 `menu-mint.js` 在**每个后台页面**无条件加上，浅色模式也不例外 —— 于是浅色页面被塞进一个深色弹层，而**没有任何令牌能撤销它**。更关键的是，本主题要兼容的**精简 LuCI 构建**（`cbi.js` 不含 `CBI.Dropdown`，由 `mz-ui.js` 的兜底接管）下，浮动 `<ul>` **不会**被加上 `.dropdown` 类，因此后面那条用令牌的覆盖规则 `body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown { background: var(--mz-panel-bg-strong) }` **永不匹配**，硬编码的深蓝在任何页面都能胜出。修法：该块整体改为解析令牌 `var(--mz-panel-bg-strong)`（浅色 = 白玻璃、深色 = 深灰玻璃，一条声明同时覆盖两种模式与两种标记形态），并补上 `backdrop-filter` / `border-color` 与全局玻璃层对齐
+- **根因二（排版，`#mz-view ul` 的内边距泄漏）**：`#mz-view ul, #mz-view ol { padding-left: 20px }` 本是给正文列表的缩进，但它是 **ID 选择器**，会连带命中表单里的每个下拉 `<ul>`，并以 ID 特异性压掉所有基于类的弹层规则。实测打开态菜单的 `padding` 为 `4px 4px 4px 20px`：选项文字被整体右推 20px 而右缘不动，正是「排版错位」的来源。修法：在 `#mz-view` 下为下拉控件恢复其自身内边距（打开态 4px、关闭态 0），所有权重新交还给组件规则
+- **同类隐患一并清除**：原生 `<select>` 的 option 列表被同一套「`mz-has-wallpaper` 即深色」的假设染成深蓝（`body.mz-has-wallpaper select option`）—— 改为只在 `html[data-theme="dark"]` 下生效；`li:hover` 的白色水洗（`rgba(255,255,255,.1)`）在浅色玻璃上是白底白字、悬停反馈完全不可见 —— 同样收归深色模式专用（`compat.css` 内两处重复声明各收一处）
+- **新增 `scripts/verify-dropdown.py`（离线，无需路由器）**：夹具挂真实 `cascade.css`，**同时**渲染两种标记形态（完整构建的 `ul.dropdown` 与精简构建的裸 `ul`），断言 ①浅色模式下两种形态的弹层背景相对亮度 ≥ 0.75（即必须是浅色玻璃）②打开态左右内边距对称 ③完整构建下 7 个选项全部可见。加 `--css <url>` 可直接对**已部署**的样式表复测同一组契约
+- **实测（A/B 对照，同一夹具）**：修复前精简分支弹层 = `rgb(28,39,54)`（与用户截图采样值逐位一致）、`padding = 4px 4px 4px 20px`；修复后两种分支背景均 = `rgba(255,255,255,.9)`、`padding = 4px 4px 4px 4px`
+- 缓存戳 `MINT_ASSET_REV` `20260913g` → `20260913h`（header.ut / footer.ut / cascade.css 13 个 `@import` 同步）；本轮同时修复了本地仓库 `.git` 对象库缺 `HEAD` 指向提交的问题（`git fetch` 后 `update-ref` 复位）
+
 ---
 
 ## [1.2.0] - 2026-09-13

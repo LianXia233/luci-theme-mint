@@ -277,6 +277,7 @@ sysauth.ut       同一段 IIFE（登录页是 blank_page，footer.ut 那个 ver
 - 回归测试：`scripts/verify-cache-conflict.py`（模拟残留旧构建写入壁纸变量，断言登录层 `display:none`、`body::after` `content:none`、管理页无壁纸伪元素）
 - 操作栏回归测试（一组契约，两个入口）：`scripts/verify-action-bar.py` 不需要路由器，本地夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；`scripts/verify-action-bar-device.py` 登录实机对**已部署**资源复测同一组契约（需 `MZ_BASE`/`MZ_PASS`）。断言：关闭态拆分按钮仅 1 个可见选项、`⋯` 不绘制、`dd/ul/li/.open` 高度一致、**桌面容器两侧留白对称（|左 − 右| ≤ 20px；`--mz-content-max` 未咬合时每侧 ≤ 40px）**、无横向溢出
 - 容器几何专测：`scripts/verify-geometry.py`（需 `MZ_BASE`/`MZ_PASS`）扫 1366/1536/1600/1920/2560/3440 六档，断言留白对称、上限未咬合时两侧无空洞、无横向溢出、概览页系统信息网格末行无残缺轨道；可选 `MZ_SHOT_DIR` 顺便出图。详见上方「布局与容器几何」
+- 下拉菜单回归测试：`scripts/verify-dropdown.py` 不需要路由器，夹具挂真实 `cascade.css` 后读计算样式，改 CSS 即可跑；加 `--css <url>` 可对**已部署**的样式表复测。夹具**同时**渲染两种标记形态 —— 完整 LuCI 的 `ul.dropdown`（含 `ul.preview`）与精简构建的裸 `ul` —— 断言：①浅色模式下两种形态的弹层背景相对亮度 ≥ 0.75（必须是浅色玻璃，不得是硬编码深色）②打开态左右内边距对称 ③完整构建下全部选项可见。详见「暗色 / 壁纸模式与下拉菜单」
 
 ## 布局与容器几何
 
@@ -300,13 +301,27 @@ sysauth.ut       同一段 IIFE（登录页是 blank_page，footer.ut 那个 ver
 |---|---|---|
 | 旧（bug） | `compat.css` 残留 ID 规则 `#mz-view{max-width:1280px;margin:0 auto;padding:24px 28px}`，以 ID 特异性压掉整套令牌 | 1920px 下菜单与内容之间 **219px** 空洞（2560px 下 539px） |
 | `20260913f`（修错方向） | 删掉 ID 规则，但改成「左锚 + 右侧预留 260/320px 角色通道」 | 左侧空洞消失，右侧长出约 **260px** 空白条 |
-| `20260913g`（现行） | 两处覆盖全删，回归 `margin: … auto`；`--mz-content-max` 由 1680 上调至 1920px | 两侧对称：1920px 各 13/14px，2560px 各 219/220px（上限生效） |
+| `20260913g` | 两处覆盖全删，回归 `margin: … auto`；`--mz-content-max` 由 1680 上调至 1920px | 两侧对称：1920px 各 13/14px，2560px 各 219/220px（上限生效） |
+
+> 现行缓存戳为 `20260913h`。该版只改了**下拉菜单**的背景令牌与 `#mz-view` 内边距泄漏（见「暗色 / 壁纸模式与下拉菜单」），未触碰容器几何，因此上表结论对 h 版同样成立。
 
 角色立绘不依赖预留通道：`.mint-background` 是 `fixed` 独立图层（`z-index:-2`、`pointer-events:none`），透过 `.mz-view` 的半透明填充可见，所以把宽度还给内容不会丢立绘。
 
 页面内部另有一处独立空洞：概览页系统信息网格共 **9** 项，排 4 列会变成 4+4+1（末行右侧约 958px 空白），故固定 **3 列**（9 = 3×3，任意宽度都不会残缺）。改动 `.mint-ovd-sys-grid` 列数前，请先确认项数仍是该列数的整数倍。
 
 回归测试见「缓存戳」小节末尾（`verify-geometry.py` + `verify-action-bar*.py`）。
+
+## 暗色 / 壁纸模式与下拉菜单
+
+主题的**控件浮层**（下拉候选列表、原生 `<select>` 的 option、拆分按钮菜单）必须**只**通过令牌决定颜色。这里有一条踩过两次的约定：
+
+**`body.mz-has-wallpaper` 不等于深色模式。** `menu-mint.js` 在**每个**后台页面无条件给 `<body>` 加上这个类，浅色模式也不例外 —— 它表达的是「这一页允许绘制壁纸」，而不是「这一页是深色」。任何形如 `body.mz-has-wallpaper … { background: <深色> }` 的规则都会在浅色页面生效，而**没有任何主题模式能撤销它**，用户看到的是一块突兀的深色浮层。深色专用声明一律以 `html[data-theme="dark"]` 开头。
+
+**不要依赖 `.dropdown` 类。** 本主题要兼容**精简 LuCI 构建**：这类构建的 `cbi.js` 不含 `CBI.Dropdown`，浮动 `<ul>` 因此拿不到 `.dropdown` 类（完整构建由 `ui.js` 的 `openDropdown()` 加上，并同时插入 `ul.preview` 克隆，然后由 `menu-mint.js` 之外的 `mz-ui.js` 兜底接管交互）。所以**只写 `.cbi-dropdown[open] > ul.dropdown` 是不够的** —— 精简构建下这条选择器不匹配，更早的宽松规则（如 `> ul`）会意外胜出。放置浮层样式时，要么同时覆盖 `> ul` 与 `> ul.dropdown` 两种形态，要么把颜色收敛到一条两种形态都会命中的令牌声明上。
+
+**内边距同理**：`#mz-view ul, #mz-view ol { padding-left: 20px }` 是给正文列表的缩进，但它是 **ID 选择器**，会连带命中表单里每个下拉 `<ul>` 并压掉所有基于类的弹层规则（实测打开态菜单得到 `4px 4px 4px 20px` 的左右不对称内边距）。主题已在 `#mz-view` 下为下拉控件恢复其自身内边距；**新增任何 `#mz-view` 级别的 `ul` / `ol` 规则时都要先确认不会波及下拉**。
+
+对应修复见 CHANGELOG 的「同日深夜：下拉菜单颜色与排版全面异常」，回归测试为 `scripts/verify-dropdown.py`（离线夹具，同时渲染两种标记形态，断言浅色模式下弹层必须是浅色且内边距对称）。
 
 ## 壁纸设置
 
