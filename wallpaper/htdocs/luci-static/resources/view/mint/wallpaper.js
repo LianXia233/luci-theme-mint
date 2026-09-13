@@ -600,8 +600,15 @@ return view.extend({
 		const label = kind === 'mobile' ? _('Mobile') : _('Desktop');
 		this.setStatus(_('Refreshing random wallpaper cache (%s)…').format(label), 'busy');
 		return callMintWpRefresh({ kind: kind }).then(function (res) {
-			return self.reloadGrid().then(function () {
-				const url = res && res.url;
+			return self.reloadGrid().then(function (data) {
+				const cur = activeNames(data);
+				const mode = kind === 'mobile' ? cur.mobile_mode : cur.pc_mode;
+				const sel = kind === 'mobile' ? cur.mobile : cur.pc;
+				/* Only re-paint when this device actually runs the random
+				   proxy. A custom / library image is unaffected by a random
+				   cache refresh, so force-applying the proxy img here would
+				   wrongly overwrite the user's chosen picture. */
+				const url = (mode === 'random' && !sel) ? (res && res.url) : null;
 				if (url)
 					applyLiveWallpaper(url, kind);
 				self.setStatus(_('Wallpaper cache refreshed (%s).').format(label), 'ok');
