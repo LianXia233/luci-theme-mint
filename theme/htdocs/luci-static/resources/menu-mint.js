@@ -1,6 +1,6 @@
 // mint theme frontend logic
 // Copyright (C) 2026 LianXia233
-// Licensed to the public under the Apache License 2.0.
+// Licensed to the public under the GNU General Public License v3.0.
 //
 // Loaded via L.require('menu-mint') from footer.ut. Extends the LuCI
 // baseclass and implements:

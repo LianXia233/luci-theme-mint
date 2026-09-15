@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # Copyright (C) 2026 LianXia233
 #
@@ -28,7 +28,7 @@ LUCI_TITLE:=Mint Wallpaper settings
 # fail.
 LUCI_DEPENDS:=+luci-base +curl
 
-PKG_LICENSE:=Apache-2.0
+PKG_LICENSE:=GPL-3.0-only
 PKG_MAINTAINER:=LianXia233 <LianXia233@users.noreply.github.com>
 
 # See theme/Makefile for the provenance rationale: PKG_VERSION left empty for

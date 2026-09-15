@@ -1,7 +1,7 @@
 /*
  * mint - shared UI helpers (device-agnostic)
  * Copyright (C) 2026 LianXia233
- * Licensed to the public under the Apache License 2.0.
+ * Licensed to the public under the GNU General Public License v3.0.
  *
  * Loaded on every admin page. Owns apply/revert notifications and
  * cbi-dynlist edit/delete affordances. The overview renderers

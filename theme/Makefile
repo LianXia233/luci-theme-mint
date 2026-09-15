@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # Copyright (C) 2026 LianXia233
 #
@@ -25,7 +25,7 @@ LUCI_DEPENDS:=+luci-base
 # resolve, so precompilation with ucode/host must be disabled.
 LUCI_MINIFY_UT:=0
 
-PKG_LICENSE:=Apache-2.0
+PKG_LICENSE:=GPL-3.0-only
 PKG_MAINTAINER:=LianXia233 <LianXia233@users.noreply.github.com>
 
 # Version provenance (R-11): luci.mk's findrev derives the package version

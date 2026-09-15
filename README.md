@@ -291,4 +291,4 @@ API 不可达（无外网、DNS 失败、超时）时页面依然即时渲染，
 
 ## 许可证
 
-Apache-2.0，见 [theme/LICENSE](./theme/LICENSE)。
+GPL-3.0，见 [LICENSE](./LICENSE)。

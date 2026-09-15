@@ -1,7 +1,7 @@
 #!/bin/sh
 # mz-wallpaper-fetch.sh - server-side wallpaper cache refresher
 # Copyright (C) 2026 LianXia233
-# Licensed to the public under the Apache License 2.0.
+# Licensed to the public under the GNU General Public License v3.0.
 #
 # The random wallpaper APIs answer every request with a 302 redirect to a
 # DIFFERENT image, so the browser HTTP cache can never pin one picture:

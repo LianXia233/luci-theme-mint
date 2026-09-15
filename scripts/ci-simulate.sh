@@ -92,7 +92,7 @@ build_ipk() { # <name> <version> <depends> <payload> <conffiles|-> <out.ipk>
 		printf 'Maintainer: LianXia233 <maintainer@example.org>\n'
 		printf 'Filename: %s_%s_all.ipk\n' "$name" "$ver"
 		printf 'Section: luci\n'
-		printf 'License: Apache-2.0\n'
+		printf 'License: GPL-3.0-only\n'
 		if [ "$name" = luci-theme-mint ]; then
 			printf 'Description: Mint Theme\n A modern LuCI theme.\n'
 		else
@@ -122,7 +122,7 @@ build_apk() { # <name> <version> <deps(comma)> <pkgdesc> <payload> <out.apk>
 		--name "$name" --version "$ver" --arch noarch \
 		--origin "$name" \
 		--url "https://github.com/LianXia233/luci-theme-mint" \
-		--license "Apache-2.0" \
+		--license "GPL-3.0-only" \
 		--maintainer "LianXia233 <maintainer@example.org>" \
 		--desc "$desc" \
 		--depends "$deps" \
@@ -171,7 +171,7 @@ python3 "$R/scripts/mkadbpkg.py" \
 	--name luci-theme-mint --version "$R1" --arch x86_64 \
 	--origin luci-theme-mint \
 	--url "https://github.com/LianXia233/luci-theme-mint" \
-	--license "Apache-2.0" \
+	--license "GPL-3.0-only" \
 	--maintainer "LianXia233 <maintainer@example.org>" \
 	--desc "Mint Theme" \
 	--depends "luci-base,curl" \

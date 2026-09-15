@@ -189,4 +189,4 @@ make package/luci-theme-mint/compile V=s
 
 ## License
 
-Apache-2.0. See [LICENSE](./LICENSE).
+GPL-3.0. See [../LICENSE](../LICENSE).

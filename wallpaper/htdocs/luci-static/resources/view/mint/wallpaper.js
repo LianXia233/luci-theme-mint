@@ -1,6 +1,6 @@
 // mint wallpaper settings view — wallpaper management centre
 // Copyright (C) 2026 LianXia233
-// Licensed to the public under the Apache License 2.0.
+// Licensed to the public under the GNU General Public License v3.0.
 //
 // Flow: pick file → POST /cgi-bin/cgi-upload (multipart, session-auth) →
 // library file on disk → wp_list refresh → thumbnail appears → click to

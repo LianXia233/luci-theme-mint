@@ -5,7 +5,7 @@
 # theme revision and package version it was built from.
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # Usage:
 #   ./scripts/make-release-notes.sh --assets dist --tag nightly --out notes.md

@@ -4,7 +4,7 @@
 # as `apk mkpkg` (apk-tools 3.0.5), for local CI fixture generation.
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # This mirrors what OpenWrt's include/package-pack.mk produces for apk:
 #

@@ -1,6 +1,6 @@
 // mint wallpaper backend
 // Copyright (C) 2026 LianXia233
-// Licensed to the public under the Apache License 2.0.
+// Licensed to the public under the GNU General Public License v3.0.
 //
 // Resolves the wallpaper per device class: the settings page stores
 // independent sources for desktop (pc) and mobile visitors. Each may be:

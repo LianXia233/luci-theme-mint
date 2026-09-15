@@ -3,7 +3,7 @@
 # verify-package.sh - structural verification of built .apk / .ipk packages.
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # The point of this check is to prove that a package was really produced by
 # the OpenWrt package build system:

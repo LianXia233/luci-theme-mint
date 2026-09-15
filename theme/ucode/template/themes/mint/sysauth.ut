@@ -1,7 +1,7 @@
 {#
  mint - modern LuCI theme, login page
  Copyright (C) 2026 LianXia233
- Licensed to the public under the Apache License 2.0.
+ Licensed to the public under the GNU General Public License v3.0.
 
  Renders a standalone fullscreen login page on top of the standard LuCI
  sysauth form. Authentication itself stays 100% LuCI (POST to the same

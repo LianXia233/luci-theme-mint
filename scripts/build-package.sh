@@ -3,7 +3,7 @@
 # build-package.sh - build luci-theme-mint with an official OpenWrt SDK.
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # The package format is decided by the OpenWrt package build system itself
 # (CONFIG_USE_APK in include/package-pack.mk on 24.10/25.12/master,

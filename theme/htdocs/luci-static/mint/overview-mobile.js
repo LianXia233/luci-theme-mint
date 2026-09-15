@@ -1,7 +1,7 @@
 /*
  * mint - status overview enhancer
  * Copyright (C) 2026 LianXia233
- * Licensed to the public under the Apache License 2.0.
+ * Licensed to the public under the GNU General Public License v3.0.
  *
  * Builds mint overview panels once, then patches live values in place
  * so LuCI XHR polls do not force a full DOM tear-down every few seconds.

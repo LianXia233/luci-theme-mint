@@ -10,7 +10,7 @@
 #   luci-i18n-mint-wallpaper-zh-cn - the wallpaper translation (auto-detected)
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # Real installation is attempted whenever the matching package manager is
 # available on the runner:

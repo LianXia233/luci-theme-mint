@@ -4,7 +4,7 @@
 # without downloading or compiling an OpenWrt SDK.
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # The theme is a pure data package (htdocs / ucode templates / root config /
 # po catalog, no src/). The previous CI still pulled a ~300 MB official SDK
@@ -243,7 +243,7 @@ build_ipk() {
 		printf 'Maintainer: LianXia233 <LianXia233@users.noreply.github.com>\n'
 		printf 'Filename: %s_%s_all.ipk\n' "$name" "$ver"
 		printf 'Section: luci\n'
-		printf 'License: Apache-2.0\n'
+		printf 'License: GPL-3.0-only\n'
 		case "$name" in
 			luci-theme-mint)
 				printf 'Description: Mint Theme\n A modern LuCI theme.\n' ;;
@@ -388,7 +388,7 @@ build_apk() {
 		--arch noarch \
 		--origin "$name" \
 		--url "https://github.com/LianXia233/luci-theme-mint" \
-		--license "Apache-2.0" \
+		--license "GPL-3.0-only" \
 		--maintainer "LianXia233 <LianXia233@users.noreply.github.com>" \
 		--desc "$desc" \
 		--depends "$deps" \

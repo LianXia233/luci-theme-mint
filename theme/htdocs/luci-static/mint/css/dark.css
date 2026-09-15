@@ -1,7 +1,7 @@
 /*
  * mint - dark mode
  * Copyright (C) 2026 LianXia233
- * Licensed to the public under the Apache License 2.0.
+ * Licensed to the public under the GNU General Public License v3.0.
  *
  * Dark mode is NOT a LuCI theme variant: it is toggled from the sidebar
  * button and persisted in localStorage as html[data-theme="dark"].

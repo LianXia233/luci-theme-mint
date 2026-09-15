@@ -1,6 +1,6 @@
 // mint login view
 // Copyright (C) 2026 LianXia233
-// Licensed to the public under the Apache License 2.0.
+// Licensed to the public under the GNU General Public License v3.0.
 //
 // Frontend for the mint login page. The login card rendered by
 // sysauth.ut contains the single native LuCI login form, so authentication

@@ -3,7 +3,7 @@
 # get-openwrt-sdk.sh - resolve, download and unpack an official OpenWrt SDK.
 #
 # Copyright (C) 2026 LianXia233
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 #
 # Nothing about the SDK is hardcoded: the release series, the concrete
 # version, the tarball name and the compression are all discovered from the
