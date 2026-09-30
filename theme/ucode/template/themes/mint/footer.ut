@@ -77,7 +77,7 @@
 			   overview-dashboard.css already ships 1199px / 767px / 420px
 			   breakpoints (2- and 1-column grids), so the full dashboard is
 			   used everywhere and the layout reflows per viewport.
-			   overview-mobile.js stays in the package but is no longer booted. */
+			   overview-mobile.js was removed from the package (2026-09-30). */
 			var s = document.createElement('script');
 			s.src = '{{ media }}/overview-dashboard.js?v={{ MINT_ASSET_REV }}';
 			s.defer = true;

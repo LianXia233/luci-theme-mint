@@ -127,8 +127,7 @@ luci-theme-mint/
 ├── Makefile                  # luci.mk based package
 ├── htdocs/luci-static/mint/
 │   ├── cascade.css           # design system + layout + components
-│   ├── overview-dashboard.js # PC status overview dashboard
-│   ├── overview-mobile.js    # mobile status overview panels
+│   ├── overview-dashboard.js # status overview dashboard
 │   ├── overview-banner.png   # topbar brand image
 │   ├── login-logo.png        # login page logo
 │   └── favicon/              # favicon.svg (vector) / -48.png / -180.png

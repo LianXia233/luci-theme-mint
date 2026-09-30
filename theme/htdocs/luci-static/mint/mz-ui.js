@@ -4,8 +4,8 @@
  * Licensed to the public under the GNU General Public License v3.0.
  *
  * Loaded on every admin page. Owns apply/revert notifications and
- * cbi-dynlist edit/delete affordances. The overview renderers
- * (overview-dashboard.js / overview-mobile.js) are separate files.
+ * cbi-dynlist edit/delete affordances. The overview renderer
+ * (overview-dashboard.js) is a separate file.
  */
 (function () {
 	'use strict';

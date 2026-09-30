@@ -300,8 +300,8 @@ html[data-theme="dark"] .mz-field label {
 }
 
 html[data-theme="dark"] .mz-field input {
-	background: rgba(20, 24, 30, .92);
-	border-color: rgba(255, 255, 255, .16);
+	background: var(--mz-input-bg);
+	border-color: var(--mz-input-border);
 	color: #f2f4f7;
 }
 

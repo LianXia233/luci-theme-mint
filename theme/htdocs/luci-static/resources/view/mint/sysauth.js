@@ -34,30 +34,12 @@
 
 const REMEMBER_KEY = 'mz-username';
 
-/* Shared helper (review TZ-14): header.ut defines window.mzWpUtil so the
-   login page and admin pages share ONE UA/API definition. */
+/* Shared helper: header.ut defines window.mzWpUtil on every page - the
+   login page includes header.ut too - so this view resolves it directly
+   instead of carrying a second UA/API implementation. */
 function mzWp() {
-	if (typeof window !== 'undefined' && window.mzWpUtil)
-		return window.mzWpUtil;
-	return {
-		isMobileUA() {
-			return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
-		},
-		randomUrl(mobile, sources) {
-			const list = (sources && sources.length) ? sources
-				: (mobile
-					? ['https://api.seaya.link/wap', 'https://t.alcy.cc/mp']
-					: ['https://api.paugram.com/wallpaper/', 'https://t.alcy.cc/bd']);
-			const api = list[Math.floor(Math.random() * list.length)];
-			return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
-		}
-	};
+	return (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUtil : {};
 }
-
-/* Fisher-Yates shuffle and a timestamp stamp are no longer needed here:
-   the login page no longer walks a random source list (see the module
-   header - random wallpaper is an admin-page opt-in). The cache-version
-   stamp still comes from the shared mzWpUtil helper. */
 
 function applyWallpaperSettings(wp) {
 	if (!wp)
@@ -121,7 +103,7 @@ return view.extend({
 		   admin-page opt-in and is not consulted here. When this block is
 		   skipped, the layer from sysauth.ut is the backdrop. */
 		const wp = mzWp();
-		const mobile = wp.isMobileUA();
+		const mobile = (typeof wp.isMobileUA === 'function') ? wp.isMobileUA() : false;
 
 		/* Drop the 5-minute RANDOM-wallpaper session slot on the way in.
 		   This page never paints a random image, and leaving the slot
