@@ -15,23 +15,11 @@
 'require baseclass';
 'require ui';
 
-/* Shared wallpaper helper (review TZ-14): window.mzWpUtil is defined by
-   header.ut so the login page and admin pages share ONE UA/API
-   definition. The local fallback keeps this module working if the
-   header script is ever missing. */
-const mzWp = (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUtil : {
-	isMobileUA() {
-		return /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
-	},
-	randomUrl(mobile, sources) {
-		const list = (sources && sources.length) ? sources
-			: (mobile
-				? ['https://api.seaya.link/wap', 'https://t.alcy.cc/mp']
-				: ['https://api.paugram.com/wallpaper/', 'https://t.alcy.cc/bd']);
-		const api = list[Math.floor(Math.random() * list.length)];
-		return api + (api.indexOf('?') >= 0 ? '&' : '?') + '_mzt=' + Date.now();
-	}
-};
+/* Shared wallpaper helper: window.mzWpUtil is defined by header.ut on
+   every rendered page (admin and login) and is the single UA/API
+   definition. menu-mint.js loads after the header, so it resolves the
+   helper directly - no local re-implementation is kept. */
+const mzWp = (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUtil : {};
 
 /* Fisher-Yates shuffle; multi-source wallpaper mode tries every
    configured source in random order, falling back to the next on error. */
@@ -51,9 +39,7 @@ function shuffle(a) {
 let mzMenuRef = null;
 
 function mzIsMobileUA() {
-	return (mzWp && typeof mzWp.isMobileUA === 'function')
-		? mzWp.isMobileUA()
-		: /Android|iPhone|iPad|iPod|Mobile|Windows Phone|WebOS|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || '');
+	return (mzWp && typeof mzWp.isMobileUA === 'function') ? mzWp.isMobileUA() : false;
 }
 
 /* Bump the cache version and re-resolve the wallpaper from the live

@@ -83,7 +83,7 @@ html[data-theme="dark"] .cbi-tabmenu > li > a:hover {
 
 /* Native select option list follows the dark scheme. */
 html[data-theme="dark"] select option {
-	background: #1d2536;
+	background: var(--mz-color-surface-2);
 	color: var(--mz-color-text);
 }
 
