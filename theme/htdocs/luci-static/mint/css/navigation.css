@@ -3,9 +3,12 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * Sidebar menu, submenu folding, page tabs and breadcrumbs.
+ * Sidebar menu,
+submenu folding,
+page tabs and breadcrumbs.
  * Icon slots are injected by menu-mint.js (decorateMenuIcons) as a
- * decorative inline <svg>; this file only styles the slot, so a missing
+ * decorative inline <svg>; this file only styles the slot,
+so a missing
  * icon never changes the layout.
  */
 
@@ -48,7 +51,7 @@
 }
 
 /* Active item: soft brand wash plus a left edge bar in the cyan accent,
-   the same "cut sheet" cue the cards use. */
+the same "cut sheet" cue the cards use. */
 .mz-menu li.active > a,
 .mz-menu a.active {
 	background: var(--mz-color-primary-soft);
@@ -120,10 +123,13 @@
 }
 
 /* Fold caret - an inline SVG injected by menu-mint.js#mzCaret(). It is
-   a flex item of the link, so `align-items: center` on `.mz-menu a`
-   keeps it on the same optical line as the icon and the label, and
+   a flex item of the link,
+so `align-items: center` on `.mz-menu a`
+   keeps it on the same optical line as the icon and the label,
+and
    `margin-left: auto` pins it to the trailing edge. No absolute
-   positioning, no magic top offset: it cannot be misaligned. */
+   positioning,
+no magic top offset: it cannot be misaligned. */
 .mz-menu-caret {
 	display: inline-flex;
 	align-items: center;
@@ -141,7 +147,8 @@
 
 /* compat.css still draws its own triangle caret with a::after. Without
    this the group link shows TWO arrows (the legacy CSS triangle next to
-   the injected SVG). One caret only, and it is the SVG one. */
+   the injected SVG). One caret only,
+and it is the SVG one. */
 .mz-menu .mz-menu-group > a::after {
 	content: none;
 }
@@ -168,8 +175,9 @@
 /* ---------------------------------------------------------------- */
 /* Page tabs (LuCI #tabmenu)                                          */
 /* ---------------------------------------------------------------- */
-/* Reference-site chip tabs: a 1px outline, tight opposite corners,
-   a 44px hit area on touch devices and a solid ink chip for the
+/* Reference-site chip tabs: a 1px outline,
+tight opposite corners,
+a 44px hit area on touch devices and a solid ink chip for the
    selected entry. */
 
 #tabmenu {
@@ -244,30 +252,4 @@ html[data-theme="dark"] .cbi-tabmenu > li.active > a {
 	background: var(--mz-color-primary-soft);
 	border-color: var(--mz-color-primary);
 	color: var(--mz-color-primary);
-}
-
-/* ---------------------------------------------------------------- */
-/* Breadcrumb                                                         */
-/* ---------------------------------------------------------------- */
-
-.mz-breadcrumb {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	flex-wrap: wrap;
-	font-size: .82rem;
-	color: var(--mz-color-text-muted);
-	margin-bottom: var(--mz-spacing-md);
-}
-
-.mz-breadcrumb a {
-	color: var(--mz-color-text-muted);
-}
-
-.mz-breadcrumb a:hover {
-	color: var(--mz-color-primary);
-}
-
-.mz-breadcrumb .sep {
-	opacity: .45;
 }

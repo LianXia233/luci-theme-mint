@@ -3,10 +3,16 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * The shared component vocabulary: buttons, form controls, tables,
- * modals, badges, alerts, progress and loading states. Every entry is a
+ * The shared component vocabulary: buttons,
+form controls,
+tables,
+* modals,
+badges,
+alerts,
+progress and loading states. Every entry is a
  * real LuCI class or a theme class - nothing is matched with a universal
- * selector, so third-party views keep their own markup working.
+ * selector,
+so third-party views keep their own markup working.
  */
 
 /* ---------------------------------------------------------------- */
@@ -90,16 +96,14 @@ input[type="button"].cbi-button:hover,
 
 /* Destructive */
 .cbi-button-negative,
-.btn.danger,
-.mz-btn-danger {
+.btn.danger {
 	background: var(--mz-color-danger);
 	border-color: var(--mz-color-danger);
 	color: #fff;
 }
 
 .cbi-button-negative:hover,
-.btn.danger:hover,
-.mz-btn-danger:hover {
+.btn.danger:hover {
 	background: #c33d44;
 	border-color: #c33d44;
 	color: #fff;
@@ -363,8 +367,7 @@ table.cbi-section-table tbody tr:hover {
 /* ---------------------------------------------------------------- */
 
 .label,
-.badge,
-.mz-badge {
+.badge {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
@@ -379,49 +382,29 @@ table.cbi-section-table tbody tr:hover {
 	white-space: nowrap;
 }
 
-.mz-badge-success,
 .label.success {
 	background: var(--mz-color-success-soft);
 	border-color: transparent;
 	color: var(--mz-color-success);
 }
 
-.mz-badge-warning,
 .label.warning {
 	background: var(--mz-color-warning-soft);
 	border-color: transparent;
 	color: var(--mz-color-warning);
 }
 
-.mz-badge-danger,
 .label.error {
 	background: var(--mz-color-danger-soft);
 	border-color: transparent;
 	color: var(--mz-color-danger);
 }
 
-.mz-badge-info,
 .label.notice {
 	background: var(--mz-color-info-soft);
 	border-color: transparent;
 	color: var(--mz-color-info);
 }
-
-/* Status dot */
-.mz-dot {
-	display: inline-block;
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	background: var(--mz-color-text-muted);
-	flex: 0 0 auto;
-}
-
-.mz-dot.up,
-.mz-dot.success { background: var(--mz-color-success); }
-.mz-dot.warn { background: var(--mz-color-warning); }
-.mz-dot.down,
-.mz-dot.error { background: var(--mz-color-danger); }
 
 /* ---------------------------------------------------------------- */
 /* Alerts                                                             */
@@ -523,8 +506,7 @@ html[data-theme="dark"] .alert-message.success {
 /* Modal                                                              */
 /* ---------------------------------------------------------------- */
 
-#modal_overlay,
-.mz-modal-overlay {
+#modal_overlay {
 	position: fixed;
 	inset: 0;
 	z-index: var(--mz-z-modal);
@@ -539,8 +521,7 @@ html[data-theme="dark"] .alert-message.success {
 }
 
 .modal,
-.cbi-modal,
-.mz-modal {
+.cbi-modal {
 	position: relative;
 	width: min(560px, 100%);
 	max-height: 88vh;
@@ -555,8 +536,7 @@ html[data-theme="dark"] .alert-message.success {
 }
 
 .modal > h3,
-.cbi-modal > h3,
-.mz-modal > h3 {
+.cbi-modal > h3 {
 	margin: 0 0 var(--mz-spacing-md);
 	padding-bottom: 11px;
 	border-bottom: 2px solid var(--mz-color-border);
@@ -574,17 +554,18 @@ html[data-theme="dark"] .alert-message.success {
  *                        widget gets [open] (compat.css owns that rule,
  *                        including "positioning belongs to LuCI JS")
  *     <span class="more"> / <span class="open">
- *     <ul class="dropdown">   <- second popup, only on some widgets
+ *     <ul class="dropdown">   <- second popup,
+only on some widgets
  *
  * RULE: never touch `.cbi-dropdown > ul` here. The previous revision did
- * (`position:absolute` + white card on every `> ul`), which ripped the
+ * (`position:absolute` + white card on every `> ul`),
+which ripped the
  * closed-state value strip out of the flow - the selected value floated
  * mid-form and the "Save & Apply" split button kept an empty glass shell
  * where its label used to be. Only `ul.dropdown` (and `[open] > ul` via
  * compat.css) may be styled as a floating layer. */
 
-.cbi-dropdown,
-.mz-dropdown {
+.cbi-dropdown {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
@@ -593,12 +574,13 @@ html[data-theme="dark"] .alert-message.success {
 /* The floating popup list ONLY (the ul.dropdown of this LuCI build).
    Long option lists MUST scroll inside the popup instead of stretching
    past the viewport. LuCI's dropdown JS writes an INLINE max-height
-   computed against the document height (not the viewport), which on
+   computed against the document height (not the viewport),
+which on
    tall pages lets the slab run ~400px past the fold - an inline style
-   cannot be beaten by specificity, so the viewport clamp needs the one
+   cannot be beaten by specificity,
+so the viewport clamp needs the one
    deliberate !important in this theme. */
-.cbi-dropdown > ul.dropdown,
-.mz-dropdown > ul {
+.cbi-dropdown > ul.dropdown {
 	position: absolute;
 	top: auto;
 	left: 0;
@@ -628,8 +610,7 @@ html[data-theme="dark"] .alert-message.success {
 	gap: 3px;
 }
 
-.cbi-dropdown > ul.dropdown > li,
-.mz-dropdown > ul > li {
+.cbi-dropdown > ul.dropdown > li {
 	padding: 7px 12px;
 	border-radius: var(--mz-radius-sm);
 	font-size: .86rem;
@@ -638,8 +619,7 @@ html[data-theme="dark"] .alert-message.success {
 	transition: background var(--mz-dur-instant) var(--mz-ease);
 }
 
-.cbi-dropdown > ul.dropdown > li:hover,
-.mz-dropdown > ul > li:hover {
+.cbi-dropdown > ul.dropdown > li:hover {
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-primary);
 }
@@ -692,8 +672,7 @@ html[data-theme="dark"] .alert-message.success {
 /* Progress                                                           */
 /* ---------------------------------------------------------------- */
 
-.progress,
-.mz-progress {
+.progress {
 	position: relative;
 	height: 8px;
 	border-radius: var(--mz-radius-pill);
@@ -701,8 +680,7 @@ html[data-theme="dark"] .alert-message.success {
 	overflow: hidden;
 }
 
-.progress > div,
-.mz-progress > div {
+.progress > div {
 	height: 100%;
 	border-radius: var(--mz-radius-pill);
 	background: linear-gradient(90deg,
@@ -710,11 +688,6 @@ html[data-theme="dark"] .alert-message.success {
 	transition: width var(--mz-dur-panel) var(--mz-ease);
 }
 
-/* ---------------------------------------------------------------- */
-/* Loading                                                            */
-/* ---------------------------------------------------------------- */
-
-.mz-loading,
 .loading {
 	display: inline-flex;
 	align-items: center;
@@ -730,33 +703,6 @@ html[data-theme="dark"] .alert-message.success {
 	border-top-color: var(--mz-color-primary);
 	border-radius: 50%;
 	animation: mz-spin .7s linear infinite;
-}
-
-/* ---------------------------------------------------------------- */
-/* Tooltip                                                            */
-/* ---------------------------------------------------------------- */
-
-.mz-tooltip {
-	position: relative;
-}
-
-.mz-tooltip:hover::after {
-	content: attr(data-tooltip);
-	position: absolute;
-	left: 50%;
-	bottom: calc(100% + 8px);
-	transform: translateX(-50%);
-	z-index: var(--mz-z-popover);
-	padding: 6px 10px;
-	border-radius: var(--mz-radius-sm);
-	background: var(--mz-ink);
-	color: #fff;
-	font-size: .78rem;
-	font-weight: 500;
-	white-space: nowrap;
-	box-shadow: var(--mz-shadow-md);
-	pointer-events: none;
-	animation: mz-pop-in var(--mz-dur-instant) var(--mz-ease);
 }
 
 /* ---------------------------------------------------------------- */

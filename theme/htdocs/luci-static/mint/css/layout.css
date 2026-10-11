@@ -3,7 +3,10 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * The application shell: sidebar, main column, page container, footer
+ * The application shell: sidebar,
+main column,
+page container,
+footer
  * and the mobile bar. Content width is constrained by a single
  * `min(<max>, 100% - <gutter>)` expression so the page never produces a
  * horizontal scrollbar between 320px and very wide screens.
@@ -98,7 +101,7 @@
    exists so the mobile bar can own the title on phones). */
 
 @media (min-width: 855px) {
-	.mz-topbar {
+.mz-topbar {
 		display: none;
 	}
 }
@@ -140,7 +143,8 @@
 /* ---------------------------------------------------------------- */
 /* .mz-view is the page's ONE visual container and is defined in
    container.css (background / border / radius / shadow / padding).
-   Only its placement inside the flex column belongs here, so the
+   Only its placement inside the flex column belongs here,
+so the
    geometry has exactly one home and the sticky action bar can
    full-bleed by exactly one --mz-container-pad. Constraint: it must
    never be given overflow other than `visible` - an `overflow-x: clip`

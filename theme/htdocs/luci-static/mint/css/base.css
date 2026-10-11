@@ -3,12 +3,16 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * Document defaults, typography scale, focus rings and scrollbars.
- * Deliberately scoped: no universal selector, so third-party LuCI views
+ * Document defaults,
+typography scale,
+focus rings and scrollbars.
+ * Deliberately scoped: no universal selector,
+so third-party LuCI views
  * keep their own component styling.
  */
 
-/* The page colour lives on <html>, NOT on <body>. The wallpaper layers
+/* The page colour lives on <html>,
+NOT on <body>. The wallpaper layers
    are body pseudo-elements with a NEGATIVE z-index so they sit behind
    every piece of UI without forcing .mz-main to open a stacking
    context; an opaque body background would paint straight over them. */
@@ -21,7 +25,7 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	html {
+html {
 		scroll-behavior: auto;
 	}
 }
@@ -53,7 +57,8 @@ a:hover {
 	color: var(--mz-color-primary-hover);
 }
 
-/* A single, consistent focus ring for every interactive element. */
+/* A single,
+consistent focus ring for every interactive element. */
 :focus-visible {
 	outline: 2px solid var(--mz-color-primary);
 	outline-offset: 2px;
@@ -68,7 +73,12 @@ a:hover {
 /* Typography scale                                                   */
 /* ---------------------------------------------------------------- */
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
 	margin: 0;
 	font-weight: 700;
 	line-height: 1.35;
@@ -77,13 +87,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 { font-size: 1.6rem; }
+
 h2 { font-size: 1.35rem; }
+
 h3 { font-size: 1.1rem; }
+
 h4 { font-size: 1rem; }
+
 h5 { font-size: .92rem; }
+
 h6 { font-size: .85rem; }
 
 p { margin: 0 0 .8em; }
+
 p:last-child { margin-bottom: 0; }
 
 small, .small { font-size: .82em; }

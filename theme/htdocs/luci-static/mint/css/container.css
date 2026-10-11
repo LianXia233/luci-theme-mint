@@ -7,7 +7,8 @@
  * ONE PAGE / ONE MAIN CONTAINER / ONE BORDER / ONE RADIUS / ONE SHADOW
  * ==================================================================
  *
- * Page anatomy, bottom to top:
+ * Page anatomy,
+bottom to top:
  *
  *     wallpaper image        body::after                 z -2
  *     scrim + blur           body::before                z -1
@@ -20,14 +21,18 @@
  *                                                        <- transparent
  *
  * `.mz-view` is the only element of a page that may paint a
- * background, a border, a corner radius or a shadow. Every structural
- * component inside it is reduced to layout + spacing + typography, so a
+ * background,
+a border,
+a corner radius or a shadow. Every structural
+ * component inside it is reduced to layout + spacing + typography,
+so a
  * page reads as one sheet instead of a stack of nested white boxes.
  *
  * Two hard constraints behind the implementation:
  *
  *  1. NO backdrop-filter / transform / filter / opacity on .mz-view.
- *     Each of those opens a new stacking context, which would trap a
+ *     Each of those opens a new stacking context,
+which would trap a
  *     cbi-dropdown (z-index 1000) inside the column and let the fixed
  *     sidebar paint over it. The wallpaper is blurred ONCE by
  *     body::before; the container only adds a translucent fill. That
@@ -35,8 +40,10 @@
  *
  *  2. The full-bleed negative margin of the sticky action bar is
  *     derived from the very same --mz-container-pad token as the
- *     container padding. It is a deliberate full-bleed, not a
- *     compensating hack, and the two values cannot drift apart.
+ *     container padding. It is a deliberate full-bleed,
+not a
+ *     compensating hack,
+and the two values cannot drift apart.
  */
 
 /* ---------------------------------------------------------------- */
@@ -65,23 +72,29 @@
  *
  * 1. "PC 菜单栏和内容之间留白太多" - caused by a leftover
  *    `#mz-view { max-width: 1280px; margin: 0 auto }` block in
- *    compat.css. It is an ID selector, so it beat `.mz-view` and the
- *    token system and pinned the sheet to 1280px, centred - 219px of
+ *    compat.css. It is an ID selector,
+so it beat `.mz-view` and the
+ *    token system and pinned the sheet to 1280px,
+centred - 219px of
  *    void between the menu and the page at 1920px (539px at 2560px).
  *    That block is deleted; the numbers now come from tokens again.
  * 2. "右边空着一大片" - the fix for (1) had anchored the sheet to the
- *    left, and background.css additionally reserved a 260px/320px lane
+ *    left,
+and background.css additionally reserved a 260px/320px lane
  *    on the right for the artwork. Trading a leading void for a trailing
  *    one is not a fix either.
  *
  * The surplus is therefore split evenly by the base rule above
  * (`margin: var(--mz-container-margin) auto`): a 1920px desktop gets
- * ~20px per side, and no edge grows a dead strip. There is no
+ * ~20px per side,
+and no edge grows a dead strip. There is no
  * left-anchor override and no reserved lane any more.
  *
- * Below 855px the sidebar is an off-canvas drawer, so the sheet is
+ * Below 855px the sidebar is an off-canvas drawer,
+so the sheet is
  * full-bleed there and this is moot either way. Width is untouched -
- * --mz-content-max still caps very wide screens in one place, tokens.css. */
+ * --mz-content-max still caps very wide screens in one place,
+tokens.css. */
 
 /* (No placement override here on purpose - see the note above.) */
 
@@ -113,16 +126,8 @@
 .mz-view .ifacebox-head,
 .mz-view .ifacebox-body,
 .mz-view .ifacebadge,
-.mz-view .mz-info-card,
-.mz-view .mz-ring-card,
-.mz-view .mz-port-card,
 .mz-view .mz-net-card,
-.mz-view .mz-sys-panel,
-.mz-view .mz-wifi-card,
-.mz-view .mz-table-card,
-.mz-view .mz-card,
-.mz-view .mz-panel,
-.mz-view .mz-empty-state {
+.mz-view .mz-sys-panel {
 	background: transparent;
 	border: 0;
 	border-radius: 0;
@@ -135,11 +140,7 @@
    visual layer the container is supposed to own alone. */
 .mz-view .cbi-section:hover,
 .mz-view .cbi-section-node:hover,
-.mz-view .mz-info-card:hover,
-.mz-view .mz-ring-card:hover,
-.mz-view .mz-port-card:hover,
-.mz-view .mz-net-card:hover,
-.mz-view .mz-card:hover {
+.mz-view .mz-net-card:hover {
 	box-shadow: none;
 	transform: none;
 }
@@ -177,9 +178,12 @@
 /* ---------------------------------------------------------------- */
 /* 4. Section heading                                                */
 /* ---------------------------------------------------------------- */
-/* Reference-site language: a 2px underline, tight tracking and a
+/* Reference-site language: a 2px underline,
+tight tracking and a
    short accent bar on the leading edge. The heading is part of the
-   container's content, not a header strip of its own, so the legacy
+   container's content,
+not a header strip of its own,
+so the legacy
    negative-margin "frosted head" is flattened to a plain divider. */
 
 .mz-view .cbi-section > h2,
@@ -189,8 +193,7 @@
 .mz-view .cbi-section > .cbi-title,
 .mz-view .cbi-section > .cbi-section-title,
 .mz-view .mz-sys-panel > h3,
-.mz-view .mz-net-card-header > h3,
-.mz-view .mz-card-title {
+.mz-view .mz-net-card-header > h3 {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -237,10 +240,13 @@
 }
 
 /* ---------------------------------------------------------------- */
-/* 5. Action bar - a FUNCTIONAL layer, not a second card             */
+/* 5. Action bar - a FUNCTIONAL layer,
+not a second card             */
 /* ---------------------------------------------------------------- */
 /* Save / Apply / Reset may own a fill and ONE hairline so they stay
-   readable while scrolling, but they must never grow a border box, a
+   readable while scrolling,
+but they must never grow a border box,
+a
    corner radius or a shadow of their own. The full-bleed margin is
    exactly one --mz-container-pad: the container's own padding. */
 
@@ -261,7 +267,7 @@
 
 /* Save / Apply / Reset no longer float: they live in normal document
    flow at the end of the page and align to the bottom-right corner,
-   sharing the container's own hairline so they stay readable without
+sharing the container's own hairline so they stay readable without
    growing a box of their own. */
 #maincontent .cbi-map > .cbi-page-actions,
 #maincontent .cbi-page-actions {
@@ -273,92 +279,6 @@
 	border-top: var(--mz-container-divider);
 	border-radius: 0;
 	box-shadow: none;
-}
-
-/* ---------------------------------------------------------------- */
-/* 6. Content grids (layout only)                                    */
-/* ---------------------------------------------------------------- */
-
-.mz-info-cards,
-.mz-sys-grid,
-.mz-port-grid,
-.mz-net-grid,
-.mz-wifi-grid,
-.mz-card-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-	gap: var(--mz-spacing-md);
-	margin-bottom: var(--mz-spacing-md);
-}
-
-.mz-card-grid-2 {
-	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-}
-
-.mz-card-grid-3 {
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-
-/* ---------------------------------------------------------------- */
-/* 7. Compact metric block                                           */
-/* ---------------------------------------------------------------- */
-
-.mz-info-card {
-	padding: 0;
-}
-
-.mz-info-label {
-	font-size: .76rem;
-	font-weight: 600;
-	letter-spacing: .02em;
-	color: var(--mz-color-text-muted);
-	margin-bottom: 3px;
-}
-
-.mz-info-value {
-	font-size: 1.15rem;
-	font-weight: 750;
-	letter-spacing: -.01em;
-	color: var(--mz-color-text);
-	overflow-wrap: anywhere;
-}
-
-.mz-info-model {
-	font-size: .78rem;
-	font-weight: 500;
-	color: var(--mz-color-text-muted);
-}
-
-/* ---------------------------------------------------------------- */
-/* 8. Empty state                                                    */
-/* ---------------------------------------------------------------- */
-
-.mz-view .mz-empty-state {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: var(--mz-spacing-sm);
-	padding: var(--mz-spacing-xl) 0;
-	text-align: center;
-	color: var(--mz-color-text-muted);
-}
-
-.mz-empty-state .mz-empty-icon {
-	width: 34px;
-	height: 34px;
-	opacity: .5;
-}
-
-.mz-empty-state .mz-empty-title {
-	font-size: .95rem;
-	font-weight: 700;
-	color: var(--mz-color-text);
-}
-
-.mz-empty-state .mz-empty-text {
-	font-size: .84rem;
-	max-width: 42ch;
 }
 
 /* ---------------------------------------------------------------- */

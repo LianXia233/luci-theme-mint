@@ -3,30 +3,39 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * The login page uses the same card, control and motion vocabulary as
+ * The login page uses the same card,
+control and motion vocabulary as
  * the admin UI so the two never look like separate products.
  *
- * BACKDROP - one artwork, not four
+ * BACKDROP - one artwork,
+not four
  *   The admin pages carry a FOUR-state character layer (device x mode,
  *   emitted by header.ut). The login screen is one screen with one
- *   identity, so it carries ONE artwork: Plana, in both colour modes.
+ *   identity,
+so it carries ONE artwork: Plana,
+in both colour modes.
  *   sysauth.ut emits its own .mint-background.mz-login-char for that,
- *   and this file supplies the three things that differ:
+*   and this file supplies the three things that differ:
  *
  *     1. the palette - the layer's base is transparent so the login
- *        gradient below it stays the base colour, and the wedge/scrim
+ *        gradient below it stays the base colour,
+and the wedge/scrim
  *        are re-tuned to translucent values that let that gradient read
  *        through instead of covering it;
- *     2. the artwork  - Plana for every mode, in its own geometry
+ *     2. the artwork  - Plana for every mode,
+in its own geometry
  *        (desktop square anchored right, phone portrait anchored to the
  *        bottom edge);
- *     3. the veil     - a gentle top-down wash, since the card is
+ *     3. the veil     - a gentle top-down wash,
+since the card is
  *        centred rather than left-aligned like the admin column.
  *
- * The layer is fixed / inset 0 / z-index:-2 / pointer-events:none, so it
+ * The layer is fixed / inset 0 / z-index:-2 / pointer-events:none,
+so it
  * is outside the flow and cannot touch the form or the card.
  *
- * This file is imported LAST in cascade.css, so the overrides below win
+ * This file is imported LAST in cascade.css,
+so the overrides below win
  * against background.css at equal specificity - which is exactly why the
  * generic .mint-background rule can stay untouched for the admin pages.
  */
@@ -41,10 +50,13 @@
 }
 
 /* Background layer: the base colour and the gradient fallback. It sits
-   BELOW the login character layer (same z-index, earlier in the DOM), so
+   BELOW the login character layer (same z-index, earlier in the DOM),
+so
    it is what the character layer's transparent base reveals. Opacity 0
    until an explicitly selected wallpaper has decoded - the gradient is
-   painted by the element's own background-image, not by opacity, so the
+   painted by the element's own background-image,
+not by opacity,
+so the
    backdrop is composed on the very first frame. */
 .mz-login-bg {
 	position: fixed;
@@ -75,7 +87,8 @@ html[data-theme="dark"] .mz-login-bg {
 /* ---------------------------------------------------------------- */
 
 /* .mint-background is display:none unless the body opts in; the login
-   body carries no mz-char-bg (that is the admin flag), so the login
+   body carries no mz-char-bg (that is the admin flag),
+so the login
    layer opts itself in here. */
 .mint-background.mz-login-char {
 	display: block;
@@ -136,22 +149,29 @@ html[data-theme="dark"] .mint-background.mz-login-char {
 
 /* The photo layer is needed ONLY once an explicitly selected wallpaper has
    decoded - and sysauth.js announces exactly that by adding mz-wp-custom.
-   Without the class there is no wallpaper to show, so the element is
+   Without the class there is no wallpaper to show,
+so the element is
    removed instead of left sitting at opacity 0. This is also the second
    half of the stale-build defence: an older sysauth.js (see the note in
    footer.ut - LuCI versions these modules with its own build string) still
-   applied the cron-cached RANDOM image here, which used to show straight
-   through the artwork. Now that path is unreachable, whatever builds the
+   applied the cron-cached RANDOM image here,
+which used to show straight
+   through the artwork. Now that path is unreachable,
+whatever builds the
    script. */
 body:not(.mz-wp-custom) .mz-login-bg {
 	display: none;
 }
 
-/* Plana, in both modes: one node, always opaque. .mint-bg-character sets
+/* Plana,
+in both modes: one node,
+always opaque. .mint-bg-character sets
    opacity 0 and background.css flips the two admin nodes by data-theme;
-   this single node is not one of them, so both of those are overridden
+   this single node is not one of them,
+so both of those are overridden
    here rather than fought with. Re-uses the admin grid asset through
-   --mz-char-grid, which is inherited from .mint-background. */
+   --mz-char-grid,
+which is inherited from .mint-background. */
 .mz-login-char-art {
 	background-image: url("../images/character-pc-dark.webp");
 	background-position: right center;
@@ -182,7 +202,7 @@ body.mz-wp-custom .mint-background.mz-login-char {
  * glass, which is the point of the layer. Only the middle of the figure
  * is behind the card, and only the outer 19% of each side is cropped. */
 @media (max-width: 854px) {
-	.mz-login-char-art {
+.mz-login-char-art {
 		background-image: url("../images/character-mobile-dark.webp");
 		background-position: bottom center;
 		background-size: cover;
@@ -332,7 +352,8 @@ html[data-theme="dark"] .mz-field input {
 	text-align: left;
 }
 
-/* Submit: full width, brand solid. */
+/* Submit: full width,
+brand solid. */
 .mz-login-form .cbi-button,
 .mz-login-form .btn,
 .mz-login-form button[type="submit"] {
@@ -376,13 +397,13 @@ html[data-theme="dark"] .mz-login .alert-message.error {
 /* ---------------------------------------------------------------- */
 
 @media (max-width: 480px) {
-	.mz-login {
+.mz-login {
 		padding: var(--mz-spacing-md);
 		align-items: flex-start;
 		padding-top: 8vh;
 	}
 
-	.mz-login-card {
+.mz-login-card {
 		padding: var(--mz-spacing-lg) var(--mz-spacing-md);
 		border-radius: 12px 3px 18px 3px;
 	}

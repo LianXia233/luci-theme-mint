@@ -3,19 +3,25 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * Layer contract, bottom to top:
+ * Layer contract,
+bottom to top:
  *
  *     Wallpaper        body.mz-has-wallpaper::after   z -2   fixed image
  *     Overlay / Blur   body.mz-has-wallpaper::before  z -1   scrim + blur
  *     Glass UI         sidebar / bars / cards          z >=1  frosted
- *     Content          text, controls                  normal flow
+ *     Content          text,
+controls                  normal flow
  *
- * The two wallpaper layers use a NEGATIVE z-index and live on <body>, so
+ * The two wallpaper layers use a NEGATIVE z-index and live on <body>,
+so
  * .mz-main never has to open a stacking context. That is what keeps
  * cbi-dropdown menus (z 1000) above the fixed sidebar instead of trapped
  * inside a raised content column.
  *
- * The wallpaper can therefore never cover a menu, card, modal, form or
+ * The wallpaper can therefore never cover a menu,
+card,
+modal,
+form or
  * button - it is painted strictly below the root stacking context.
  */
 
@@ -67,9 +73,11 @@ body.mz-has-wallpaper::before {
 }
 
 /* Dark mode renders NO wallpaper at all: `content: none` removes both
-   pseudo-elements from the box tree instead of painting over them, so
+   pseudo-elements from the box tree instead of painting over them,
+so
    dark pages sit on the flat page colour with dark glass above.
-   The data-theme attribute lives on <html>, so the selector MUST be
+   The data-theme attribute lives on <html>,
+so the selector MUST be
    html[data-theme="dark"] body... - a bare
    body.mz-has-wallpaper[data-theme="dark"] could never match. */
 html[data-theme="dark"] body.mz-has-wallpaper::after,
@@ -78,22 +86,31 @@ html[data-theme="dark"] body.mz-has-wallpaper::before {
 }
 
 /* ---------------------------------------------------------------- */
-/* The random wallpaper is an OPT-IN, enforced HERE as well as in JS  */
+/* The random wallpaper is an OPT-IN,
+enforced HERE as well as in JS  */
 /* ---------------------------------------------------------------- */
 /* header.ut states mint.wallpaper.ui_random on <html data-wp-random>.
-   The frontends already honour it, but menu-mint.js is a LuCI class
+   The frontends already honour it,
+but menu-mint.js is a LuCI class
    module: LuCI's loader versions those with its OWN build string (the
-   ?v= on its luci.js tag), not with MINT_ASSET_REV, so a browser can
+   ?v= on its luci.js tag),
+not with MINT_ASSET_REV,
+so a browser can
    still be running a previous theme build after an upgrade - and that
    build auto-applied the cron-cached random image. Since the markup and
-   the sheet DO move together, the sheet gets the last word: with
+   the sheet DO move together,
+the sheet gets the last word: with
    data-wp-random="0" the wallpaper pseudo-elements are removed from the
-   box tree outright, exactly like the dark-mode rule above.
+   box tree outright,
+exactly like the dark-mode rule above.
  *
  * `:not(.mz-wp-custom)` keeps an EXPLICIT selection working: library
-   upload, legacy upload and direct links all set mz-wp-custom, which is
+   upload,
+legacy upload and direct links all set mz-wp-custom,
+which is
    also what stands the character layer down. So the rule can only ever
-   suppress the random photo, never a wallpaper the administrator chose.
+   suppress the random photo,
+never a wallpaper the administrator chose.
  *
  * Specificity (0,3,2) deliberately beats both body.mz-has-wallpaper::after
  * (0,2,1) and the character sheet's
@@ -132,7 +149,7 @@ html:not([data-theme="dark"]) body.mz-has-wallpaper {
 }
 
 /* Glass tokens - dark ("deep grey glass"). Dark never paints an image,
-   so these surfaces only have to stay legible over the flat page.
+so these surfaces only have to stay legible over the flat page.
    They are more opaque on purpose: a heavily transparent dark card
    would let the page bleed through and smear the text. */
 html[data-theme="dark"] body.mz-has-wallpaper {
@@ -157,12 +174,14 @@ html[data-theme="dark"] body.mz-has-wallpaper {
 /* ---------------------------------------------------------------- */
 /* The ONE frosted sheet                                             */
 /* ---------------------------------------------------------------- */
-/* The blur already happened once, on body::before. The page container
+/* The blur already happened once,
+on body::before. The page container
    therefore only adds a translucent fill - it must NOT take a
    backdrop-filter of its own:
      * a second blur on top of the scrim doubles the effect and makes
        the wallpaper wash out/over-brighten;
-     * backdrop-filter opens a stacking context, which would trap every
+     * backdrop-filter opens a stacking context,
+which would trap every
        cbi-dropdown (z 1000) inside the column and let the sidebar win;
      * one blur per page is the only budget a router can afford.
    Result: exactly ONE frosted sheet between the wallpaper and the
@@ -184,7 +203,9 @@ body.mz-has-wallpaper .mz-view {
 /* ---------------------------------------------------------------- */
 /* The sidebar and the bars share the strong glass tint so the
    wallpaper flows edge to edge instead of being cut into slabs. These
-   are chrome, not page content, and they legitimately own a blur. */
+   are chrome,
+not page content,
+and they legitimately own a blur. */
 body.mz-has-wallpaper .mz-sidebar,
 body.mz-has-wallpaper .mz-topbar,
 body.mz-has-wallpaper .mz-mobilebar {
@@ -194,13 +215,15 @@ body.mz-has-wallpaper .mz-mobilebar {
 	border-color: var(--mz-glass-border);
 }
 
-/* The footer is a thin strip below the container, not a panel. */
+/* The footer is a thin strip below the container,
+not a panel. */
 body.mz-has-wallpaper .mz-footer {
 	background: transparent;
 	border-top-color: var(--mz-glass-border);
 }
 
-/* The action bar is a FUNCTIONAL layer, not a second frosted sheet: it
+/* The action bar is a FUNCTIONAL layer,
+not a second frosted sheet: it
    takes the container's own fill and no blur. A backdrop-filter here
    would open a stacking context and trap the "Save & Apply" split
    dropdown inside the bar (z 100) under the mobile bar (z 200).
@@ -219,7 +242,7 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
 /* ---------------------------------------------------------------- */
 /* compat.css still carries its old "frost every card" pass as
    `body.mz-has-wallpaper .cbi-section {...}` (2 classes + 1 element),
-   which OUTRANKS the plain `.mz-view .cbi-section {...}` in
+which OUTRANKS the plain `.mz-view .cbi-section {...}` in
    container.css (2 classes, 0 elements) and would put a second frosted
    slab inside the page container again. This block repeats the flatten
    with one extra class so the single-container rule also holds while a
@@ -227,7 +250,8 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
    flatten and exists purely to out-specify that legacy rule - it is not
    a per-page patch.
    Nothing here gets a backdrop-filter: the blur already happened on
-   body::before, and a second one both over-brightens the wallpaper and
+   body::before,
+and a second one both over-brightens the wallpaper and
    opens a stacking context that traps cbi-dropdown menus. */
 body.mz-has-wallpaper .mz-view .cbi-map,
 body.mz-has-wallpaper .mz-view .cbi-section,
@@ -240,16 +264,8 @@ body.mz-has-wallpaper .mz-view .cbi-map-descr,
 body.mz-has-wallpaper .mz-view .cbi-tab-descr,
 body.mz-has-wallpaper .mz-view .cbi-dynlist,
 body.mz-has-wallpaper .mz-view .cbi-dynlist > .item,
-body.mz-has-wallpaper .mz-view .mz-info-card,
-body.mz-has-wallpaper .mz-view .mz-ring-card,
-body.mz-has-wallpaper .mz-view .mz-port-card,
 body.mz-has-wallpaper .mz-view .mz-net-card,
 body.mz-has-wallpaper .mz-view .mz-sys-panel,
-body.mz-has-wallpaper .mz-view .mz-sys-grid,
-body.mz-has-wallpaper .mz-view .mz-wifi-card,
-body.mz-has-wallpaper .mz-view .mz-table-card,
-body.mz-has-wallpaper .mz-view .mz-card,
-body.mz-has-wallpaper .mz-view .mz-empty-state,
 body.mz-has-wallpaper .mz-view .ifacebox,
 body.mz-has-wallpaper .mz-view .ifacebox-head,
 body.mz-has-wallpaper .mz-view .ifacebox-head.active,
@@ -279,9 +295,9 @@ body.mz-has-wallpaper table.cbi-section-table th {
    surface so legibility never depends on an unsupported effect. */
 
 @supports not (backdrop-filter: blur(1px)) {
-	body.mz-has-wallpaper .mz-sidebar,
-	body.mz-has-wallpaper .mz-topbar,
-	body.mz-has-wallpaper .mz-mobilebar {
+body.mz-has-wallpaper .mz-sidebar,
+body.mz-has-wallpaper .mz-topbar,
+body.mz-has-wallpaper .mz-mobilebar {
 		background: var(--mz-color-surface);
 	}
 }
@@ -324,7 +340,8 @@ body.mz-has-wallpaper #modal_overlay {
 	max-width: 68ch;
 }
 
-/* A toolbar is a layout row, not a second container. */
+/* A toolbar is a layout row,
+not a second container. */
 .mz-wp-mgr-toolbar {
 	display: flex;
 	flex-wrap: wrap;
@@ -386,11 +403,14 @@ body.mz-has-wallpaper #modal_overlay {
 }
 
 /* NOTE: the settings view (luci-app-mint-wallpaper) emits .mz-wp-card,
-   .mz-wp-badge, .mz-wp-del and .mz-wp-empty - keep the names in sync
+.mz-wp-badge,
+.mz-wp-del and .mz-wp-empty - keep the names in sync
    with wallpaper.js#buildGridNodes. */
-/* A wallpaper tile is MEDIA CONTENT (the thumbnail itself), not a
+/* A wallpaper tile is MEDIA CONTENT (the thumbnail itself),
+not a
    panel: it keeps the clipping radius and the selection ring but no
-   fill and no lift, so the grid never reads as a second card layer. */
+   fill and no lift,
+so the grid never reads as a second card layer. */
 .mz-wp-card {
 	position: relative;
 	display: flex;

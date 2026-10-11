@@ -5,7 +5,8 @@
  *
  * Every animation in the theme is defined here and referenced by name
  * from the other layers. Only transform / opacity / filter are animated
- * so the compositor can run them without layout work, and nothing loops
+ * so the compositor can run them without layout work,
+and nothing loops
  * forever except the spinner.
  */
 
@@ -61,11 +62,7 @@
 .cbi-section,
 .cbi-section-node,
 .cbi-map,
-.mz-info-card,
-.mz-ring-card,
-.mz-port-card,
-.mz-net-card,
-.mz-card {
+.mz-net-card {
 	animation: mz-reveal var(--mz-dur-panel) var(--mz-ease) both;
 }
 
@@ -76,9 +73,11 @@
 /* ---------------------------------------------------------------- */
 /* Wallpaper cross-fade                                               */
 /* ---------------------------------------------------------------- */
-/* The wallpaper lives on a body pseudo-element, which cannot be
+/* The wallpaper lives on a body pseudo-element,
+which cannot be
    transitioned per-image. Instead the whole layer is faded in once the
-   JS reports the image decoded, so a swap never flashes the old
+   JS reports the image decoded,
+so a swap never flashes the old
    picture. */
 
 body.mz-wp-swapping::after {
@@ -90,33 +89,29 @@ body.mz-wp-swapping::after {
 /* ---------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-	.mz-view,
-	.cbi-section,
-	.cbi-section-node,
-	.cbi-map,
-	.mz-info-card,
-	.mz-ring-card,
-	.mz-port-card,
-	.mz-net-card,
-	.mz-card,
-	.fade-in,
-	body.mz-wp-swapping::after {
+.mz-view,
+.cbi-section,
+.cbi-section-node,
+.cbi-map,
+.mz-net-card,
+.fade-in,
+body.mz-wp-swapping::after {
 		animation: none !important;
 	}
 
-	.mz-sidebar,
-	.mz-overlay,
-	.btn,
-	.cbi-button,
-	.mz-icon-btn,
-	.mz-menu a,
-	input,
-	select,
-	textarea {
+.mz-sidebar,
+.mz-overlay,
+.btn,
+.cbi-button,
+.mz-icon-btn,
+.mz-menu a,
+input,
+select,
+textarea {
 		transition-duration: .01ms !important;
 	}
 
-	.mz-spinner {
+.mz-spinner {
 		animation: mz-spin 1.2s linear infinite;
 	}
 }

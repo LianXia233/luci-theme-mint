@@ -15,17 +15,20 @@
 /* Design tokens                                                     */
 /* ---------------------------------------------------------------- */
 
-/* Design tokens live in css/tokens.css, which is loaded AFTER this
+/* Design tokens live in css/tokens.css,
+which is loaded AFTER this
    sheet on purpose - the later definition wins for every consumer.
    The legacy token block that used to sit here declared the same
    variables under the same selectors (:root and html[data-theme="dark"])
-   but could never affect a computed value, so it was removed. */
+   but could never affect a computed value,
+so it was removed. */
 
 /* ---------------------------------------------------------------- */
 /* Base                                                              */
 /* ---------------------------------------------------------------- */
 
-/* The page colour lives on <html>, NOT on <body>. The wallpaper layers
+/* The page colour lives on <html>,
+NOT on <body>. The wallpaper layers
    are body pseudo-elements with a NEGATIVE z-index so that they sit
    behind every piece of UI without forcing .mz-main to open a stacking
    context; an opaque body background would paint straight over them. */
@@ -166,15 +169,6 @@ a:hover {
 	border-top: 1px solid var(--mz-color-border);
 }
 
-/* NOTE (OT-07): the #modemenu element and its renderModeMenu() were removed;
-   these .mz-modelist rules went with them. */
-
-.mz-sidebar-actions {
-	display: flex;
-	gap: var(--mz-spacing-xs);
-	justify-content: flex-end;
-}
-
 .mz-icon-btn {
 	display: inline-flex;
 	align-items: center;
@@ -255,20 +249,12 @@ a:hover {
 	gap: var(--mz-spacing-md);
 }
 
-/* (Removed 2026-09-10: no DOM producer emits .mz-breadcrumb anywhere.
-   The desktop page title is the .mz-topbar-title element in header.ut.) */
-
-.mz-indicators {
-	display: flex;
-	align-items: center;
-	gap: var(--mz-spacing-sm);
-}
-
 /* LuCI indicator strip - the host of the native #indicators slot
    (ui.js#showIndicator: change/apply indicator, XHR poll badge, ...).
    It is a SEPARATE element from .mz-topbar precisely so that hiding the
    desktop title bar cannot take a native LuCI affordance with it.
-   Zero-height while empty: side padding only and no vertical padding, so
+   Zero-height while empty: side padding only and no vertical padding,
+so
    an unused strip costs exactly 0px of layout on every page. */
 .mz-indicatorbar {
 	position: sticky;
@@ -287,10 +273,12 @@ a:hover {
 
 /* Content wrapper. It constrains WIDTH only - never visibility.
    An earlier revision also set `overflow-x: clip` on this selector as a
-   page-level guard, which silently clipped every absolutely positioned
+   page-level guard,
+which silently clipped every absolutely positioned
    descendant reaching past the view box: most visibly the cbi-dropdown
    menus near the right/bottom edge. A dropdown is supposed to overlap its
-   card and to hang off the page bottom, so overflow is handled by the
+   card and to hang off the page bottom,
+so overflow is handled by the
    elements that actually need a scroll container instead. */
 .mz-view {
 	flex: 1;
@@ -406,7 +394,8 @@ input[type="button"].cbi-button {
 	box-shadow: var(--mz-shadow-sm);
 }
 
-/* Save / positive: light blue fill, blue text (official LuCI look) */
+/* Save / positive: light blue fill,
+blue text (official LuCI look) */
 .cbi-button-save,
 .cbi-button-positive {
 	background: var(--mz-color-primary-soft);
@@ -421,7 +410,8 @@ input[type="button"].cbi-button {
 	color: #fff;
 }
 
-/* Reset / neutral / edit: light red fill, red text */
+/* Reset / neutral / edit: light red fill,
+red text */
 .cbi-button-reset {
 	background: var(--mz-color-danger-soft);
 	border-color: transparent;
@@ -487,12 +477,13 @@ input[type="button"].cbi-button {
 	width: 100%;
 }
 
-
 /* ---------------------------------------------------------------- */
 /* Forms                                                             */
 /* ---------------------------------------------------------------- */
 
-input, select, textarea {
+input,
+select,
+textarea {
 	font-family: inherit;
 	font-size: .9rem;
 	color: var(--mz-color-text);
@@ -530,7 +521,9 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 /* ---------------------------------------------------------------- */
-/* Cards, sections, tables                                           */
+/* Cards,
+sections,
+tables                                           */
 /* ---------------------------------------------------------------- */
 
 .cbi-section,
@@ -772,15 +765,18 @@ th {
  *     <h3 style="display:flex;justify-content:space-between">
  *         端口状态 <span class="label">隐藏</span></h3>
  * and rely on the theme to keep the title and the pill on ONE row,
- * vertically centred. The theme's own `.cbi-section h3` rules
+* vertically centred. The theme's own `.cbi-section h3` rules
  * (fixed margin/padding/border) plus the narrow-column reflow further
- * down can push the pill onto a second line, which reads as a broken
+ * down can push the pill onto a second line,
+which reads as a broken
  * heading ("端口状态" / "隐藏" stacked).
  *
  * Scoped on purpose. A bare `h3 { ... }` would restyle every heading in
- * LuCI and in every third-party app, so the rules only match headings
+ * LuCI and in every third-party app,
+so the rules only match headings
  * that actually carry a pill:
- *   - .mz-h3-pill is added by mz-ui.js (works in every browser), and
+ *   - .mz-h3-pill is added by mz-ui.js (works in every browser),
+and
  *   - :has(> .label) covers the no-JS / pre-init case on browsers that
  *     support it. Both selectors hit the same declaration block.
  * ---------------------------------------------------------------- */
@@ -959,14 +955,6 @@ th {
 	border-radius: 18px;
 }
 
-/* (Removed 2026-09-07: .mz-login-title has no matching element in sysauth.ut.) */
-
-.mz-login-welcome {
-	margin: var(--mz-spacing-xs) 0 var(--mz-spacing-lg);
-	font-size: .86rem;
-	color: rgba(242, 244, 250, .65);
-}
-
 .mz-login-form {
 	text-align: left;
 	display: flex;
@@ -1041,8 +1029,7 @@ th {
 }
 
 /* The hidden bootstrap-style form that LuCI JS toggles; keep it out of view */
-.mz-login ~ #view,
-body.mz-login-active #maincontent {
+.mz-login ~ #view {
 	display: none;
 }
 
@@ -1050,9 +1037,11 @@ body.mz-login-active #maincontent {
 /* Mobile top bar (2026-09-09)                                       */
 /*                                                                   */
 /* The old fixed corner hamburger forced a full-height left padding  */
-/* gutter on #mz-view, leaving a blank column under the button. The  */
+/* gutter on #mz-view,
+leaving a blank column under the button. The  */
 /* toggle now lives inside a slim sticky bar above the content that  */
-/* also carries the page title, so the view keeps normal symmetric   */
+/* also carries the page title,
+so the view keeps normal symmetric   */
 /* padding on every phone width. Desktop (>854px) keeps the bar      */
 /* display:none entirely.                                            */
 /* ---------------------------------------------------------------- */
@@ -1061,7 +1050,7 @@ body.mz-login-active #maincontent {
 }
 
 @media (max-width: 854px) {
-	.mz-mobilebar {
+.mz-mobilebar {
 		position: sticky;
 		top: 0;
 		/* Under the drawer scrim (--mz-z-scrim) so the bar dims with
@@ -1076,7 +1065,7 @@ body.mz-login-active #maincontent {
 		border-bottom: 1px solid var(--mz-color-border);
 	}
 
-	.mz-mobilebar .mz-mobilebar-title {
+.mz-mobilebar .mz-mobilebar-title {
 		font-weight: 600;
 		font-size: .95rem;
 		color: var(--mz-color-text);
@@ -1090,7 +1079,7 @@ body.mz-login-active #maincontent {
 		min-width: 0;
 	}
 
-	/* In-flow inside the bar: overrides the fixed top-left corner
+/* In-flow inside the bar: overrides the fixed top-left corner
 	   placement of the base .mz-sidebar-toggle rule. */
 	.mz-mobilebar #mz-sidebar-toggle {
 		position: static;
@@ -1101,39 +1090,45 @@ body.mz-login-active #maincontent {
 		margin: 0;
 	}
 
-	/* The dashboard refresh control lives in the bar on phones; push it
-	   to the right edge, opposite the hamburger. */
+/* The dashboard refresh control lives in the bar on phones; push it
+	   to the right edge,
+opposite the hamburger. */
 	.mz-mobilebar .mint-ovd-refresh {
 		margin-left: auto;
 		flex: 0 0 auto;
 	}
 
-	/* Page-level titles are hidden on phones and rendered by the
-	   .mz-topbar strip instead, so no page ever shows its title twice.
+/* Page-level titles are hidden on phones and rendered by the
+	   .mz-topbar strip instead,
+so no page ever shows its title twice.
 	   Covers the plain LuCI page heading and the overview dashboard
 	   header (its refresh button is re-parented into this bar by
 	   menu-mint.js). Desktop (>854px) keeps the original in-page
 	   titles. */
 	#mz-view > h2,
-	.mint-ovd-header {
+.mint-ovd-header {
 		display: none !important;
 	}
 
-	/* Phones show ONE header bar, not two. An earlier revision moved the
-	   title into .mz-topbar and hid it inside .mz-mobilebar, which stacked
-	   a 65px control strip and a 57px title strip - 122px of chrome, i.e.
+/* Phones show ONE header bar,
+not two. An earlier revision moved the
+	   title into .mz-topbar and hid it inside .mz-mobilebar,
+which stacked
+	   a 65px control strip and a 57px title strip - 122px of chrome,
+i.e.
 	   the big empty band at the top of the mobile screenshots. The title
 	   belongs to .mz-mobilebar (which already owns the sticky slot and the
-	   hamburger), so .mz-topbar is removed outright here. */
+	   hamburger),
+so .mz-topbar is removed outright here. */
 	.mz-topbar {
 		display: none;
 	}
 
-	.mz-mobilebar {
+.mz-mobilebar {
 		justify-content: space-between;
 	}
 
-	.mz-mobilebar .mz-mobilebar-title {
+.mz-mobilebar .mz-mobilebar-title {
 		display: block;
 	}
 }
@@ -1149,85 +1144,91 @@ body.mz-has-wallpaper .mz-mobilebar {
 /* ---------------------------------------------------------------- */
 
 @media (max-width: 1024px) {
-	.mz-view {
+.mz-view {
 		padding: var(--mz-spacing-md);
 	}
 }
 
 @media (max-width: 854px) {
-	.mz-sidebar {
+.mz-sidebar {
 		transform: translateX(-100%);
 		box-shadow: var(--mz-shadow-lg);
 	}
 
-	.mz-sidebar.is-open {
+.mz-sidebar.is-open {
 		transform: translateX(0);
 	}
 
-	/* The hamburger only lives inside .mz-mobilebar (created by JS).
-	   Keep the base .mz-sidebar-toggle display:none on phones too, so a
+/* The hamburger only lives inside .mz-mobilebar (created by JS).
+	   Keep the base .mz-sidebar-toggle display:none on phones too,
+so a
 	   failed initMobileBar can never re-introduce the fixed floating
 	   button that covered the page title. */
 	.mz-sidebar-toggle {
 		display: none;
 	}
 
-	.mz-main {
+.mz-main {
 		margin-left: 0;
 	}
 
-	/* No left padding anymore (2026-09-09): the hamburger now lives in
-	   the sticky .mz-mobilebar above the content, so the topbar keeps
+/* No left padding anymore (2026-09-09): the hamburger now lives in
+	   the sticky .mz-mobilebar above the content,
+so the topbar keeps
 	   its natural padding with no blank left gutter. */
 	.mz-topbar {
 		padding-left: var(--mz-spacing-lg);
 	}
 
-	.mz-view {
+.mz-view {
 		padding: var(--mz-spacing-md) var(--mz-spacing-sm);
 	}
 
-	.table, .table .tr, table.table, table.cbi-section-table {
+.table, .table .tr, table.table, table.cbi-section-table {
 		display: block;
 	}
 
-	.table .td, .table .th, table.table td, table.table th,
-	table.cbi-section-table td, table.cbi-section-table th {
+.table .td,
+.table .th,
+table.table td,
+table.table th,
+table.cbi-section-table td,
+table.cbi-section-table th {
 		display: block;
 		box-sizing: border-box;
 		width: 100% !important;
 		border-bottom: none;
 	}
 
-	.table .tr, table.table tr, table.cbi-section-table tr {
+.table .tr, table.table tr, table.cbi-section-table tr {
 		display: block;
 		border-bottom: 1px solid var(--mz-color-border);
 		padding: var(--mz-spacing-xs) 0;
 	}
 
-	table.cbi-section-table th {
+table.cbi-section-table th {
 		border-bottom: 1px solid var(--mz-color-border);
 	}
 }
 
 @media (max-width: 480px) {
-	.mz-view {
+.mz-view {
 		padding: var(--mz-spacing-sm);
 	}
 
-	.btn {
+.btn {
 		width: 100%;
 	}
 
-	.cbi-section-actions .btn {
+.cbi-section-actions .btn {
 		width: auto;
 	}
 
-	.mz-login-card {
+.mz-login-card {
 		padding: var(--mz-spacing-lg);
 	}
 
-	.mz-login-copyright {
+.mz-login-copyright {
 		max-width: 60vw;
 	}
 }
@@ -1237,7 +1238,7 @@ body.mz-has-wallpaper .mz-mobilebar {
 /* ---------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-	*, *::before, *::after {
+*, *::before, *::after {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
@@ -1252,6 +1253,7 @@ body.mz-has-wallpaper .mz-mobilebar {
 	border-left: none;
 	margin-left: 0;
 }
+
 .mz-menu-group > a {
 	cursor: pointer;
 	font-weight: 600;
@@ -1259,70 +1261,23 @@ body.mz-has-wallpaper .mz-mobilebar {
 	font-size: .85rem;
 	letter-spacing: .01em;
 }
+
 .mz-menu-group > ul {
 	padding-left: 18px;
 	border-left: 1px solid var(--mz-color-border);
 	margin-left: 12px;
 }
+
 /* ---------------------------------------------------------------- */
 /* Overview ring panel (menu-mint.js)                           */
 /* ---------------------------------------------------------------- */
 .mz-overview-panel { margin-bottom: var(--mz-spacing-lg); }
-.mz-info-cards {
-	display: grid; gap: var(--mz-spacing-sm);
-	margin-bottom: var(--mz-spacing-md);
-}
-.mz-info-card {
-	flex: 1 1 150px; min-width: 0; padding: 10px 14px;
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-md); box-sizing: border-box;
-}
-.mz-info-label { font-size: .75rem; color: var(--mz-color-text-muted); margin-bottom: 2px; }
-.mz-info-value {
-	font-size: .95rem; font-weight: 600; color: var(--mz-color-text);
-	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.mz-info-model { font-size: .78rem; font-weight: 500; }
-.mz-rings { display: grid; gap: var(--mz-spacing-md); }
-.mz-ring-card {
-	flex: 1 1 280px; min-width: 0; display: flex; align-items: center;
-	gap: var(--mz-spacing-md); padding: 16px 18px;
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-lg); box-sizing: border-box;
-}
-.mz-ring { width: 96px; height: 96px; flex-shrink: 0; transform: rotate(-90deg); }
-.mz-ring-bg { fill: none; stroke: var(--mz-color-surface-2); stroke-width: 10; }
-.mz-ring-fg {
-	fill: none; stroke: var(--mz-color-primary); stroke-width: 10;
-	stroke-linecap: round; transition: stroke-dashoffset 600ms ease;
-}
-.mz-ring-card:nth-child(2) .mz-ring-fg { stroke: var(--mz-color-success); }
-.mz-ring-card:nth-child(3) .mz-ring-fg { stroke: var(--mz-color-warning); }
-.mz-ring-meta { flex: 1; min-width: 0; }
-.mz-ring-label {
-	font-size: .78rem; color: var(--mz-color-text-muted); font-weight: 600;
-	text-transform: uppercase; letter-spacing: .04em;
-}
-.mz-ring-value-text {
-	font-size: 1.25rem; font-weight: 700; color: var(--mz-color-text);
-	line-height: 1.25; margin-top: 2px;
-}
-.mz-ring-pct { font-size: .8rem; color: var(--mz-color-text-muted); margin-top: 1px; }
-.mz-ring-sub { font-size: .76rem; color: var(--mz-color-text-muted); margin-top: 3px; }
-/* (Removed 2026-09-07: .mz-mem-detail is no longer emitted by overview.js.) */
-@media (max-width: 640px) {
-	.mz-ring-card { flex-basis: 100%; }
-	.mz-ring { width: 80px; height: 80px; }
-}
-
-
-/* Hide original memory/storage sections on overview (persistent across LuCI refreshes) */
-.mz-hidden-section { display: none !important; }
 
 /* ================================================================
- * LuCI component fixes - buttons, forms, tables, layout
+ * LuCI component fixes - buttons,
+forms,
+tables,
+layout
  * ================================================================ */
 
 /* Page / section action bars */
@@ -1335,6 +1290,7 @@ body.mz-has-wallpaper .mz-mobilebar {
 	padding: 12px 0;
 	margin-top: 8px;
 }
+
 .cbi-page-actions .btn,
 .cbi-section-actions .btn {
 	margin: 0;
@@ -1344,6 +1300,7 @@ body.mz-has-wallpaper .mz-mobilebar {
 .cbi-button-apply {
 	position: relative;
 }
+
 .cbi-button-apply .dropdown,
 .cbi-button-apply + .dropdown-menu,
 .btn + .dropdown-menu {
@@ -1369,10 +1326,12 @@ body.mz-has-wallpaper .mz-mobilebar {
 	list-style: none;
 	display: none;
 }
+
 .cbi-button-apply.open .dropdown,
 .cbi-button-apply[aria-expanded="true"] + .dropdown-menu {
 	display: block;
 }
+
 .cbi-button-apply .dropdown li,
 .cbi-button-apply + .dropdown-menu li,
 .dropdown-menu li,
@@ -1381,6 +1340,7 @@ body.mz-has-wallpaper .mz-mobilebar {
 	margin: 0;
 	padding: 0;
 }
+
 .cbi-button-apply .dropdown li a,
 .cbi-button-apply + .dropdown-menu li a,
 .dropdown-menu li a,
@@ -1400,6 +1360,7 @@ body.mz-has-wallpaper .mz-mobilebar {
 	text-decoration: none;
 	white-space: nowrap;
 }
+
 .cbi-button-apply .dropdown li a:hover,
 .dropdown-menu li a:hover,
 .dropdown li a:hover,
@@ -1424,9 +1385,11 @@ body.mz-has-wallpaper .mz-mobilebar {
 	padding: 8px 0;
 	border-bottom: 1px solid var(--mz-color-border);
 }
+
 .cbi-value:last-child {
 	border-bottom: none;
 }
+
 .cbi-value-title {
 	flex: 0 0 180px;
 	min-width: 140px;
@@ -1434,10 +1397,12 @@ body.mz-has-wallpaper .mz-mobilebar {
 	font-size: .9rem;
 	padding-top: 7px;
 }
+
 .cbi-value-field {
 	flex: 1 1 300px;
 	min-width: 200px;
 }
+
 .cbi-value-field input:not([type="checkbox"]):not([type="radio"]),
 .cbi-value-field select,
 .cbi-value-field textarea {
@@ -1461,6 +1426,7 @@ table.cbi-section-table {
 	width: 100%;
 	margin: 8px 0;
 }
+
 table.table td,
 table.table th,
 table.cbi-section-table td,
@@ -1478,11 +1444,13 @@ table.cbi-section-table th {
 	margin-bottom: 16px;
 	padding: 0;
 }
+
 .cbi-tabmenu > li {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
+
 .cbi-tabmenu > li > a {
 	display: block;
 	padding: 8px 16px;
@@ -1492,6 +1460,7 @@ table.cbi-section-table th {
 	border-bottom: 2px solid transparent;
 	margin-bottom: -2px;
 }
+
 .cbi-tabmenu > li.active > a,
 .cbi-tabmenu > li > a:hover {
 	color: var(--mz-color-primary);
@@ -1508,17 +1477,20 @@ table.cbi-section-table th {
 	margin: 12px 0;
 	font-size: .9rem;
 }
+
 .errorbox,
 .cbi-section-error {
 	background: var(--mz-color-danger-soft);
 	color: var(--mz-color-danger);
 	border: 1px solid var(--mz-color-danger);
 }
+
 .warningbox {
 	background: var(--mz-color-warning-soft);
 	color: var(--mz-color-text);
 	border: 1px solid var(--mz-color-warning);
 }
+
 .infobox {
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-primary);
@@ -1529,9 +1501,11 @@ table.cbi-section-table th {
 .ifacebox {
 	margin: 8px 0;
 }
+
 .ifacebox-body {
 	line-height: 1.6;
 }
+
 .ifacebox-body .table {
 	margin: 4px 0;
 }
@@ -1542,45 +1516,52 @@ table.cbi-section-table th {
 	padding-left: 20px;
 }
 
-/* ...but NOT inside a dropdown control. `#mz-view` is an ID, so this prose
+/* ...but NOT inside a dropdown control. `#mz-view` is an ID,
+so this prose
    indent out-ranked every class-based popup rule and handed the floating
    menu an asymmetric padding (computed 4px 4px 4px 20px): the option text
-   was shoved 20px to the right while the right edge stayed flush, which is
+   was shoved 20px to the right while the right edge stayed flush,
+which is
    the "misaligned" half of the dropdown bug. Restore the control's own
-   padding - 4px while the popup is open, 0 for the closed value strip. */
-#mz-view .cbi-dropdown > ul,
-#mz-view .mz-dropdown > ul {
+   padding - 4px while the popup is open,
+0 for the closed value strip. */
+#mz-view .cbi-dropdown > ul {
 	padding-left: 0;
 }
 
 #mz-view .cbi-dropdown[open] > ul {
 	padding-left: 4px;
 }
+
 #mz-view li {
 	margin: 2px 0;
 }
 
 /* Responsive: narrow screens */
 @media (max-width: 768px) {
-	.cbi-value {
+.cbi-value {
 		flex-direction: column;
 		gap: 4px;
 	}
-	.cbi-value-title {
+
+.cbi-value-title {
 		flex: none;
 		min-width: 0;
 		padding-top: 0;
 	}
-	.cbi-page-actions,
-	.cbi-section-actions {
+
+.cbi-page-actions,
+.cbi-section-actions {
 		flex-direction: column;
 		align-items: stretch;
 	}
-	.cbi-page-actions .btn,
-	.cbi-section-actions .btn {
+
+.cbi-page-actions .btn,
+.cbi-section-actions .btn {
 		width: 100%;
 	}
 }
+
 /* ================================================================
  * cbi-dropdown (保存并应用/强制应用) fix
  * ================================================================ */
@@ -1591,21 +1572,25 @@ table.cbi-section-table th {
 	cursor: pointer;
 	user-select: none;
 }
+
 .cbi-dropdown > ul {
 	list-style: none;
 	padding: 0;
 	margin: 0;
 	display: inline;
 }
+
 .cbi-dropdown > ul > li {
 	display: none;
 	list-style: none;
 	padding: 0;
 	margin: 0;
 }
+
 .cbi-dropdown > ul > li[selected] {
 	display: inline;
 }
+
 .cbi-dropdown[open] > ul {
 	position: absolute;
 	/* Positioning is owned by LuCI's dropdown JS, NOT by the theme: the JS
@@ -1628,6 +1613,7 @@ table.cbi-section-table th {
 	margin-top: 4px;
 	display: block;
 }
+
 .cbi-dropdown[open] > ul.dropdown > li {
 	display: block;
 	padding: 8px 12px;
@@ -1636,39 +1622,16 @@ table.cbi-section-table th {
 	font-size: .9rem;
 	white-space: nowrap;
 }
+
 .cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: var(--mz-color-surface-2);
 }
+
 .cbi-dropdown .more,
 .cbi-dropdown .open {
 	margin-left: 6px;
 	font-size: .8rem;
 	opacity: .7;
-}
-
-/* Ring percentage text inside circle */
-.mz-ring text.mz-ring-text {
-	font-size: 18px;
-	font-weight: 700;
-	fill: var(--mz-color-text);
-	font-family: inherit;
-}
-@media (max-width: 640px) {
-	.mz-ring text.mz-ring-text {
-		font-size: 15px;
-	}
-}
-/* ================================================================
- * UI OVERHAUL - comprehensive rewrite
- * ================================================================ */
-
-/* Fix ring text direction: the parent .mz-ring is rotated -90deg, so the
-   text is counter-rotated +90deg around its own bounding-box center to
-   stay upright. */
-.mz-ring text.mz-ring-text {
-	transform: rotate(90deg);
-	transform-box: fill-box;
-	transform-origin: center;
 }
 
 /* Hide duplicate bottom modemenu (管理权 already in top menu) */
@@ -1686,22 +1649,26 @@ table.cbi-section-table th {
 	user-select: none;
 	padding: 8px 14px;
 }
+
 .cbi-dropdown > ul {
 	list-style: none;
 	padding: 0;
 	margin: 0;
 	display: inline;
 }
+
 .cbi-dropdown > ul > li {
 	display: none;
 	list-style: none;
 	padding: 0;
 	margin: 0;
 }
+
 .cbi-dropdown > ul > li[selected] {
 	display: inline;
 	font-weight: 500;
 }
+
 .cbi-dropdown[open] > ul {
 	position: absolute;
 	/* Positioning is owned by LuCI's dropdown JS, NOT by the theme: the JS
@@ -1724,6 +1691,7 @@ table.cbi-section-table th {
 	margin: 0;
 	display: block;
 }
+
 .cbi-dropdown[open] > ul.dropdown > li {
 	display: block;
 	padding: 8px 12px;
@@ -1733,9 +1701,11 @@ table.cbi-section-table th {
 	font-weight: 400;
 	white-space: nowrap;
 }
+
 .cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: var(--mz-color-surface-2);
 }
+
 .cbi-dropdown .more,
 .cbi-dropdown .open {
 	margin-left: 8px;
@@ -1763,6 +1733,7 @@ textarea {
 	line-height: 1.4;
 	transition: border-color .15s, box-shadow .15s;
 }
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -1770,6 +1741,7 @@ textarea:focus {
 	box-shadow: 0 0 0 3px var(--mz-color-primary-soft);
 	outline: none;
 }
+
 input[type="checkbox"],
 input[type="radio"] {
 	width: 16px;
@@ -1787,9 +1759,11 @@ input[type="radio"] {
 	padding: 10px 0;
 	border-bottom: 1px solid var(--mz-color-border);
 }
+
 .cbi-value:last-child {
 	border-bottom: none;
 }
+
 .cbi-value-title {
 	flex: 0 0 180px;
 	min-width: 140px;
@@ -1797,15 +1771,18 @@ input[type="radio"] {
 	font-size: .88rem;
 	padding-top: 9px;
 }
+
 .cbi-value-field {
 	flex: 1 1 300px;
 	min-width: 200px;
 }
+
 .cbi-value-field input:not([type="checkbox"]):not([type="radio"]),
 .cbi-value-field select,
 .cbi-value-field textarea {
 	width: 100%;
 }
+
 .cbi-value-description {
 	font-size: .8rem;
 	color: var(--mz-color-text-muted);
@@ -1821,6 +1798,7 @@ table.cbi-section-table {
 	margin: 8px 0;
 	font-size: .88rem;
 }
+
 table.table th,
 table.table td,
 table.cbi-section-table th,
@@ -1830,6 +1808,7 @@ table.cbi-section-table td {
 	text-align: left;
 	vertical-align: middle;
 }
+
 table.table thead th,
 table.cbi-section-table thead th,
 .table .table-titles .td {
@@ -1840,6 +1819,7 @@ table.cbi-section-table thead th,
 	letter-spacing: .03em;
 	background: var(--mz-color-surface-2);
 }
+
 table.table tbody tr:hover td,
 table.cbi-section-table tbody tr:hover td {
 	background: var(--mz-color-surface-2);
@@ -1853,6 +1833,7 @@ table.cbi-section-table tbody tr:hover td {
 	padding: 20px;
 	margin: 16px 0;
 }
+
 .cbi-section h2,
 .cbi-section h3,
 .cbi-section-title {
@@ -1862,6 +1843,7 @@ table.cbi-section-table tbody tr:hover td {
 	padding-bottom: 12px;
 	border-bottom: 1px solid var(--mz-color-border);
 }
+
 .cbi-section-actions,
 .cbi-page-actions {
 	display: flex;
@@ -1883,11 +1865,13 @@ table.cbi-section-table tbody tr:hover td {
 	padding: 0;
 	list-style: none;
 }
+
 .cbi-tabmenu > li {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
+
 .cbi-tabmenu > li > a {
 	display: block;
 	padding: 10px 20px;
@@ -1899,9 +1883,11 @@ table.cbi-section-table tbody tr:hover td {
 	margin-bottom: -2px;
 	transition: color .15s, border-color .15s;
 }
+
 .cbi-tabmenu > li > a:hover {
 	color: var(--mz-color-primary);
 }
+
 .cbi-tabmenu > li.active > a {
 	color: var(--mz-color-primary);
 	border-bottom-color: var(--mz-color-primary);
@@ -1918,17 +1904,20 @@ table.cbi-section-table tbody tr:hover td {
 	font-size: .88rem;
 	line-height: 1.5;
 }
+
 .errorbox,
 .cbi-section-error {
 	background: var(--mz-color-danger-soft);
 	color: var(--mz-color-danger);
 	border: 1px solid var(--mz-color-danger);
 }
+
 .warningbox {
 	background: var(--mz-color-warning-soft);
 	color: var(--mz-color-text);
 	border: 1px solid var(--mz-color-warning);
 }
+
 .infobox {
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-primary);
@@ -1943,16 +1932,19 @@ table.cbi-section-table tbody tr:hover td {
 	background: var(--mz-color-surface);
 	margin: 10px 0;
 }
+
 .ifacebox-head {
 	padding: 10px 16px;
 	background: var(--mz-color-surface-2);
 	font-size: .85rem;
 	font-weight: 600;
 }
+
 .ifacebox-head.active {
 	background: var(--mz-color-success-soft);
 	color: var(--mz-color-success);
 }
+
 .ifacebox-body {
 	padding: 16px;
 	font-size: .88rem;
@@ -1967,6 +1959,7 @@ table.cbi-section-table tbody tr:hover td {
 	border-radius: 999px;
 	overflow: hidden;
 }
+
 .cbi-progressbar > div {
 	height: 100%;
 	background: var(--mz-color-primary);
@@ -1987,6 +1980,7 @@ table.cbi-section-table tbody tr:hover td {
 	border-radius: 8px;
 	transition: background .15s;
 }
+
 .mz-menu-group > a::after {
 	content: "";
 	flex-shrink: 0;
@@ -1998,15 +1992,19 @@ table.cbi-section-table tbody tr:hover td {
 	border-top: 5px solid var(--mz-color-text-muted);
 	transition: transform .2s;
 }
+
 .mz-menu-group.mz-collapsed > a::after {
 	transform: rotate(-90deg);
 }
+
 .mz-menu-group > a:hover {
 	background: var(--mz-color-surface-2);
 }
+
 .mz-menu-group > ul {
 	padding-left: 12px;
 }
+
 .mz-menu-group > ul > li > a {
 	display: block;
 	padding: 8px 16px;
@@ -2016,6 +2014,7 @@ table.cbi-section-table tbody tr:hover td {
 	border-radius: 8px;
 	transition: all .15s;
 }
+
 .mz-menu-group > ul > li > a:hover,
 .mz-menu-group > ul > li.active > a {
 	background: var(--mz-color-primary-soft);
@@ -2024,340 +2023,69 @@ table.cbi-section-table tbody tr:hover td {
 
 /* === Responsive === */
 @media (max-width: 768px) {
-	.cbi-value {
+.cbi-value {
 		flex-direction: column;
 		gap: 4px;
 	}
-	.cbi-value-title {
+
+.cbi-value-title {
 		flex: none;
 		min-width: 0;
 		padding-top: 0;
 	}
-	.cbi-page-actions,
-	.cbi-section-actions {
+
+.cbi-page-actions,
+.cbi-section-actions {
 		flex-direction: column;
 		align-items: stretch;
 	}
-	.cbi-page-actions .btn,
-	.cbi-section-actions .btn,
-	.cbi-page-actions .cbi-button,
-	.cbi-section-actions .cbi-button {
+
+.cbi-page-actions .btn,
+.cbi-section-actions .btn,
+.cbi-page-actions .cbi-button,
+.cbi-section-actions .cbi-button {
 		width: 100%;
 	}
-	.cbi-section {
+
+.cbi-section {
 		padding: 14px;
 	}
 }
+
 /* === Footer center + links (override) === */
 .mz-footer {
 	padding: 16px 24px;
 	text-align: center;
 	line-height: 1.8;
 }
+
 .mz-footer a {
 	color: var(--mz-color-primary);
 	text-decoration: none;
 	transition: opacity .15s;
 }
+
 .mz-footer a:hover {
 	opacity: .75;
 	text-decoration: underline;
 }
+
 .mz-footer-sep {
 	margin: 0 10px;
 	opacity: .5;
 }
+
 .mz-footer-brand {
 	font-weight: 600;
 }
-/* ================================================================
- * Port status + Network upstream cards (aurora-style)
- * ================================================================ */
-.mz-section-title {
-	font-size: 1.1rem;
-	font-weight: 600;
-	margin: 24px 0 14px 0;
-	padding: 0 4px;
-	color: var(--mz-color-text);
-}
 
-/* Port grid */
-.mz-port-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-	gap: 14px;
-}
-.mz-port-card {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 12px;
-	padding: 14px 12px;
-	text-align: center;
-	transition: box-shadow .15s, transform .15s;
-}
-.mz-port-card:hover {
-	box-shadow: 0 4px 12px rgba(0,0,0,.08);
-	transform: translateY(-2px);
-}
-.mz-port-card.up {
-	border-top: 3px solid var(--mz-color-success);
-}
-.mz-port-card.down {
-	border-top: 3px solid var(--mz-color-text-muted);
-	opacity: .7;
-}
-.mz-port-name {
-	font-size: 1rem;
-	font-weight: 700;
-	margin-bottom: 6px;
-	color: var(--mz-color-text);
-}
-.mz-port-status {
-	font-size: .82rem;
-	color: var(--mz-color-text-muted);
-	margin-bottom: 6px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 6px;
-}
-.mz-port-dot {
-	display: inline-block;
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-}
-.mz-port-dot.up { background: var(--mz-color-success); }
-.mz-port-dot.down { background: var(--mz-color-text-muted); }
-.mz-port-zones {
-	font-size: .75rem;
-	color: var(--mz-color-text-muted);
-	margin-bottom: 6px;
-	line-height: 1.4;
-}
-.mz-port-traffic {
-	display: flex;
-	justify-content: center;
-	gap: 12px;
-	font-size: .78rem;
-	padding-top: 6px;
-	border-top: 1px solid var(--mz-color-border);
-}
-.mz-port-traffic .mz-tx { color: var(--mz-color-primary); }
-.mz-port-traffic .mz-rx { color: var(--mz-color-success); }
-
-/* Network upstream cards */
-.mz-net-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-	gap: 14px;
-}
 .mz-net-card {
 	background: var(--mz-color-surface);
 	border: 1px solid var(--mz-color-border);
 	border-radius: 12px;
 	overflow: hidden;
 }
-.mz-net-header {
-	background: var(--mz-color-primary);
-	color: #fff;
-	padding: 10px 14px;
-	font-size: .9rem;
-	font-weight: 600;
-	text-align: center;
-}
-.mz-net-body {
-	padding: 12px 14px;
-}
-.mz-net-row {
-	display: grid;
-	grid-template-columns: 4.5em 1fr;
-	align-items: center;
-	gap: 10px;
-	padding: 5px 0;
-	border-bottom: 1px solid var(--mz-color-border);
-	font-size: .82rem;
-}
-.mz-net-row:last-child {
-	border-bottom: none;
-}
-.mz-net-label {
-	color: var(--mz-color-text-muted);
-	font-weight: 500;
-}
-.mz-net-value {
-	color: var(--mz-color-text);
-	text-align: right;
-	word-break: break-all;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-.mz-net-value:hover,
-.mz-net-value:focus {
-	white-space: normal;
-	overflow: visible;
-}
-/* (Removed 2026-09-07: .mz-net-device is no longer emitted by overview.js.) */
 
-/* Responsive: the port / network / wifi grids keep the two-column
-   mobile track defined at the end of this file (the historical single
-   column rules below were fully overridden by later !important rules
-   and only confused the cascade). */
-/* ================================================================
- * Overview section cards: system / DHCP / WiFi / UPnP
- * ================================================================ */
-.mz-section-title {
-	text-align: center;
-	font-size: 1.15rem;
-	font-weight: 700;
-	margin: 28px 0 16px 0;
-	padding: 0 4px;
-	color: var(--mz-color-text);
-}
-.mz-subtitle {
-	text-align: center;
-	font-size: .95rem;
-	font-weight: 600;
-	margin: 20px 0 12px 0;
-	color: var(--mz-color-text-muted);
-}
-
-/* System info grid */
-.mz-sys-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-	gap: 10px;
-}
-.mz-sys-item {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 12px;
-	padding: 10px 14px;
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 10px;
-}
-.mz-sys-label {
-	color: var(--mz-color-text-muted);
-	font-size: .85rem;
-	flex-shrink: 0;
-}
-.mz-sys-value {
-	color: var(--mz-color-text);
-	font-size: .88rem;
-	font-weight: 500;
-	text-align: right;
-	word-break: break-all;
-}
-
-/* Data table card */
-.mz-table-card {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 12px;
-	overflow: hidden;
-	margin: 10px 0;
-}
-.mz-data-table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: .85rem;
-}
-.mz-data-table thead th {
-	background: var(--mz-color-surface-2);
-	color: var(--mz-color-text-muted);
-	font-weight: 600;
-	font-size: .78rem;
-	text-transform: uppercase;
-	letter-spacing: .02em;
-	padding: 10px 14px;
-	text-align: left;
-	border-bottom: 1px solid var(--mz-color-border);
-}
-.mz-data-table tbody td {
-	padding: 10px 14px;
-	border-bottom: 1px solid var(--mz-color-border);
-	color: var(--mz-color-text);
-	vertical-align: middle;
-}
-.mz-data-table tbody tr:last-child td {
-	border-bottom: none;
-}
-.mz-data-table tbody tr:hover td {
-	background: var(--mz-color-surface-2);
-}
-
-/* Empty state */
-.mz-empty-state {
-	text-align: center;
-	padding: 32px 20px;
-	color: var(--mz-color-text-muted);
-	font-size: .9rem;
-	background: var(--mz-color-surface);
-	border: 1px dashed var(--mz-color-border);
-	border-radius: 12px;
-	margin: 10px 0;
-}
-
-/* WiFi cards */
-.mz-wifi-radios {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-	gap: 14px;
-	margin-bottom: 8px;
-}
-.mz-wifi-card {
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: 12px;
-	padding: 18px 16px;
-	text-align: center;
-	transition: box-shadow .15s, transform .15s;
-}
-.mz-wifi-card:hover {
-	box-shadow: 0 4px 12px rgba(0,0,0,.08);
-	transform: translateY(-2px);
-}
-.mz-wifi-name {
-	font-size: 1.1rem;
-	font-weight: 700;
-	color: var(--mz-color-text);
-	margin-bottom: 6px;
-}
-.mz-wifi-sub {
-	font-size: .8rem;
-	color: var(--mz-color-text-muted);
-	margin-bottom: 12px;
-}
-.mz-wifi-stats {
-	display: flex;
-	justify-content: center;
-	gap: 16px;
-	font-size: .82rem;
-	color: var(--mz-color-text-muted);
-	padding-top: 10px;
-	border-top: 1px solid var(--mz-color-border);
-}
-.mz-wifi-stats strong {
-	color: var(--mz-color-primary);
-	font-weight: 600;
-}
-
-/* Responsive tables */
-@media (max-width: 640px) {
-	.mz-data-table {
-		font-size: .78rem;
-	}
-	.mz-data-table thead th,
-	.mz-data-table tbody td {
-		padding: 8px 10px;
-	}
-	.mz-sys-grid {
-		grid-template-columns: 1fr;
-	}
-}
 /* ================================================================
  * PC desktop optimization + FOUC fix
  * ================================================================ */
@@ -2366,52 +2094,9 @@ table.cbi-section-table tbody tr:hover td {
 #mainmenu {
 	display: none !important;
 }
+
 #mainmenu.mz-menu-ready {
 	display: block !important;
-}
-
-/* Main content geometry: REMOVED 2026-09-13.
-   This block used to be:
-       #mz-view { max-width: 1280px; margin: 0 auto; padding: 24px 28px; }
-   Because it is an ID selector it out-ranks `.mz-view` (a class), so it
-   silently overrode the whole token system:
-     - `--mz-content-max` (1680px) was capped to 1280px, and
-     - `--mz-container-pad` (22px) was replaced by 24px/28px,
-   and `margin: 0 auto` force-CENTERED the container. Measured on a 1920px
-   desktop that produced a 219px void between the sidebar and the content
-   on BOTH sides (539px at 2560px) - the "PC 菜单栏和内容之间留白太多"
-   report. It also defeated the documented single source of truth, since
-   container.css/tokens.css could change the numbers and nothing moved.
-   `.mz-view` in layout.css + container.css now owns width, padding and
-   margins, with the numbers coming from tokens.css. The container is
-   CENTRED with an equal margin on both sides
-   (`margin: var(--mz-container-margin) auto`) - do not reinstate geometry
-   here, and do not re-anchor it to one edge either: that was tried, and it
-   only moved the void from the leading edge to the trailing one (see
-   container.css section 1b). compat.css is a legacy base, not the
-   container's owner. */
-/* (Removed 2026-09-07: .mz-topbar-inner has no matching element in header.ut.) */
-
-/* Overview panels: wider grids on desktop */
-@media (min-width: 1024px) {
-	.mz-info-cards {
-		grid-template-columns: repeat(4, 1fr) !important;
-	}
-	.mz-rings {
-		grid-template-columns: repeat(3, 1fr) !important;
-	}
-	.mz-port-grid {
-		grid-template-columns: repeat(4, 1fr) !important;
-	}
-	.mz-net-grid {
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
-	.mz-sys-grid {
-		grid-template-columns: repeat(3, 1fr) !important;
-	}
-	.mz-wifi-radios {
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
 }
 
 /* Ensure all cbi-sections inside view use full width but constrained */
@@ -2419,220 +2104,65 @@ table.cbi-section-table tbody tr:hover td {
 	max-width: 100%;
 }
 
-/* Better table horizontal scroll on narrow columns */
-.mz-table-card {
-	overflow-x: auto;
-}
-.mz-data-table {
-	min-width: 500px;
-}
-
 /* Sidebar: slightly wider on very large screens */
 @media (min-width: 1600px) {
-	:root {
+:root {
 		--mz-sidebar-width: 256px;
 	}
 }
+
 /* ================================================================
- * Polish: hide page title, uniform sys cards, apply button, notices
+ * Polish: hide page title,
+uniform sys cards,
+apply button,
+notices
  * ================================================================ */
 
 /* Hide leftover LuCI page title (h2) - our panels have their own titles */
 #mz-view > h2 {
 	display: none !important;
 }
+
 #mz-view > div:empty {
 	display: none !important;
 }
 
-/* System info: uniform card height, no wrapping values */
-.mz-sys-item {
+/* System info: uniform card height {
 	min-height: 48px;
 	align-items: center;
 }
-.mz-sys-value {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	max-width: 65%;
-}
-.mz-sys-label {
-	flex-shrink: 0;
-	max-width: 35%;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
 
 /* ================================================================
- * Fix: titles left-aligned, cards centered
+ * Fix: titles left-aligned,
+cards centered
  * ================================================================ */
 
-/* Section titles: left-aligned, not centered */
-.mz-section-title {
+/* Section titles: left-aligned {
 	text-align: left !important;
 	padding-left: 4px;
 }
-.mz-subtitle {
-	text-align: left !important;
-}
 
-/* START grid-override legacy block (2026-09-08/09). These rules are
-   deliberately kept read-only history and are NOT the source of truth:
-   the authoritative grid tracks for the overview are the "auto-fit +
-   1fr" blocks near the end of this file. Please do not add more
-   !important tweaks here - edit the final block instead. */
-.mz-info-cards,
-.mz-rings,
-.mz-port-grid,
-.mz-net-grid,
-.mz-sys-grid,
-.mz-wifi-radios {
-	justify-content: center !important;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-}
-.mz-net-grid {
-	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-}
-.mz-sys-grid {
-	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
-}
-.mz-wifi-radios {
-	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
-}
-.mz-rings {
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-}
-.mz-info-cards {
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-}
-
-/* Desktop: auto-fit columns, every row fills the full card width
-   (fixed pixel counts left ragged right edges on wide screens) */
-@media (min-width: 1024px) {
-	.mz-info-cards {
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-	}
-	.mz-rings {
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-	}
-	.mz-port-grid {
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-	}
-	.mz-net-grid {
-		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-	}
-	.mz-sys-grid {
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-	}
-	.mz-wifi-radios {
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-	}
-}
-
-/* Table cards: centered, max-width constrained */
-.mz-table-card {
+/* Table cards: centered {
 	max-width: 900px;
 	margin-left: auto !important;
 	margin-right: auto !important;
 }
 
-/* Empty state: centered */
-.mz-empty-state {
-	max-width: 600px;
-	margin-left: auto !important;
-	margin-right: auto !important;
-}
 /* ================================================================
  * Fix: cards truly centered (fixed max column width, no 1fr stretch)
  * ================================================================ */
 
-/* Base: fixed max width so cards don't stretch, leftover space centered */
-.mz-info-cards {
+/* Base: fixed max width so cards don't stretch {
 	grid-template-columns: repeat(auto-fit, minmax(180px, 220px)) !important;
 	justify-content: center !important;
 }
-.mz-rings {
-	grid-template-columns: repeat(auto-fit, minmax(260px, 300px)) !important;
-	justify-content: center !important;
-}
-.mz-port-grid {
-	grid-template-columns: repeat(auto-fit, minmax(200px, 240px)) !important;
-	justify-content: center !important;
-}
-.mz-net-grid {
-	grid-template-columns: repeat(auto-fit, minmax(300px, 400px)) !important;
-	justify-content: center !important;
-}
-.mz-sys-grid {
-	grid-template-columns: repeat(auto-fit, minmax(240px, 300px)) !important;
-	justify-content: center !important;
-}
-.mz-wifi-radios {
-	grid-template-columns: repeat(auto-fit, minmax(220px, 320px)) !important;
-	justify-content: center !important;
-}
 
-/* Desktop: fixed pixel columns for true centering */
-@media (min-width: 1024px) {
-	.mz-info-cards {
-		grid-template-columns: repeat(4, 220px) !important;
-	}
-	.mz-rings {
-		grid-template-columns: repeat(3, 300px) !important;
-	}
-	.mz-port-grid {
-		grid-template-columns: repeat(4, 240px) !important;
-	}
-	.mz-net-grid {
-		grid-template-columns: repeat(2, 400px) !important;
-	}
-	.mz-sys-grid {
-		grid-template-columns: repeat(3, 300px) !important;
-	}
-	.mz-wifi-radios {
-		grid-template-columns: repeat(2, 320px) !important;
-	}
-}
-
-/* Ultra-wide: keep the fill behavior, raise the minimum card size */
-@media (min-width: 1400px) {
-	.mz-port-grid {
-		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
-	}
-	.mz-sys-grid {
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-	}
-}
 /* ================================================================
  * Fix: all cards left-aligned (container + inner content)
  * ================================================================ */
 
-/* Grid containers: left-aligned, not centered */
-.mz-info-cards,
-.mz-rings,
-.mz-port-grid,
-.mz-net-grid,
-.mz-sys-grid,
-.mz-wifi-radios {
+/* Grid containers: left-aligned {
 	justify-content: flex-start !important;
-}
-
-/* Port card: inner content left-aligned */
-.mz-port-card {
-	text-align: left !important;
-}
-.mz-port-status {
-	justify-content: flex-start !important;
-}
-.mz-port-traffic {
-	justify-content: flex-start !important;
-}
-.mz-port-name {
-	text-align: left;
-}
-.mz-port-zones {
-	text-align: left;
 }
 
 /* Network card: left-aligned */
@@ -2640,136 +2170,28 @@ table.cbi-section-table tbody tr:hover td {
 .mz-net-card-header {
 	text-align: left !important;
 }
+
 .mz-net-card-header h3 {
 	text-align: left;
 }
 
-/* WiFi card: left-aligned */
-.mz-wifi-card,
-.mz-wifi-card-header {
-	text-align: left !important;
-}
-
-/* System info item: left-aligned */
-.mz-sys-item {
-	text-align: left !important;
-	justify-content: flex-start !important;
-}
-
-/* Ring card: left-aligned (already flex, ensure meta text left) */
-.mz-ring-meta,
-.mz-ring-label,
-.mz-ring-value-text,
-.mz-ring-pct,
-.mz-ring-sub {
-	text-align: left !important;
-}
-
-/* Info card: left-aligned */
-.mz-info-card,
-.mz-info-label,
-.mz-info-value {
-	text-align: left !important;
-}
-
-/* Table card: left-aligned headers */
-.mz-table-card th {
-	text-align: left !important;
-}
-
-/* Desktop: keep fixed columns but left-aligned */
-@media (min-width: 1024px) {
-	.mz-info-cards,
-	.mz-rings,
-	.mz-port-grid,
-	.mz-net-grid,
-	.mz-sys-grid,
-	.mz-wifi-radios {
-		justify-content: flex-start !important;
-	}
-}
-/* Fix: net/wifi card headers left-aligned (correct class names) */
-.mz-net-header {
-	text-align: left !important;
-}
-.mz-wifi-header,
-.mz-wifi-card-header {
-	text-align: left !important;
-}
-/* ================================================================
- * Fix: port/net/wifi fixed 2 columns
- * ================================================================ */
-.mz-port-grid {
+/* Keep 2 columns on desktop {
 	grid-template-columns: repeat(2, 1fr) !important;
 }
-.mz-net-grid {
-	grid-template-columns: repeat(2, 1fr) !important;
-}
-.mz-wifi-radios {
-	grid-template-columns: repeat(2, 1fr) !important;
-}
-/* Desktop overrides also 2 columns for these */
-@media (min-width: 1024px) {
-	.mz-port-grid {
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
-	.mz-net-grid {
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
-	.mz-wifi-radios {
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
-}
-@media (min-width: 1400px) {
-	.mz-port-grid {
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
-}
-/* ================================================================
- * Fix: system info all items in one card
- * ================================================================ */
-.mz-sys-grid {
-	background: var(--mz-color-surface) !important;
-	border: 1px solid var(--mz-color-border) !important;
-	border-radius: 12px !important;
-	padding: 6px 18px !important;
-	gap: 0 !important;
-	overflow: hidden;
-}
-.mz-sys-item {
-	background: transparent !important;
-	border: none !important;
-	border-radius: 0 !important;
-	padding: 12px 4px !important;
-	border-bottom: 1px solid var(--mz-color-border) !important;
-	min-height: auto !important;
-}
-.mz-sys-item:last-child {
-	border-bottom: none !important;
-}
-/* Keep 2 columns on desktop, 1 on mobile */
-.mz-sys-grid {
-	grid-template-columns: repeat(2, 1fr) !important;
-}
-@media (max-width: 640px) {
-	.mz-sys-grid {
-		grid-template-columns: 1fr !important;
-	}
-}
+
 /* ================================================================
  * Fix: table/empty cards full width left-aligned + sys info polish
  * ================================================================ */
 
-/* Table cards: full width, left-aligned, no max-width constraint */
-.mz-table-card {
+/* Table cards: full width,
+left-aligned {
 	max-width: none !important;
 	margin-left: 0 !important;
 	margin-right: 0 !important;
 	width: 100% !important;
 }
 
-/* Empty state: full width, left-aligned text */
-.mz-empty-state {
+/* Empty state: full width {
 	max-width: none !important;
 	margin-left: 0 !important;
 	margin-right: 0 !important;
@@ -2778,68 +2200,9 @@ table.cbi-section-table tbody tr:hover td {
 	padding-left: 20px !important;
 }
 
-/* System info: better typography */
-.mz-sys-grid {
-	padding: 4px 20px !important;
-}
-.mz-sys-item {
-	padding: 11px 6px !important;
-	gap: 16px !important;
-}
-.mz-sys-label {
-	flex: 0 0 110px !important;
-	max-width: 110px !important;
-	font-size: .82rem !important;
-	color: var(--mz-color-text-muted) !important;
-	font-weight: 500 !important;
-}
-.mz-sys-value {
-	flex: 1 !important;
-	max-width: none !important;
-	text-align: left !important;
-	font-size: .86rem !important;
-	font-weight: 500 !important;
-	color: var(--mz-color-text) !important;
-	word-break: break-word !important;
-	white-space: normal !important;
-	overflow: visible !important;
-	text-overflow: clip !important;
-}
 /* ================================================================
- * Fix: info cards uniform height & better typography
- * ================================================================ */
-.mz-info-cards {
-	align-items: stretch !important;
-	gap: 10px !important;
-}
-.mz-info-card {
-	display: flex !important;
-	flex-direction: column !important;
-	justify-content: center !important;
-	min-height: 72px !important;
-	padding: 14px 16px !important;
-	gap: 4px !important;
-}
-.mz-info-label {
-	font-size: .78rem !important;
-	font-weight: 500 !important;
-	margin-bottom: 0 !important;
-	letter-spacing: .01em;
-}
-.mz-info-value {
-	font-size: 1rem !important;
-	font-weight: 700 !important;
-	line-height: 1.3 !important;
-}
-.mz-info-model {
-	font-size: .76rem !important;
-	font-weight: 500 !important;
-	color: var(--mz-color-text-muted) !important;
-	margin-top: 2px !important;
-	line-height: 1.3 !important;
-}
-/* ================================================================
- * Fix: menu level-1 titles bold, distinguish from level-2
+ * Fix: menu level-1 titles bold,
+distinguish from level-2
  * ================================================================ */
 #mainmenu.mz-menu > li > a {
 	font-weight: 700 !important;
@@ -2848,44 +2211,40 @@ table.cbi-section-table tbody tr:hover td {
 	padding: 10px 12px !important;
 	letter-spacing: .01em;
 }
+
 #mainmenu.mz-menu > li > a:hover {
 	color: var(--mz-color-text) !important;
 }
+
 #mainmenu.mz-menu ul li a {
 	font-weight: 400 !important;
 	font-size: .88rem !important;
 	color: var(--mz-color-text-muted) !important;
 	padding: 7px 12px !important;
 }
+
 #mainmenu.mz-menu ul li a:hover {
 	color: var(--mz-color-text) !important;
 }
+
 #mainmenu.mz-menu ul li.active > a,
 #mainmenu.mz-menu ul li a.active {
 	font-weight: 600 !important;
 	color: var(--mz-color-primary) !important;
 }
 
-/* (Removed 2026-09-07 OT-27: dashboard view was deleted; .mz-dash-grid/.mz-card/.mz-traffic/.mz-spark had zero emitters.) */
-
-/* ================================================================
- * Dark mode: override hardcoded light backgrounds
- * ================================================================ */
-html[data-theme="dark"] .warningbox {
-	background: var(--mz-color-warning-soft);
-	color: var(--mz-color-warning);
-	border-color: var(--mz-color-warning);
-}
 html[data-theme="dark"] .alert-message.warning {
 	background: var(--mz-color-warning-soft);
 	border-color: var(--mz-color-warning);
 	color: var(--mz-color-text);
 }
+
 html[data-theme="dark"] .infobox {
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-primary);
 	border-color: var(--mz-color-primary);
 }
+
 html[data-theme="dark"] .cbi-change-list,
 html[data-theme="dark"] #xhr_poll_status {
 	background: var(--mz-color-surface);
@@ -3056,15 +2415,15 @@ body.modal-overlay-active {
 }
 
 @media (max-width: 640px) {
-	#modal_overlay {
+#modal_overlay {
 		padding: 2vh 10px 24px;
 	}
 
-	#modal_overlay .modal {
+#modal_overlay .modal {
 		padding: 16px 14px 18px;
 	}
 
-	/* flex-basis becomes HEIGHT in the stacked column layout: a fixed
+/* flex-basis becomes HEIGHT in the stacked column layout: a fixed
 	   120px basis used to inflate every modal label to 120px tall. */
 	.modal .cbi-value-title {
 		flex: 0 0 auto;
@@ -3072,13 +2431,13 @@ body.modal-overlay-active {
 		width: 100%;
 	}
 
-	.modal .cbi-value-field {
+.modal .cbi-value-field {
 		flex: 1 1 auto;
 		min-height: 0;
 		width: 100%;
 	}
 
-	.modal .cbi-value {
+.modal .cbi-value {
 		padding: 5px 0;
 	}
 }
@@ -3209,38 +2568,36 @@ html[data-theme="dark"] {
  * Compact form rows on small screens ("options spaced far apart")
  * ================================================================ */
 @media (max-width: 640px) {
-	.cbi-value {
+.cbi-value {
 		padding: 6px 0;
 		gap: 4px 12px;
 	}
 
-	.cbi-value-title {
+.cbi-value-title {
 		padding-top: 2px;
 	}
 
-	.cbi-value-description {
+.cbi-value-description {
 		margin-top: 2px;
 		line-height: 1.45;
 	}
 
-	.cbi-tab-descr {
+.cbi-tab-descr {
 		margin-bottom: var(--mz-spacing-sm);
 	}
 
-	.mz-view {
+.mz-view {
 		padding: var(--mz-spacing-sm) var(--mz-spacing-sm) 24px;
 	}
 
-	.cbi-section {
+.cbi-section {
 		padding: var(--mz-spacing-sm);
 	}
 }
 
-
-
-
 /* ================================================================
- * Compact, consistent page-action buttons (apply/save/reset)
+ * Compact,
+consistent page-action buttons (apply/save/reset)
  * ================================================================ */
 .cbi-page-actions .btn,
 .cbi-page-actions .cbi-button,
@@ -3279,16 +2636,16 @@ html[data-theme="dark"] {
 }
 
 @media (max-width: 640px) {
-	.cbi-page-actions {
+.cbi-page-actions {
 		flex-direction: row;
 		flex-wrap: wrap;
 		justify-content: flex-start;
 		gap: 6px;
 	}
 
-	.cbi-page-actions .btn,
-	.cbi-page-actions .cbi-button,
-	.cbi-page-actions .cbi-dropdown.cbi-button {
+.cbi-page-actions .btn,
+.cbi-page-actions .cbi-button,
+.cbi-page-actions .cbi-dropdown.cbi-button {
 		width: auto;
 		flex: 0 1 auto;
 		min-height: 32px;
@@ -3296,7 +2653,7 @@ html[data-theme="dark"] {
 		font-size: .84rem;
 	}
 
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
 		min-height: 30px;
 		padding: 4px 10px;
 		font-size: .84rem;
@@ -3305,7 +2662,8 @@ html[data-theme="dark"] {
 
 /* cbi-dropdown closed state: hide non-selected options (otherwise the
    apply split button renders every option stacked and grows huge).
-   LuCI toggles the [open] ATTRIBUTE - the `.open` CLASS is never set, so
+   LuCI toggles the [open] ATTRIBUTE - the `.open` CLASS is never set,
+so
    this must be an attribute selector. (Previously written as `:not(.open)`
    + `!important`, which was permanently true and hid the options of every
    OPEN dropdown too; that was then papered over by a second !important rule
@@ -3319,7 +2677,7 @@ html[data-theme="dark"] {
    used to force every form row to ~340px tall (options spaced far
    apart). Neutralize the basis on stacked layouts. */
 @media (max-width: 768px) {
-	.cbi-value-field {
+.cbi-value-field {
 		flex: 1 1 auto;
 		min-height: 0;
 		width: 100%;
@@ -3330,9 +2688,11 @@ html[data-theme="dark"] {
    buttons next to it (dropdown internals previously inflated it).
    `overflow: hidden` used to live here and was the root cause of the
    Save & Apply menu being invisible: it clipped the floating <ul> the
-   moment it opened. Height is still pinned, but overflow is NOT - the
+   moment it opened. Height is still pinned,
+but overflow is NOT - the
    later `overflow: visible !important` block is a safety net for other
-   cbi-dropdown flavours, not the fix for this one. */
+   cbi-dropdown flavours,
+not the fix for this one. */
 .cbi-page-actions .cbi-dropdown.cbi-button {
 	height: 34px;
 	overflow: visible;
@@ -3348,11 +2708,11 @@ html[data-theme="dark"] {
 }
 
 @media (max-width: 640px) {
-	.cbi-page-actions .cbi-dropdown.cbi-button {
+.cbi-page-actions .cbi-dropdown.cbi-button {
 		height: 32px;
 	}
 
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
 		line-height: 30px;
 	}
 }
@@ -3392,7 +2752,8 @@ html[data-theme="dark"] {
 	color: #fff;
 }
 
-/* Modal status <output> blocks: cap height, scroll internally */
+/* Modal status <output> blocks: cap height,
+scroll internally */
 .modal output {
 	display: block;
 	max-height: 9rem;
@@ -3407,8 +2768,8 @@ html[data-theme="dark"] {
  * button to full width, which reads as oversized).
  * ================================================================ */
 @media (max-width: 768px) {
-	.cbi-page-actions,
-	.cbi-section-actions {
+.cbi-page-actions,
+.cbi-section-actions {
 		flex-direction: row;
 		flex-wrap: wrap;
 		justify-content: flex-start;
@@ -3416,11 +2777,11 @@ html[data-theme="dark"] {
 		gap: 6px;
 	}
 
-	.cbi-page-actions .btn,
-	.cbi-page-actions .cbi-button,
-	.cbi-page-actions .cbi-dropdown.cbi-button,
-	.cbi-section-actions .btn,
-	.cbi-section-actions .cbi-button {
+.cbi-page-actions .btn,
+.cbi-page-actions .cbi-button,
+.cbi-page-actions .cbi-dropdown.cbi-button,
+.cbi-section-actions .btn,
+.cbi-section-actions .cbi-button {
 		width: auto;
 		flex: 0 1 auto;
 		min-height: 32px;
@@ -3428,12 +2789,12 @@ html[data-theme="dark"] {
 		font-size: .84rem;
 	}
 
-	.cbi-page-actions .cbi-dropdown.cbi-button {
+.cbi-page-actions .cbi-dropdown.cbi-button {
 		height: 32px;
 		padding: 0;
 	}
 
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
 		min-height: 30px;
 		line-height: 28px;
 		padding: 2px 10px;
@@ -3445,7 +2806,9 @@ html[data-theme="dark"] {
  * Apply feedback: progress modal + success notification
  * ================================================================ */
 
-/* "Applying changes" modal: centered, readable, with progress bar */
+/* "Applying changes" modal: centered,
+readable,
+with progress bar */
 .modal.alert-message.spinning {
 	min-width: min(320px, 86vw);
 	max-width: 92vw;
@@ -3589,11 +2952,11 @@ html[data-theme="dark"] {
 
 /* Mobile: narrower action buttons, text must stay untruncated */
 @media (max-width: 768px) {
-	.cbi-page-actions .btn,
-	.cbi-page-actions .cbi-button,
-	.cbi-page-actions .cbi-dropdown.cbi-button,
-	.cbi-section-actions .btn,
-	.cbi-section-actions .cbi-button {
+.cbi-page-actions .btn,
+.cbi-page-actions .cbi-button,
+.cbi-page-actions .cbi-dropdown.cbi-button,
+.cbi-section-actions .btn,
+.cbi-section-actions .cbi-button {
 		padding: 3px 9px;
 		font-size: .8rem;
 		letter-spacing: 0;
@@ -3602,11 +2965,11 @@ html[data-theme="dark"] {
 		text-overflow: clip;
 	}
 
-	.cbi-page-actions .cbi-dropdown.cbi-button .more {
+.cbi-page-actions .cbi-dropdown.cbi-button .more {
 		display: none;
 	}
 
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
+.cbi-page-actions .cbi-dropdown.cbi-button > ul > li {
 		padding: 2px 8px;
 		font-size: .8rem;
 	}
@@ -3634,7 +2997,7 @@ html[data-theme="dark"] {
    or no height at all). The EOF block (~line 6930) already follows this
    convention; these three blocks were missed. */
 @media (max-width: 768px) {
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		height: 100%;
 		align-items: center;
 		line-height: 1;
@@ -3642,13 +3005,15 @@ html[data-theme="dark"] {
 }
 
 @media (max-width: 768px) {
-	.cbi-page-actions .cbi-dropdown.cbi-button {
+.cbi-page-actions .cbi-dropdown.cbi-button {
 		height: 32px;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) {
+
+.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) {
 		height: 30px;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+
+.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		height: 28px;
 		max-height: 28px;
 		line-height: 28px;
@@ -3657,9 +3022,9 @@ html[data-theme="dark"] {
 
 /* Final: normalize apply split-button height chain (dropdown > ul > li) */
 @media (max-width: 768px) {
-	.cbi-page-actions .cbi-dropdown.cbi-button,
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+.cbi-page-actions .cbi-dropdown.cbi-button,
+.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
+.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		height: 32px !important;
 		min-height: 32px !important;
 		max-height: 32px !important;
@@ -3667,10 +3032,12 @@ html[data-theme="dark"] {
 		padding-bottom: 0 !important;
 		box-sizing: border-box;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button {
+
+.cbi-page-actions .cbi-dropdown.cbi-button {
 		border-width: 1px;
 	}
-	.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+
+.cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		line-height: 28px !important;
 	}
 }
@@ -3680,7 +3047,8 @@ html[data-theme="dark"] {
 	justify-content: center;
 }
 
-/* Sidebar brand: square pixel avatar, centered */
+/* Sidebar brand: square pixel avatar,
+centered */
 .mz-brand-link {
 	justify-content: center;
 }
@@ -3698,12 +3066,15 @@ html[data-theme="dark"] {
  * ================================================================ */
 /* body itself stays transparent: the flat fallback colour lives on <html>
    (see Base) and the wallpaper layers below are body pseudo-elements with
-   a NEGATIVE z-index, so an opaque body background would paint straight
+   a NEGATIVE z-index,
+so an opaque body background would paint straight
    over them. */
 
-/* Fixed image layer (::after) + dim/blur overlay (::before), both painted
+/* Fixed image layer (::after) + dim/blur overlay (::before),
+both painted
 	   BEHIND all page content via negative z-index. A real fixed layer is
-	   used instead of background-attachment: fixed, which iOS Safari
+	   used instead of background-attachment: fixed,
+which iOS Safari
 	   ignores (review TZ-10). Paint order: page colour (html) < image
 	   (z -2) < overlay (z -1) < every piece of UI (root stacking context).
 	   Using negative z-index here is what allows .mz-main to stay a plain
@@ -3730,15 +3101,17 @@ body.mz-has-wallpaper::after {
 
 /* Dark mode renders NO wallpaper layer at all.
    `content: none` removes both pseudo-elements from the box tree instead of
-   painting over them, so dark pages never composite a wallpaper (no image,
+   painting over them,
+so dark pages never composite a wallpaper (no image,
    no gradient, no scrim) - they simply sit on the flat page colour with the
    dark glass surfaces above it. The data-theme attribute lives on <html>,
-   so the selector MUST be html[data-theme="dark"] body...; the previous
+so the selector MUST be html[data-theme="dark"] body...; the previous
    `body.mz-has-wallpaper[data-theme="dark"]` could never match and dark
    pages kept painting the light gradient behind the glass.
 
    The mz-has-wallpaper class itself is still applied in dark mode: it is
-   the switch that enables the whole glass component layer, and only the
+   the switch that enables the whole glass component layer,
+and only the
    wallpaper layers are meant to disappear. */
 html[data-theme="dark"] body.mz-has-wallpaper::after,
 html[data-theme="dark"] body.mz-has-wallpaper::before {
@@ -3767,17 +3140,22 @@ html:not([data-theme="dark"]) body.mz-has-wallpaper::before {
 /* NOTE: .mz-main must NOT be given `position: relative; z-index: 1`.
    That combination opens a stacking context and traps every popup inside
    it: a cbi-dropdown opening at z-index 1000 would STILL paint below the
-   fixed .mz-sidebar, because the sidebar's z-index is compared against
+   fixed .mz-sidebar,
+because the sidebar's z-index is compared against
    .mz-main's "1" rather than against the dropdown's. The wallpaper now
-   sits at a negative z-index, so the content never needs raising, and all
+   sits at a negative z-index,
+so the content never needs raising,
+and all
    inner popups compete in the root stacking context where the --mz-z-*
    tokens mean what they say. */
 
-/* Frosted app chrome (review TZ-02, 2026-09-07): the sidebar, topbar,
-   footer and sticky action bar used to be fully opaque slabs that cut the
+/* Frosted app chrome (review TZ-02, 2026-09-07): the sidebar,
+topbar,
+footer and sticky action bar used to be fully opaque slabs that cut the
    wallpaper into pieces. They now share the strong glass tint so the
    wallpaper flows edge to edge while text stays readable. Blur/saturate
-   come from the tokens, so the same rule serves white glass in light mode
+   come from the tokens,
+so the same rule serves white glass in light mode
    and deep grey glass in dark mode. */
 body.mz-has-wallpaper .mz-sidebar,
 body.mz-has-wallpaper .mz-topbar,
@@ -3795,13 +3173,13 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
    text. Fall back to a near-opaque surface so legibility never depends on
    an unsupported effect. */
 @supports not (backdrop-filter: blur(1px)) {
-	body.mz-has-wallpaper .mz-sidebar,
-	body.mz-has-wallpaper .mz-topbar,
-	body.mz-has-wallpaper .mz-footer,
-	body.mz-has-wallpaper .mz-mobilebar,
-	body.mz-has-wallpaper .cbi-section,
-	body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
-	body.mz-has-wallpaper #maincontent .cbi-page-actions {
+body.mz-has-wallpaper .mz-sidebar,
+body.mz-has-wallpaper .mz-topbar,
+body.mz-has-wallpaper .mz-footer,
+body.mz-has-wallpaper .mz-mobilebar,
+body.mz-has-wallpaper .cbi-section,
+body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
+body.mz-has-wallpaper #maincontent .cbi-page-actions {
 		background: var(--mz-color-surface);
 	}
 }
@@ -3821,7 +3199,7 @@ body.mz-has-wallpaper #modal_overlay {
 /* ================================================================
  * Glass cards over the global wallpaper
  * Cards become translucent (frosted) so the wallpaper shows through,
- * while a slightly stronger background on hover/focus plus a text
+* while a slightly stronger background on hover/focus plus a text
  * halo keeps every label readable in light and dark mode.
  * ================================================================ */
 /* Theme-aware glass: light theme uses a white frosted sheet with dark
@@ -3832,7 +3210,8 @@ body.mz-has-wallpaper #modal_overlay {
 /* LIGHT + wallpaper: "white glassmorphism". The panel tokens are aliases of
    the --mz-glass-* light tokens so the glass parameters live in exactly one
    place. Note the `html:not([data-theme="dark"])` prefix: data-theme is an
-   attribute of <html>, so a bare `body.mz-has-wallpaper:not([data-theme])`
+   attribute of <html>,
+so a bare `body.mz-has-wallpaper:not([data-theme])`
    matched unconditionally and leaked the light palette into dark mode. */
 html:not([data-theme="dark"]) body.mz-has-wallpaper {
 	--mz-panel-bg: var(--mz-glass-bg);
@@ -3851,9 +3230,12 @@ html:not([data-theme="dark"]) body.mz-has-wallpaper {
 /* DARK + wallpaper class (dark mode never paints an image, but the class is
    still what switches the whole glass layer on): "deep grey glass". The
    surfaces here are 0.88-0.92 opaque - the previous rgba(255,255,255,0.07)
-   sheets were invisible over a dark page, which is why dark cards looked
+   sheets were invisible over a dark page,
+which is why dark cards looked
    like floating text. Only one token set covers both the "wallpaper on,
-   dark" and "wallpaper off, dark" cases, because dark never renders an
+dark" and "wallpaper off,
+dark" cases,
+because dark never renders an
    image layer anyway. */
 html[data-theme="dark"] body.mz-has-wallpaper {
 	--mz-panel-bg: rgba(30, 34, 42, 0.88);
@@ -3875,14 +3257,7 @@ body.mz-has-wallpaper .cbi-section-node,
 body.mz-has-wallpaper .cbi-section-table,
 body.mz-has-wallpaper table.table,
 body.mz-has-wallpaper .cbi-tabmenu,
-body.mz-has-wallpaper .mz-info-card,
-body.mz-has-wallpaper .mz-ring-card,
-body.mz-has-wallpaper .mz-port-card,
 body.mz-has-wallpaper .mz-net-card,
-body.mz-has-wallpaper .mz-sys-grid,
-body.mz-has-wallpaper .mz-wifi-card,
-body.mz-has-wallpaper .mz-empty-state,
-body.mz-has-wallpaper .mz-table-card,
 body.mz-has-wallpaper .ifacebox,
 body.mz-has-wallpaper .ifacebox-head,
 body.mz-has-wallpaper .ifacebox-head.active,
@@ -3900,10 +3275,13 @@ body.mz-has-wallpaper .cbi-dynlist > .item {
 
 /* ONE glass surface for every status card in the content area.
    Per-card rules further down (the port grid, the upstream row) painted
-   --mz-color-surface-2, i.e. ~0.84 alpha, while the sections behind them
+   --mz-color-surface-2,
+i.e. ~0.84 alpha,
+while the sections behind them
    sat at 0.72 - which is why the status cards read as solid boxes and not
    as the "global frosted glass" the rest of the UI uses. This selector
-   (id + two classes) outranks the port-grid rules, so a future card
+   (id + two classes) outranks the port-grid rules,
+so a future card
    flavour cannot drift away from the global glass again. */
 body.mz-has-wallpaper #mz-view .ifacebox {
 	background: var(--mz-panel-bg) !important;
@@ -3914,8 +3292,10 @@ body.mz-has-wallpaper #mz-view .ifacebox {
 /* De-nested glass (review TZ-01/TZ-06, 2026-09-07): only the OUTERMOST
    container keeps the frosted background. Inner layers go fully
    transparent - stacked 0.72 layers used to multiply up to ~99%
-   opaque, which is why some cards looked solid. Overview panel
-   wrappers are invisible layout boxes, never glass themselves. */
+   opaque,
+which is why some cards looked solid. Overview panel
+   wrappers are invisible layout boxes,
+never glass themselves. */
 body.mz-has-wallpaper .cbi-map,
 body.mz-has-wallpaper .cbi-section-node,
 body.mz-has-wallpaper .cbi-section-table,
@@ -3924,10 +3304,7 @@ body.mz-has-wallpaper .ifacebox-body,
 body.mz-has-wallpaper .mz-overview-panel,
 body.mz-has-wallpaper .mz-port-panel,
 body.mz-has-wallpaper .mz-net-panel,
-body.mz-has-wallpaper .mz-sys-panel,
-body.mz-has-wallpaper .mz-dhcp-panel,
-body.mz-has-wallpaper .mz-wifi-panel,
-body.mz-has-wallpaper .mz-upnp-panel {
+body.mz-has-wallpaper .mz-sys-panel {
 	background: transparent;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
@@ -3937,7 +3314,8 @@ body.mz-has-wallpaper .mz-upnp-panel {
 
 /* Alert / notice family over wallpaper (review TZ-03): the default
    (non-variant) boxes were fully opaque slabs. Semantic meaning is
-   carried by the colored borders, which are intentionally preserved -
+   carried by the colored borders,
+which are intentionally preserved -
    only the fill turns to glass. */
 body.mz-has-wallpaper .alert-message,
 body.mz-has-wallpaper .cbi-change-list,
@@ -3962,38 +3340,13 @@ body.mz-has-wallpaper table.cbi-section-table thead th,
 body.mz-has-wallpaper .table .table-titles .td {
 	background: rgba(148, 163, 184, 0.18);
 }
+
 body.mz-has-wallpaper .table .tr:hover .td,
 body.mz-has-wallpaper table.table tr:hover td,
 body.mz-has-wallpaper table.cbi-section-table tr:hover td,
 body.mz-has-wallpaper table.table tbody tr:hover td,
-body.mz-has-wallpaper table.cbi-section-table tbody tr:hover td,
-body.mz-has-wallpaper .mz-data-table tbody tr:hover td {
+body.mz-has-wallpaper table.cbi-section-table tbody tr:hover td {
 	background: rgba(148, 163, 184, 0.16);
-}
-
-/* Sys-info grid uses !important in its base rule; force the glass vars with
-   the same specificity plus !important so the wallpaper shows through. */
-body.mz-has-wallpaper .mz-sys-grid {
-	background: var(--mz-panel-bg) !important;
-	border-color: rgba(148, 163, 184, 0.3) !important;
-}
-
-/* Overview page translucent headers / titles over wallpaper */
-/* Headers share the panel alpha family (reference style: no loud opaque
-   bars) - a 0.4 primary tint keeps white labels readable without turning
-   the header into a solid slab. */
-body.mz-has-wallpaper .mz-net-header,
-body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 79, 110, 247), 0.4);
-}
-body.mz-has-wallpaper .mz-net-header {
-	color: #fff;
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-}
-
-html[data-theme="dark"] body.mz-has-wallpaper .mz-net-header,
-html[data-theme="dark"] body.mz-has-wallpaper .mz-data-table thead th {
-	background: rgba(var(--mz-color-primary-rgb, 125, 147, 255), 0.4);
 }
 
 /* LuCI ifacebox headers use inline background-color for firewall zones;
@@ -4006,11 +3359,6 @@ html[data-theme="dark"] body.mz-has-wallpaper .ifacebox-head {
 	background-color: rgba(var(--zone-color-rgb, 128, 128, 128), 0.55) !important;
 }
 
-body.mz-has-wallpaper .mz-section-title,
-body.mz-has-wallpaper .mz-subtitle {
-	text-shadow: var(--mz-panel-halo);
-}
-
 /* Keep overview panel spacing airy but compact */
 body.mz-has-wallpaper .mz-overview-panel {
 	margin-bottom: var(--mz-spacing-md);
@@ -4018,25 +3366,13 @@ body.mz-has-wallpaper .mz-overview-panel {
 
 /* Interaction states: more opaque where the eye is looking */
 body.mz-has-wallpaper .cbi-section:hover,
-body.mz-has-wallpaper .mz-info-card:hover,
-body.mz-has-wallpaper .mz-ring-card:hover,
-body.mz-has-wallpaper .mz-port-card:hover,
 body.mz-has-wallpaper .mz-net-card:hover,
-body.mz-has-wallpaper .mz-sys-grid:hover,
-body.mz-has-wallpaper .mz-wifi-card:hover,
-body.mz-has-wallpaper .mz-table-card:hover,
 body.mz-has-wallpaper .ifacebox:hover,
 body.mz-has-wallpaper .cbi-section:focus-within,
 body.mz-has-wallpaper .cbi-section-node:focus-within,
 body.mz-has-wallpaper .cbi-dynlist > .item:hover {
 	background: var(--mz-panel-bg-strong);
 	border-color: rgba(148, 163, 184, 0.45);
-	box-shadow: var(--mz-shadow-lg);
-}
-
-body.mz-has-wallpaper .mz-sys-grid:hover {
-	background: var(--mz-panel-bg-strong) !important;
-	border-color: rgba(148, 163, 184, 0.45) !important;
 	box-shadow: var(--mz-shadow-lg);
 }
 
@@ -4056,9 +3392,7 @@ body.mz-has-wallpaper .cbi-section[disabled] {
 /* Text halo keeps titles and form labels readable (review TZ-11,
    2026-09-07): narrowed from "every table cell" to headings and
    labels - full-table shadows cost scroll performance and blur small
-   text, and WCAG contrast ignores shadows anyway. */
-body.mz-has-wallpaper .mz-section-title,
-body.mz-has-wallpaper .mz-subtitle,
+   text,
 body.mz-has-wallpaper h2,
 body.mz-has-wallpaper h3,
 body.mz-has-wallpaper h4,
@@ -4096,7 +3430,7 @@ table.table {
    already provided by the `@media (max-width: 768px)` block further down, so
    nothing else depended on it. */
 .cbi-section-node {
-	min-width: 0;
+min-width: 0;
 }
 
 table.table th,
@@ -4124,56 +3458,11 @@ table.table .cbi-button,
 }
 
 @media (max-width: 768px) {
-	.cbi-section-table,
-	table.table {
+.cbi-section-table,
+table.table {
 		display: block;
 		width: 100%;
 		overflow-x: auto;
-	}
-}
-
-/* ================================================================
- * Code-review polish (2026-09-07 OT-28 / OT-33 notes)
- * ================================================================ */
-/* Breadcrumb separators emitted by menu-mint.js */
-.mz-crumb-sep {
-	opacity: .45;
-}
-
-/* Wallpaper settings action row (upload buttons) */
-.mz-wp-actions {
-	gap: 8px;
-	margin-bottom: 12px;
-}
-
-/* NOTE (OT-33): .cbi-section-node needs overflow-x:auto for wide tables;
-   absolutely-positioned dropdowns inside it clip vertically by CSS spec.
-   In practice LuCI dropdowns live in .cbi-page-actions (outside any
-   scroll container), so this is a documented non-issue. */
-
-/* ================================================================
- * Overview row alignment (2026-09-08)
- * The overview card rows used fixed pixel tracks (info 4x220px,
- * rings 3x300px) on wide screens, so those rows ended ~300px short of
- * the content width while the port/network rows stretched to it. The
- * ragged right edge is what made the layout look broken.
- * auto-fit + 1fr keeps the same column counts at current widths but
- * lets every row span the full container, so all rows line up.
- * ================================================================ */
-@media (min-width: 1024px) {
-	.mz-info-cards {
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-	}
-	.mz-rings {
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-	}
-	.mz-sys-grid {
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
-	}
-	.mz-port-grid,
-	.mz-net-grid,
-	.mz-wifi-radios {
-		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important;
 	}
 }
 
@@ -4184,50 +3473,8 @@ table.table .cbi-button,
    The desktop value (rgba(15,21,36,.55) on .mz-login-card) is untouched
    above 640px. */
 @media (max-width: 640px) {
-	.mz-login-card {
+.mz-login-card {
 		background: rgba(15, 21, 36, .38);
-	}
-}
-
-/* Overview: below the desktop breakpoint show at least two cards per
-   row. The old 4-up info row truncated long values (model names) and the
-   3-up ring row stretched its gauges on phones. The ring row holds
-   exactly three cards (CPU / memory / storage), so it gets a fixed
-   three-column track and stays on a single line. Card panel alphas stay
-   shared with desktop - the same --mz-panel-bg drives both. */
-@media (max-width: 1023.98px) {
-	.mz-info-cards {
-		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-		justify-content: stretch !important;
-	}
-	.mz-rings {
-		grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-		justify-content: stretch !important;
-	}
-}
-
-@media (max-width: 480px) {
-	/* Third-of-width cells: stack the gauge above its labels so nothing is
-	   squeezed into a ~112px row layout. */
-	.mz-ring-card {
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: 6px;
-		padding: 8px 6px;
-	}
-	.mz-ring {
-		width: 72px;
-		height: 72px;
-	}
-	.mz-ring-card .mz-ring-label,
-	.mz-ring-card .mz-ring-sub {
-		font-size: 12px;
-	}
-	/* Long values wrap instead of being cut off mid-word. */
-	.mz-info-value {
-		white-space: normal;
-		overflow-wrap: anywhere;
 	}
 }
 
@@ -4263,7 +3510,10 @@ table.table .cbi-button,
 }
 
 /* Page action bar shares the card alpha family: it was --panel-bg-strong
-   (0.13), one step ABOVE every card (0.07). Same tint, same blur, so the
+   (0.13),
+one step ABOVE every card (0.07). Same tint,
+same blur,
+so the
    sticky bar reads as part of the page instead of a heavier slab. */
 body.mz-has-wallpaper .cbi-map > .cbi-page-actions,
 body.mz-has-wallpaper #maincontent .cbi-page-actions {
@@ -4271,7 +3521,8 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
 }
 
 /* cbi-dropdown / native select option panels: the closed control already
-   uses the surface token, but the OPEN list had no shadow - it melted
+   uses the surface token,
+but the OPEN list had no shadow - it melted
    into the cards behind it. A real elevation shadow plus a stronger
    glass fill separates the floating menu from the page. */
 .cbi-dropdown[open] > ul,
@@ -4283,14 +3534,20 @@ body.mz-has-wallpaper #maincontent .cbi-page-actions {
 
 /* TOKENISED DELIBERATELY. This block used to hard-code background:#1c2736 on
    the assumption that `mz-has-wallpaper` implied "dark mode". It does not:
-   menu-mint.js sets the class on EVERY admin page, light theme included, so a
+   menu-mint.js sets the class on EVERY admin page,
+light theme included,
+so a
    light-themed page was handed a dark navy popup that nothing could undo.
-   Worse, on the stripped LuCI builds (cbi.js ships without CBI.Dropdown) the
-   floating <ul> never receives the `.dropdown` class, so the later rule keyed
+   Worse,
+on the stripped LuCI builds (cbi.js ships without CBI.Dropdown) the
+   floating <ul> never receives the `.dropdown` class,
+so the later rule keyed
    on `ul.dropdown` - the one that resolves the panel token - could not
-   override it either, and the hard-coded navy won on every page.
+   override it either,
+and the hard-coded navy won on every page.
    Resolve through the panel token instead: the token already flips between
-   white glass (light) and deep grey glass (dark), so one declaration is
+   white glass (light) and deep grey glass (dark),
+so one declaration is
    correct in both modes and for both markup shapes. */
 body.mz-has-wallpaper .cbi-dropdown[open] > ul,
 body.mz-has-wallpaper .cbi-button-apply .dropdown,
@@ -4303,7 +3560,8 @@ body.mz-has-wallpaper .btn + .dropdown-menu {
 }
 
 /* A white hover wash is only legible on the dark glass. In light mode it was
-   invisible (white on white), so the hover feedback silently disappeared.
+   invisible (white on white),
+so the hover feedback silently disappeared.
    Keep it for dark only; light inherits the token rule above. */
 html[data-theme="dark"] .cbi-dropdown[open] > ul.dropdown > li:hover {
 	background: rgba(255, 255, 255, 0.1);
@@ -4311,15 +3569,18 @@ html[data-theme="dark"] .cbi-dropdown[open] > ul.dropdown > li:hover {
 
 /* Native select option lists pick up the dark scheme so the OS popup is not
    blinding white in dark mode. `body.mz-has-wallpaper` must NOT appear here:
-   it is set in light mode too, which dyed every <option> navy on a light
-   page - the same bug as the popup above, in the native control. */
+   it is set in light mode too,
+which dyed every <option> navy on a light
+   page - the same bug as the popup above,
+in the native control. */
 html[data-theme="dark"] select option {
 	background-color: #1c2736;
 	color: #eef2f8;
 }
 
 /* Text inputs / textareas / select fields keep a stronger frosted fill
-   over glass cards so the caret, value and placeholder stay readable on
+   over glass cards so the caret,
+value and placeholder stay readable on
    every page (review 2026-09-09). */
 body.mz-has-wallpaper input,
 body.mz-has-wallpaper select,
@@ -4364,7 +3625,8 @@ table.cbi-section-table td {
  * Global typography readability (2026-09-08)
  * ================================================================ */
 /* The rem cascade (body 16px -> .88/.9rem = ~14px) plus thin system-ui
-   rendering made body text feel small and washed out, especially over
+   rendering made body text feel small and washed out,
+especially over
    the wallpaper. Bump the base scale one notch and strengthen glyph
    rendering; the rem-based layout scales up proportionally without
    breaking any grid. */
@@ -4379,11 +3641,12 @@ body {
 
 /* Tables and dense CBI text keep their relative sizes but gain weight so
    labels stop disappearing into glass backgrounds. */
-td, th {
+td,
+th {
 	font-weight: 400;
 }
 
-th, .mz-info-label, .mz-sys-label {
+th {
 	font-weight: 600;
 }
 
@@ -4392,7 +3655,7 @@ th, .mz-info-label, .mz-sys-label {
  * ================================================================ */
 /* The OS default scrollbar is a fat white strip that clashes with the
    dark sidebar and glass cards. Thin translucent thumbs everywhere,
-   plus color-scheme so native popups follow the dark mode too. */
+plus color-scheme so native popups follow the dark mode too. */
 * {
 	scrollbar-width: thin;
 	scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
@@ -4429,7 +3692,8 @@ html:not([data-theme="dark"]) {
 }
 
 /* Restore stock tooltip semantics: hidden until hover. The previous
-   rule styled .cbi-tooltip as a permanent inline card, which dumped
+   rule styled .cbi-tooltip as a permanent inline card,
+which dumped
    every device detail (type/MAC/traffic) into the flow and produced
    the mangled icon-over-text rows on the interfaces page.
    !important: LuCI also stamps .ifacebadge on the same node; without
@@ -4490,7 +3754,8 @@ html:not([data-theme="dark"]) {
 /* The Interface overview wraps sub-device tooltips in a literal
    "(" / ")" separator span. Hide only the punctuation (via a 0 font
    size on the wrapper) while keeping the icon tooltips visible.
-   Previously this was globally hidden with display:none, which also
+   Previously this was globally hidden with display:none,
+which also
    removed the sub-device icons on the homepage Network/Wireless cards. */
 #cbi-network-interface .ifacebox-body > span:not(.cbi-tooltip-container),
 #cbi-network-device .ifacebox-body > span:not(.cbi-tooltip-container) {
@@ -4612,7 +3877,8 @@ ul.cbi-tabmenu {
 }
 
 /* Indicator slot: flush right inside its own strip. The markup ships a
-   .pull-right helper this theme does not define, and the slot no longer
+   .pull-right helper this theme does not define,
+and the slot no longer
    lives inside .mz-topbar (see the .mz-indicatorbar rules near the top of
    this file). */
 .mz-indicatorbar .mz-indicators {
@@ -4669,7 +3935,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 
 /* Open dropdown: show every option.
    No :not() padding and no !important needed any more - the closed-state
-   rule above now uses [open] (attribute) instead of .open (class), so the
+   rule above now uses [open] (attribute) instead of .open (class),
+so the
    two rules no longer overlap. Search-filtered items keep their own rule
    below instead of being excluded by an ever-growing :not() chain. */
 .cbi-dropdown[open] > ul.dropdown > li {
@@ -4688,7 +3955,8 @@ body.mz-has-wallpaper .cbi-section-descr {
  * ================================================================ */
 /* The desktop page title is filled by menu-mint.js#initPageTopbar into
    the server-rendered .mz-topbar-title. The old breadcrumb element is
-   no longer emitted, so its rules live only in the topbar section. */
+   no longer emitted,
+so its rules live only in the topbar section. */
 
 /* Sidebar top-level entries: heavier and larger than the sub items
    so the two menu levels read apart at a glance. */
@@ -4703,7 +3971,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 /* nftables status page  (admin/status/nftables)                    */
 /* The upstream view renders every chain as a bare <div class="nft-  */
 /* chain"> holding a flat <table class="nft-rules"> with no card     */
-/* wrapper, so chains read as loose text lines. mz-nftables.js adds  */
+/* wrapper,
+so chains read as loose text lines. mz-nftables.js adds  */
 /* the grouping + collapse chrome; this stylesheet just makes it     */
 /* look like the rest of the theme.                                  */
 /* ================================================================ */
@@ -4747,11 +4016,13 @@ body.mz-has-wallpaper .cbi-section-descr {
 	font-weight: 500;
 	transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
+
 #mz-view .mz-nft-btn:hover {
 	background: var(--mz-color-primary-soft);
 	border-color: var(--mz-color-primary);
 	color: var(--mz-color-primary);
 }
+
 #mz-view .mz-nft-btn:active {
 	transform: translateY(1px);
 }
@@ -4768,9 +4039,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 	border-radius: var(--mz-radius-sm);
 	transition: background .12s ease;
 }
+
 #mz-view .mz-nft-toggle:hover {
 	background: var(--mz-color-surface-2);
 }
+
 #mz-view .mz-nft-toggle input[type="checkbox"] {
 	margin: 0;
 	cursor: pointer;
@@ -4788,6 +4061,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text);
 	transition: border-color .12s ease, box-shadow .12s ease;
 }
+
 #mz-view .mz-nft-search:focus {
 	outline: none;
 	border-color: var(--mz-color-primary);
@@ -4804,6 +4078,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	padding: var(--mz-spacing-lg) var(--mz-spacing-lg) var(--mz-spacing-md) var(--mz-spacing-lg);
 	overflow: hidden;
 }
+
 #mz-view .nft-table > h3 {
 	margin: 0 0 var(--mz-spacing-xs) 0;
 	padding: 0;
@@ -4812,6 +4087,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text);
 	letter-spacing: .01em;
 }
+
 #mz-view .nft-table > h3::before {
 	content: '';
 	display: inline-block;
@@ -4822,6 +4098,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	margin-right: 10px;
 	vertical-align: -2px;
 }
+
 #mz-view .mz-nft-table-summary {
 	display: inline-block;
 	font-size: .82rem;
@@ -4848,9 +4125,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 	letter-spacing: .04em;
 	text-transform: uppercase;
 }
+
 #mz-view .mz-nft-grouptitle:first-child {
 	margin-top: var(--mz-spacing-md);
 }
+
 #mz-view .mz-nft-grouptitle-count {
 	font-size: .78rem;
 	color: var(--mz-color-text-muted);
@@ -4873,6 +4152,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	overflow: hidden;
 	transition: box-shadow .15s ease, border-color .15s ease;
 }
+
 #mz-view .nft-chain:hover {
 	border-color: var(--mz-color-primary);
 	box-shadow: var(--mz-shadow-md);
@@ -4893,6 +4173,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	gap: var(--mz-spacing-sm);
 	flex-wrap: wrap;
 }
+
 #mz-view .nft-chain > h4::before {
 	content: '';
 	width: 4px;
@@ -4901,10 +4182,13 @@ body.mz-has-wallpaper .cbi-section-descr {
 	border-radius: 2px;
 	flex: 0 0 auto;
 }
+
 #mz-view .nft-chain > h4:hover {
 	background: var(--mz-color-primary-soft);
 }
-/* mz-nftables.js wraps the chain name in <span><code>..</code></span>, so
+
+/* mz-nftables.js wraps the chain name in <span><code>..</code></span>,
+so
    match the <code> with a descendant selector (not a direct child) to be
    immune to the wrapper span. */
 #mz-view .nft-chain > h4 code,
@@ -4918,7 +4202,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 	font-weight: 600;
 }
 
-/* The page-anchor inside the h4 used to look like a bullet, now it
+/* The page-anchor inside the h4 used to look like a bullet,
+now it
    reads as a tag. */
 #mz-view .nft-chain > h4 > a {
 	color: inherit;
@@ -4933,6 +4218,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	margin-left: auto;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
 #mz-view .nft-chain.mz-collapsed > h4 .mz-nft-chain-toggle {
 	transform: rotate(-90deg);
 }
@@ -4947,10 +4233,12 @@ body.mz-has-wallpaper .cbi-section-descr {
 	padding: 1px 10px;
 	white-space: nowrap;
 }
+
 #mz-view .mz-nft-chain-nonzero {
 	color: var(--mz-color-success);
 	font-weight: 600;
 }
+
 #mz-view .mz-nft-chain-zero {
 	color: var(--mz-color-text-muted);
 }
@@ -4959,6 +4247,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view .nft-chain-hook {
 	padding: var(--mz-spacing-md) var(--mz-spacing-md) 0 var(--mz-spacing-md);
 }
+
 #mz-view .nft-chain-hook ul {
 	list-style: none;
 	margin: 0;
@@ -4967,6 +4256,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	flex-wrap: wrap;
 	gap: var(--mz-spacing-sm);
 }
+
 #mz-view .nft-chain-hook li {
 	background: var(--mz-color-surface-2);
 	border: 1px solid var(--mz-color-border);
@@ -4976,6 +4266,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text-muted);
 	line-height: 1.4;
 }
+
 #mz-view .nft-chain-hook li strong {
 	color: var(--mz-color-text);
 	font-weight: 600;
@@ -4992,6 +4283,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	margin: var(--mz-spacing-md) 0 0 0;
 	font-size: .9rem;
 }
+
 #mz-view table.nft-rules th,
 #mz-view table.nft-rules td {
 	padding: 8px 12px;
@@ -4999,6 +4291,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	vertical-align: top;
 	border-bottom: 1px solid var(--mz-color-border);
 }
+
 #mz-view table.nft-rules thead th,
 #mz-view table.nft-rules tr.table-titles th {
 	background: var(--mz-color-primary-soft);
@@ -5008,12 +4301,15 @@ body.mz-has-wallpaper .cbi-section-descr {
 	letter-spacing: .02em;
 	border-bottom: 1px solid var(--mz-color-border);
 }
+
 #mz-view table.nft-rules tr.table-titles th {
 	padding: 8px 12px;
 }
+
 #mz-view table.nft-rules tbody tr:hover td {
 	background: var(--mz-color-surface-2);
 }
+
 #mz-view table.nft-rules tbody tr:last-child td {
 	border-bottom: 0;
 }
@@ -5021,7 +4317,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 /* --- Badges inside the rule cells --- */
 /* :not(.cbi-tooltip): LuCI device popups are
    span.cbi-tooltip.ifacebadge.large. The #mz-view ID selector used to
-   force display:inline-flex on them, defeating the hide-until-hover
+   force display:inline-flex on them,
+defeating the hide-until-hover
    rule below (specificity (1,1,0) > (0,2,0)) and permanently dumping
    every device detail panel into the interfaces page layout. */
 #mz-view .ifacebadge:not(.cbi-tooltip) {
@@ -5037,30 +4334,36 @@ body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text);
 	line-height: 1.35;
 }
+
 #mz-view .ifacebadge var {
 	font-style: normal;
 	font-weight: 500;
 	color: var(--mz-color-text-muted);
 }
+
 #mz-view .ifacebadge strong {
 	color: var(--mz-color-text);
 	font-weight: 600;
 }
+
 #mz-view .ifacebadge a {
 	color: var(--mz-color-primary);
 	text-decoration: none;
 }
+
 #mz-view .ifacebadge a:hover {
 	text-decoration: underline;
 }
 
-/* nft-counter: byte count badge, becomes green when non-zero */
+/* nft-counter: byte count badge,
+becomes green when non-zero */
 #mz-view .nft-counter {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	background: var(--mz-color-warning-soft);
 	border-color: var(--mz-color-warning);
 	color: var(--mz-color-warning);
 }
+
 #mz-view .nft-counter var {
 	font-weight: 600;
 	color: inherit;
@@ -5072,6 +4375,7 @@ body.mz-has-wallpaper .cbi-section-descr {
 	border-color: var(--mz-color-primary);
 	color: var(--mz-color-primary-strong);
 }
+
 #mz-view .nft-comment var {
 	color: var(--mz-color-primary);
 	font-weight: 700;
@@ -5089,11 +4393,13 @@ body.mz-has-wallpaper .cbi-section-descr {
 	font-size: .82rem;
 	color: var(--mz-color-text);
 }
+
 #mz-view .nft-set-items {
 	display: inline-flex;
 	flex-wrap: wrap;
 	gap: 4px;
 }
+
 #mz-view .nft-set-item {
 	background: var(--mz-color-surface);
 	border: 1px solid var(--mz-color-border);
@@ -5103,7 +4409,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 	color: var(--mz-color-text);
 }
 
-/* --- The cbi tooltip in the badge: keep readable, but cap width --- */
+/* --- The cbi tooltip in the badge: keep readable,
+but cap width --- */
 #mz-view .ifacebadge .cbi-tooltip {
 	max-width: 320px;
 	white-space: normal;
@@ -5116,9 +4423,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view .nft-chain.mz-collapsed table.nft-rules {
 	display: none;
 }
+
 #mz-view tr.mz-nft-hide-zero {
 	display: none;
 }
+
 #mz-view .nft-chain.mz-nft-search-hide {
 	display: none;
 }
@@ -5130,40 +4439,48 @@ body.mz-has-wallpaper .cbi-section-descr {
 
 /* --- Mobile: stack the table cells and break long expressions --- */
 @media (max-width: 767px) {
-	#mz-view .nft-table {
+#mz-view .nft-table {
 		padding: var(--mz-spacing-md);
 	}
-	#mz-view .nft-chain > h4 {
+
+#mz-view .nft-chain > h4 {
 		font-size: .92rem;
 	}
-	#mz-view .mz-nft-chain-summary {
+
+#mz-view .mz-nft-chain-summary {
 		font-size: .72rem;
 	}
-	#mz-view .nft-chain-hook li {
+
+#mz-view .nft-chain-hook li {
 		font-size: .8rem;
 	}
-	#mz-view table.nft-rules,
-	#mz-view table.nft-rules tbody,
-	#mz-view table.nft-rules thead {
+
+#mz-view table.nft-rules,
+#mz-view table.nft-rules tbody,
+#mz-view table.nft-rules thead {
 		display: block;
 		width: 100%;
 	}
-	#mz-view table.nft-rules tr,
-	#mz-view table.nft-rules tr.table-titles {
+
+#mz-view table.nft-rules tr,
+#mz-view table.nft-rules tr.table-titles {
 		display: block;
 		padding: 6px 0;
 		border-bottom: 1px solid var(--mz-color-border);
 	}
-	#mz-view table.nft-rules tr.table-titles {
+
+#mz-view table.nft-rules tr.table-titles {
 		display: none;
 	}
-	#mz-view table.nft-rules td {
+
+#mz-view table.nft-rules td {
 		display: block;
 		padding: 4px 0;
 		border-bottom: 0;
 		width: auto !important;
 	}
-	#mz-view table.nft-rules td::before {
+
+#mz-view table.nft-rules td::before {
 		content: attr(data-mz-col);
 		display: block;
 		font-size: .72rem;
@@ -5172,7 +4489,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 		letter-spacing: .04em;
 		margin-bottom: 2px;
 	}
-	#mz-view .mz-nft-tb-stats {
+
+#mz-view .mz-nft-tb-stats {
 		flex: 1 1 100%;
 	}
 }
@@ -5187,7 +4505,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 /* --- 1. Section title bars become frosted card headers -----------
    LuCI renders a bare .cbi-title (or h3.cbi-section-title) floating
    over the glass card. Collapse it into the card top edge with a
-   frosted head so the header reads as an anchor, not a stray line. */
+   frosted head so the header reads as an anchor,
+not a stray line. */
 .cbi-section > .cbi-title,
 .cbi-section > .cbi-section-title {
 	display: block;
@@ -5267,26 +4586,28 @@ body.mz-has-wallpaper .cbi-section-descr {
 	min-width: 300px;
 }
 
-
 /* ================================================================
  * Homepage overview + network interface card layout (2026-09-10)
  * Inspired by luci-theme-aurora.
  *
  * The stock LuCI overview renders "Port status" as a tiny 70-100px
  * grid of ifaceboxes and "Network"/"Wireless" as a `.network-status-table`
- * with no layout of its own, so those sections either stay cramped or
+ * with no layout of its own,
+so those sections either stay cramped or
  * stack full-width. luci-theme-aurora fixes this by giving the native
  * grids a responsive track and making `.network-status-table` a
  * horizontal card row on desktop (vertical on phones). The same idea is
- * applied here, while keeping the mint glass/token look.
+ * applied here,
+while keeping the mint glass/token look.
  * ================================================================ */
 
 /* Homepage "Port status": native 29_ports.js grid ------------ */
 /* LuCI sets grid-template-columns: repeat(auto-fit, minmax(70px,1fr))
    (older) or minmax(100px,1fr) (ImmortalWrt / current master) inline,
-   and each port has inline min-width/max-width or width:100px.
+and each port has inline min-width/max-width or width:100px.
    The grid is NOT always a direct child of .cbi-section (current
-   master wraps it in a bare div), so do not require that parent.
+   master wraps it in a bare div),
+so do not require that parent.
    Override with a comfortable card track so ports read as cards. */
 #mz-view div[style*="display:grid"][style*="minmax(70px, 1fr)"],
 #mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"],
@@ -5301,14 +4622,18 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 /* Port cards. LuCI emits FOUR sibling blocks per port and the theme is not
-   allowed to touch that markup, so the visual order is produced with
+   allowed to touch that markup,
+so the visual order is produced with
    grid + `order`:
      (1) .ifacebox-head                      port name  (carries --zone-color-rgb)
      (2) .ifacebox-body                      port icon + speed line
      (3) .ifacebox-head.cbi-tooltip-container a 3px zone colour strip
      (4) .ifacebox-body                      the traffic readout
-   On screen that becomes: quiet label, icon + speed headline, traffic
-   footer, and finally the colour strip as a 4px accent along the bottom
+   On screen that becomes: quiet label,
+icon + speed headline,
+traffic
+   footer,
+and finally the colour strip as a 4px accent along the bottom
    edge. Every block that LuCI paints with a solid zone colour is reset to
    transparent here - the colour survives as that accent instead of a grey
    slab. */
@@ -5350,20 +4675,24 @@ body.mz-has-wallpaper .cbi-section-descr {
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head:first-child {
 	order: 1;
 }
+
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type {
 	order: 2;
 }
+
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type {
 	order: 3;
 }
+
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container {
 	order: 4;
 }
 
-/* (1) Port name: a quiet uppercase label, not a coloured slab. */
+/* (1) Port name: a quiet uppercase label,
+not a coloured slab. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head:first-child,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-head:first-child,
 #mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-head:first-child,
@@ -5415,13 +4744,15 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 /* LuCI puts a <br> between the icon and the speed; in a flex row it is a
-   stray line box, so drop it. */
+   stray line box,
+so drop it. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type br,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:first-of-type br {
 	display: none;
 }
 
-/* (3) Traffic readout: hairline-separated footer, tight and secondary. */
+/* (3) Traffic readout: hairline-separated footer,
+tight and secondary. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
 #mz-view div[style*="minmax(100px, 1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
 #mz-view div[style*="minmax(70px,1fr)"] > .ifacebox > .ifacebox-body:last-of-type,
@@ -5448,7 +4779,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 
 /* (4) Zone colour: a 4px accent along the bottom edge. LuCI paints the
    whole strip block with rgba(--zone-color-rgb, .78) and gives it
-   `padding: 8px 10px`, which is what turned a 3px colour bar into a 20px
+   `padding: 8px 10px`,
+which is what turned a 3px colour bar into a 20px
    grey slab sitting in the middle of the card. Both are reset here; the
    colour itself is kept. */
 #mz-view div[style*="minmax(70px, 1fr)"] > .ifacebox > .ifacebox-head.cbi-tooltip-container,
@@ -5479,14 +4811,15 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 @media (max-width: 640px) {
-	#mz-view div[style*="display:grid"][style*="minmax(70px, 1fr)"],
-	#mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"] {
+#mz-view div[style*="display:grid"][style*="minmax(70px, 1fr)"],
+#mz-view div[style*="display:grid"][style*="minmax(100px, 1fr)"] {
 		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 	}
 }
 
 /* --- Homepage "Network" / "Wireless": native .network-status-table */
-/* luci-theme-aurora: flex card row on desktop, stacked on phones.  */
+/* luci-theme-aurora: flex card row on desktop,
+stacked on phones.  */
 #mz-view .network-status-table {
 	display: flex;
 	flex-wrap: wrap;
@@ -5506,9 +4839,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 /* Upstream / wireless card titles. LuCI paints `.ifacebox-head` with
-   rgba(--zone-color-rgb, .78) - a solid grey slab on a default zone, which
+   rgba(--zone-color-rgb, .78) - a solid grey slab on a default zone,
+which
    is what made these cards look unfinished next to the frosted sections.
-   The zone colour is kept, but as a slim pill on the left instead of a
+   The zone colour is kept,
+but as a slim pill on the left instead of a
    full-width fill. */
 #mz-view .network-status-table > .ifacebox > .ifacebox-head {
 	position: relative;
@@ -5567,11 +4902,11 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 @media (max-width: 767px) {
-	#mz-view .network-status-table {
+#mz-view .network-status-table {
 		flex-direction: column;
 	}
 
-	#mz-view .network-status-table > .ifacebox {
+#mz-view .network-status-table > .ifacebox {
 		flex-basis: auto;
 		width: 100%;
 	}
@@ -5579,8 +4914,12 @@ body.mz-has-wallpaper .cbi-section-descr {
 
 /* ================================================================
  * Homepage "Network"/"Wireless" cards + section headers polish
- * (2026-09-10): give status cards a defined frame, tint their header
- * with the zone color, keep labels quiet, make values pop, and turn
+ * (2026-09-10): give status cards a defined frame,
+tint their header
+ * with the zone color,
+keep labels quiet,
+make values pop,
+and turn
  * the barely-visible "隐藏" label into a clear pill button.
  * ================================================================ */
 
@@ -5654,7 +4993,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 
 /* --- Network interfaces overview (admin/network/network) --------- */
 /* Keep the zone/interface card as an equal-height card in the first
-   column and let its body fill the card, so the description column on
+   column and let its body fill the card,
+so the description column on
    the right aligns across rows. */
 #cbi-network-interface .ifacebox,
 #cbi-network-device .ifacebox {
@@ -5676,23 +5016,23 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 @media (max-width: 768px) {
-	#cbi-network-interface table.cbi-section-table td.cbi-value-field:first-child,
-	#cbi-network-device table.cbi-section-table td.cbi-value-field:first-child {
+#cbi-network-interface table.cbi-section-table td.cbi-value-field:first-child,
+#cbi-network-device table.cbi-section-table td.cbi-value-field:first-child {
 		min-width: 0 !important;
 	}
 
-	/* luci-theme-aurora: on phones the interface card becomes a
+/* luci-theme-aurora: on phones the interface card becomes a
 	   horizontal head + body card (head left, body right) so it does
 	   not consume the whole first cell. */
 	#cbi-network-interface .ifacebox,
-	#cbi-network-device .ifacebox {
+#cbi-network-device .ifacebox {
 		flex-direction: row !important;
 		align-items: stretch;
 		min-height: 72px;
 	}
 
-	#cbi-network-interface .ifacebox-head,
-	#cbi-network-device .ifacebox-head {
+#cbi-network-interface .ifacebox-head,
+#cbi-network-device .ifacebox-head {
 		flex: 0 0 auto;
 		min-width: 64px;
 		display: flex;
@@ -5703,8 +5043,8 @@ body.mz-has-wallpaper .cbi-section-descr {
 		border-bottom: 0;
 	}
 
-	#cbi-network-interface .ifacebox-body,
-	#cbi-network-device .ifacebox-body {
+#cbi-network-interface .ifacebox-body,
+#cbi-network-device .ifacebox-body {
 		flex: 1 1 auto;
 		min-width: 0;
 		justify-content: center;
@@ -5718,18 +5058,24 @@ body.mz-has-wallpaper .cbi-section-descr {
  * ================================================================
  * LuCI's ComboButton (Save & Apply) and every form Dropdown share the
  * same DOM: div.cbi-dropdown > ul.dropdown + ul.preview + span.more +
- * span.open. When the widget opens, LuCI JS:
+ * span.open. When the widget opens,
+LuCI JS:
  *   - adds class "dropdown" to the real menu <ul> and positions it with
  *     inline top/bottom/max-height;
  *   - inserts a clone <ul class="preview"> to keep the selected caption
  *     visible inside the button;
  *   - sets the [open] attribute on div.cbi-dropdown.
  * The old mint rules styled ".cbi-dropdown[open] > ul" as ONE floating
- * panel, which applied to BOTH ul.dropdown and ul.preview, so the menu
- * rendered twice/overlapped. The button also had overflow:hidden, which
+ * panel,
+which applied to BOTH ul.dropdown and ul.preview,
+so the menu
+ * rendered twice/overlapped. The button also had overflow:hidden,
+which
  * clipped the floating panel entirely on desktop. These final rules fix
- * both: ul.dropdown is the real floating menu, ul.preview stays inside
- * the button, and overflow is never allowed to clip an open menu.
+ * both: ul.dropdown is the real floating menu,
+ul.preview stays inside
+ * the button,
+and overflow is never allowed to clip an open menu.
  * ================================================================ */
 
 /* Never clip an open dropdown menu. */
@@ -5773,9 +5119,12 @@ body.mz-has-wallpaper .cbi-section-descr {
 
 /* Open state: the real menu is ul.dropdown (positioned by JS).
    The high layer value matters: the menu is absolutely positioned inside
-   the form, and it must be able to cover the sidebar (navigation layer),
-   a following card, or the sticky action bar. JS still owns top/bottom
-   and max-height, so the component keeps its own up/down flip logic -
+   the form,
+and it must be able to cover the sidebar (navigation layer),
+a following card,
+or the sticky action bar. JS still owns top/bottom
+   and max-height,
+so the component keeps its own up/down flip logic -
    the theme only guarantees that whatever it decides to render stays
    visible. */
 .cbi-dropdown[open] > ul.dropdown {
@@ -5819,11 +5168,13 @@ body.mz-has-wallpaper .cbi-section-descr {
 }
 
 /* preview shows ONLY the current selection. An earlier rule made every
-   <li> in the preview visible, so an open dropdown rendered the whole option
+   <li> in the preview visible,
+so an open dropdown rendered the whole option
    list inside the button as well as in the floating menu - two overlapping
    lists.
    The selector keeps :not([display]):not([selected]) rather than a plain
-   `display: none !important`, because luci-base marks the current value with
+   `display: none !important`,
+because luci-base marks the current value with
    a `display` ATTRIBUTE and a blanket !important would out-rank that rule
    and blank the button caption. */
 .cbi-dropdown[open] > ul.preview > li:not([display]):not([selected]) {
@@ -6024,13 +5375,14 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
    Phones keep the bar (see the 854px block below), where it carries the
    page title and the .mz-mobilebar keeps only its controls. */
 @media (min-width: 855px) {
-	.mz-topbar {
+.mz-topbar {
 		display: none;
 	}
 }
 
 /* Form dropdowns (non-button cbi-dropdown) should look like real input
-   controls, not bare text. */
+   controls,
+not bare text. */
 .cbi-dropdown:not(.btn):not(.cbi-button) {
 	border: 1px solid var(--mz-color-border);
 	background: var(--mz-color-surface);
@@ -6056,71 +5408,18 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 	text-overflow: ellipsis;
 }
 
-/* Theme data tables on phones no longer force horizontal scrolling.
-   Every mobile-generated .mz-data-table td is emitted with a
-   data-label so rows can stack with their column name on the left,
-   matching the native table stacking behaviour used everywhere else
-   on small screens. */
-@media (max-width: 640px) {
-	.mz-table-card {
-		overflow-x: visible;
-	}
-
-	.mz-data-table {
-		display: block;
-		min-width: 0;
-		width: 100%;
-	}
-
-	.mz-data-table thead {
-		display: none;
-	}
-
-	.mz-data-table tbody {
-		display: block;
-	}
-
-	.mz-data-table tbody tr {
-		display: block;
-		padding: 8px 0;
-	}
-
-	.mz-data-table tbody td {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: 14px;
-		padding: 6px 14px;
-		text-align: right;
-		border-bottom: 1px dashed var(--mz-color-border);
-	}
-
-	.mz-data-table tbody td:last-child {
-		border-bottom: none;
-	}
-
-	.mz-data-table tbody td[data-label]::before {
-		content: attr(data-label);
-		flex: 0 0 auto;
-		font-weight: 600;
-		color: var(--mz-color-text-muted);
-		text-align: left;
-	}
-
-	.mz-data-table tbody td[data-label]:empty::before {
-		content: attr(data-label);
-	}
-}
-
 /* ================================================================
  * Form-control layer (2026-09-11)
  *
- * One definition for every input flavour, because the per-component rules
+ * One definition for every input flavour,
+because the per-component rules
  * scattered through this file had drifted apart:
  *   - caption text of a closed dropdown showed the FULL option description
  *     (LuCI ships each option as a short label + a long description)
- *   - input / select / dropdown borders used --mz-color-border, which the
- *     glass scope turns into near-white, so every text box looked borderless
+ *   - input / select / dropdown borders used --mz-color-border,
+which the
+ *     glass scope turns into near-white,
+so every text box looked borderless
  *   - the Save & Apply combo button was content-box and 2px taller than the
  *     buttons beside it
  * Nothing here touches LuCI markup; it only re-states the presentation.
@@ -6132,7 +5431,8 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
      <div  class="hide-close"><strong>Title</strong><br>Description</div>
    The button must show the SHORT label and the open menu the DESCRIPTION.
    The theme hid the short label while open but never hid the description
-   while closed, so a closed dropdown rendered both - a 51px tall button
+   while closed,
+so a closed dropdown rendered both - a 51px tall button
    with the option text duplicated. Both states are stated explicitly. */
 .cbi-dropdown:not([open]) > ul > li .hide-close {
 	display: none !important;
@@ -6147,7 +5447,8 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 	display: none !important;
 }
 
-/* A closed dropdown is a one-line control, never a multi-line block. */
+/* A closed dropdown is a one-line control,
+never a multi-line block. */
 #mz-view .cbi-dropdown:not([open]) {
 	min-height: 38px;
 	align-items: center;
@@ -6244,7 +5545,8 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 }
 
 /* The Save & Apply combo button is a cbi-button wrapping a <ul>; it was
-   content-box, so its padding pushed it 2px taller than its neighbours. */
+   content-box,
+so its padding pushed it 2px taller than its neighbours. */
 #mz-view .cbi-page-actions .cbi-dropdown.cbi-button,
 #mz-view .cbi-page-actions .cbi-dropdown.btn,
 #mz-view .cbi-section-actions .cbi-dropdown.cbi-button {
@@ -6276,7 +5578,8 @@ body.mz-has-wallpaper .cbi-dropdown[open] > ul.dropdown > li[selected] {
 
 /* ---- 4. Pages whose tables are NOT wrapped in a section ---------------
    status/processes and status/channel_analysis render a bare <table> as a
-   direct child of the view, so they never received the section card and
+   direct child of the view,
+so they never received the section card and
    looked like raw HTML next to every other page. */
 body[data-page*="status-processes"] #mz-view table.table,
 body[data-page*="status-channel_analysis"] #mz-view table.table,
@@ -6328,9 +5631,12 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	max-width: 46ch;
 }
 
-/* ---- 5. Modal content: one card, not stacked cards --------------------
+/* ---- 5. Modal content: one card,
+not stacked cards --------------------
    The dialog itself is the card; the .cbi-map / .cbi-section / .cbi-modal
-   inside it kept their own background, border and shadow, which produced the
+   inside it kept their own background,
+border and shadow,
+which produced the
    "nested layers" look reported on phones. */
 #modal_overlay .modal .cbi-map,
 #modal_overlay .modal .cbi-section,
@@ -6366,25 +5672,28 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 }
 
 @media (max-width: 640px) {
-	#modal_overlay .modal {
+#modal_overlay .modal {
 		max-width: 100%;
 		padding: 16px 14px 18px;
 		border-radius: var(--mz-radius-lg);
 	}
 
-	#modal_overlay .modal .cbi-value-title {
+#modal_overlay .modal .cbi-value-title {
 		flex: 0 0 auto;
 		width: 100%;
 		min-width: 0;
 		margin-bottom: 2px;
 	}
 }
+
 /* ---- 6. Lifting the card that hosts an open popup --------------------
-   The glass surface gives every card a `backdrop-filter`, and that property
+   The glass surface gives every card a `backdrop-filter`,
+and that property
    creates a stacking context per card. Consequence: a dropdown opened inside
    an EARLIER card painted BELOW the LATER cards (and below the sticky action
    bar) even though its own z-index was 1000 - the menu was drawn correctly
-   but every click landed on the neighbouring card's heading, which is the
+   but every click landed on the neighbouring card's heading,
+which is the
    "no dropdown can be selected" report.
    Raising the card that currently hosts an open popup restores the intended
    order without giving up the frosted look. :has() degrades silently on
@@ -6392,7 +5701,6 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 .cbi-section:has(.cbi-dropdown[open]),
 .cbi-section-node:has(.cbi-dropdown[open]),
 .cbi-value:has(.cbi-dropdown[open]),
-.mz-table-card:has(.cbi-dropdown[open]),
 .mz-port-panel:has(.cbi-dropdown[open]),
 .mz-net-panel:has(.cbi-dropdown[open]),
 .mz-sys-panel:has(.cbi-dropdown[open]),
@@ -6400,6 +5708,7 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	position: relative;
 	z-index: var(--mz-z-dropdown);
 }
+
 /* ---- 7. Remove the poll-status indicator ------------------------------
    luci-base mounts a clickable <span data-indicator="poll-status"> into
    #indicators; in this theme it rendered as a lone floating refresh pill
@@ -6408,15 +5717,21 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 #indicators [data-indicator="poll-status"] {
 	display: none !important;
 }
-/* ---- 8. Combo buttons: one box model, one row height ------------------
+
+/* ---- 8. Combo buttons: one box model,
+one row height ------------------
    Applies to EVERY combo button (.cbi-dropdown.btn / .cbi-dropdown.cbi-button) —
-   the Save & Apply split button, the diagnostics tool selectors, etc. — not
+   the Save & Apply split button,
+the diagnostics tool selectors,
+etc. — not
    only to the ones inside .cbi-page-actions (that narrower scope is why the
    diagnostics buttons stayed broken).
    Measured before: the wrapper was content-box with height 50px while its
-   inner <ul> and <li> each carried min-height 34px + padding, so the parts
+   inner <ul> and <li> each carried min-height 34px + padding,
+so the parts
    stacked into a 50px box; the "···" affordance was only 13px tall next to a
-   34px "▾", which is the broken two-little-boxes look. */
+   34px "▾",
+which is the broken two-little-boxes look. */
 #mz-view .cbi-dropdown.btn,
 #mz-view .cbi-dropdown.cbi-button {
 	box-sizing: border-box !important;
@@ -6452,14 +5767,20 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	white-space: nowrap;
 }
 
-/* the ··· and ▾ affordances: full height, equal size, hairline-separated.
+/* the ··· and ▾ affordances: full height,
+equal size,
+hairline-separated.
    NOTE there is deliberately no `display` in this shared block.
-   `display: inline-flex` used to be here for BOTH spans, which made the "···"
+   `display: inline-flex` used to be here for BOTH spans,
+which made the "···"
    show up on the Save & Apply button even though that widget never marks
    itself as overflowing. ui.js UIDropdown.bind() only sets the `more`
-   attribute when `ndisplay < 0`, i.e. when the selected items outnumber
-   `display-items`; a ComboButton is never `multiple`, so it always ends up
-   with `removeAttribute('more')` - and yet the ⋯ drew anyway, stealing ~26px
+   attribute when `ndisplay < 0`,
+i.e. when the selected items outnumber
+   `display-items`; a ComboButton is never `multiple`,
+so it always ends up
+   with `removeAttribute('more')` - and yet the ⋯ drew anyway,
+stealing ~26px
    of button width next to the ▾. Upstream bootstrap gates it the same way
    (`.cbi-dropdown[multiple][more] > .more, .cbi-dropdown[multiple][empty] > .more`).
    The ▾ (.open) is unconditional; the ⋯ is opt-in. */
@@ -6496,18 +5817,23 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 #mz-view .cbi-dropdown[multiple][empty] > .more {
 	display: inline-flex;
 }
+
 /* The action bar itself can host an open combo menu (Save & Apply). It is
-   sticky with z-index 100, which walls the menu off from the rest of the
+   sticky with z-index 100,
+which walls the menu off from the rest of the
    page; raise the bar while its menu is open so the options render above
    everything else. */
 .cbi-page-actions:has(.cbi-dropdown[open]),
 .cbi-section-actions:has(.cbi-dropdown[open]) {
 	z-index: var(--mz-z-dropdown);
 }
+
 /* Combo-button menus ALWAYS open upwards.
-   The Save & Apply combo lives in a bottom-sticky action bar, so the space
+   The Save & Apply combo lives in a bottom-sticky action bar,
+so the space
    below it is constant ~40px no matter where the user scrolls; luci-base
-   still chooses to open downwards there and writes inline top/bottom, which
+   still chooses to open downwards there and writes inline top/bottom,
+which
    put the menu under (or behind) the sticky bar and made every option
    unclickable. !important legitimately overrides those inline styles. */
 .cbi-dropdown.btn[open] > ul.dropdown,
@@ -6517,15 +5843,18 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 	margin-bottom: 6px !important;
 	max-height: min(60vh, 420px) !important;
 }
+
 /* ---- 9. Diagnostics rows + phone section-title alignment --------------
- * Two phone-layout breaks, both rooted in containers LuCI leaves bare:
+ * Two phone-layout breaks,
+both rooted in containers LuCI leaves bare:
  *
  * 1. .diag-action is a bare INLINE container (no layout of its own). On a
  *    wide desktop the three tool rows merely look loose; on a 390px phone
  *    they flow into each other and the Nslookup selector lands mid-row.
  * 2. The section-title "bleed" (negative side margins that glue the title
  *    to the card edge) assumes the section padding equals --mz-spacing-lg.
- *    On the phone the padding differs, so the title bar overflowed its
+ *    On the phone the padding differs,
+so the title bar overflowed its
  *    section by ~13px on each side while the content sat 9px inside -
  *    three different left edges on one screen.
  */
@@ -6548,8 +5877,8 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 }
 
 @media (max-width: 854px) {
-	.cbi-section > .cbi-title,
-	.cbi-section > .cbi-section-title {
+.cbi-section > .cbi-title,
+.cbi-section > .cbi-section-title {
 		margin: 0 0 var(--mz-spacing-md) !important;
 		border-radius: var(--mz-radius-md);
 	}
@@ -6723,25 +6052,25 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 }
 
 @media (max-width: 600px) {
-	.mz-wp-grid {
+.mz-wp-grid {
 		grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
 		gap: 8px;
 	}
 
-	.mz-wp-thumb {
+.mz-wp-thumb {
 		height: 80px;
 	}
 
-	.mz-wp-del {
+.mz-wp-del {
 		opacity: 1;
 	}
 
-	.mz-wp-mgr-toolbar {
+.mz-wp-mgr-toolbar {
 		flex-direction: column;
 		align-items: stretch;
 	}
 
-	.mz-wp-mgr-toolbar .btn {
+.mz-wp-mgr-toolbar .btn {
 		width: 100%;
 	}
 }
@@ -6749,20 +6078,27 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 /* ================================================================
  * Combo buttons: ONE height for the whole chain (final layer)
  * ================================================================
- * The Save & Apply split button nests four boxes, and each carried its
- * height from a DIFFERENT rule: the wrapper 38px (#mz-view block), its
- * caption <ul> 36px, the caption <li> 32px (a max-width:768px !important
+ * The Save & Apply split button nests four boxes,
+and each carried its
+ * height from a DIFFERENT rule: the wrapper 38px (#mz-view block),
+its
+ * caption <ul> 36px,
+the caption <li> 32px (a max-width:768px !important
  * block) and the ▾ 36px. The caption therefore sat 1-3px off centre inside
- * its own pill, and on a phone the pill was 38px tall around a 32px text
+ * its own pill,
+and on a phone the pill was 38px tall around a 32px text
  * box - the "手机端按钮排版异常" report.
  *
  * This block owns the metrics of the whole chain at a specificity above
  * every earlier declaration (1,3,1 + !important, and it is the last rule in
- * the file), so no media query added before or after it can desynchronise
+ * the file),
+so no media query added before or after it can desynchronise
  * the parts again.
  *
- * `:not(.dropdown)` is mandatory: when the menu opens, ui.js adds the
- * `dropdown` class to the caption <ul>, which then becomes the floating
+ * `:not(.dropdown)` is mandatory: when the menu opens,
+ui.js adds the
+ * `dropdown` class to the caption <ul>,
+which then becomes the floating
  * panel - pinning ITS height would squash the menu. The closed caption list
  * is exactly the one without that class.
  *
@@ -6802,36 +6138,37 @@ body[data-page*="status-processes"] #mz-view table.table td:nth-child(3) {
 }
 
 @media (max-width: 768px) {
-	/* Phone: one height for the pill AND its parts, one step below desktop
+/* Phone: one height for the pill AND its parts,
+one step below desktop
 	   so a 4-button bar still fits 390px without wrapping. */
 	#mz-view .cbi-page-actions .cbi-dropdown.btn,
-	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button,
-	#mz-view .cbi-page-actions .cbi-dropdown.btn > ul:not(.dropdown),
-	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
-	#mz-view .cbi-page-actions .cbi-dropdown.btn > ul:not(.dropdown) > li,
-	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li,
-	#mz-view .cbi-page-actions .cbi-dropdown.btn > .open,
-	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > .open {
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button,
+#mz-view .cbi-page-actions .cbi-dropdown.btn > ul:not(.dropdown),
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown),
+#mz-view .cbi-page-actions .cbi-dropdown.btn > ul:not(.dropdown) > li,
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li,
+#mz-view .cbi-page-actions .cbi-dropdown.btn > .open,
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > .open {
 		height: 34px !important;
 		min-height: 34px !important;
 		max-height: 34px !important;
 		line-height: 34px !important;
 	}
 
-	/* 保存 / 重置 share the pill's baseline exactly. */
+/* 保存 / 重置 share the pill's baseline exactly. */
 	#mz-view .cbi-page-actions .cbi-button,
-	#mz-view .cbi-page-actions .btn {
+#mz-view .cbi-page-actions .btn {
 		min-height: 34px !important;
 		height: 34px !important;
 	}
 
-	/* A 4-button bar must fit one phone row: tighten the inner text padding
+/* A 4-button bar must fit one phone row: tighten the inner text padding
 	   rather than letting the bar wrap into a second line. */
 	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) {
 		padding-left: 10px !important;
 	}
 
-	#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
+#mz-view .cbi-page-actions .cbi-dropdown.cbi-button > ul:not(.dropdown) > li {
 		padding-left: 0 !important;
 		padding-right: 10px !important;
 	}

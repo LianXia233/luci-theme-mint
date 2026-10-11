@@ -4,11 +4,17 @@
  * to avoid collisions with LuCI / other theme modules. Reuses mint CSS
  * design tokens (--mz-color-*, --mz-radius-*, --mz-spacing-*, --mz-shadow-*).
  *
- * SINGLE-CONTAINER RULE: the dashboard lives inside .mz-view, which is
+ * SINGLE-CONTAINER RULE: the dashboard lives inside .mz-view,
+which is
  * the page's one and only visual container. Every block below is
- * therefore FLAT - no background, no border, no radius, no shadow.
- * Blocks are separated by the grid gap and, where a group needs an
- * anchor, by one hairline. Nothing here may re-create a card.
+ * therefore FLAT - no background,
+no border,
+no radius,
+no shadow.
+ * Blocks are separated by the grid gap and,
+where a group needs an
+ * anchor,
+by one hairline. Nothing here may re-create a card.
  * ================================================================== */
 
 .mint-overview-dashboard {
@@ -29,12 +35,14 @@
 	justify-content: space-between;
 	margin: 0 0 var(--mz-spacing-sm);
 }
+
 .mint-ovd-title {
 	font-size: 1.15rem;
 	font-weight: 650;
 	margin: 0;
 	letter-spacing: .01em;
 }
+
 .mint-ovd-refresh {
 	display: inline-flex;
 	align-items: center;
@@ -49,10 +57,15 @@
 	cursor: pointer;
 	transition: background var(--mz-transition), transform var(--mz-transition), border-color var(--mz-transition);
 }
+
 .mint-ovd-refresh:hover { border-color: var(--mz-color-primary); }
+
 .mint-ovd-refresh:active { transform: scale(.94); }
+
 .mint-ovd-refresh:focus-visible { outline: 2px solid var(--mz-color-primary); outline-offset: 2px; }
+
 .mint-ovd-refresh.is-loading svg { animation: ovd-spin .8s linear infinite; }
+
 @keyframes ovd-spin { to { transform: rotate(360deg); } }
 
 /* ---- gauges ---- */
@@ -62,6 +75,7 @@
 	gap: var(--ovd-gap);
 	margin-bottom: var(--ovd-gap);
 }
+
 .mint-ovd-gauge {
 	display: flex;
 	align-items: center;
@@ -73,14 +87,18 @@
 	box-shadow: none;
 	min-width: 0;
 }
+
 .mint-ovd-ring-wrap {
 	position: relative;
 	width: 84px;
 	height: 84px;
 	flex: 0 0 84px;
 }
+
 .mint-ovd-ring { width: 84px; height: 84px; display: block; }
+
 .mint-ovd-ring-bg { fill: none; stroke: var(--ovd-ring-track); stroke-width: 9; }
+
 .mint-ovd-ring-fg {
 	fill: none;
 	stroke: var(--mz-color-primary);
@@ -90,10 +108,15 @@
 	transform-origin: 60px 60px;
 	transition: stroke-dashoffset .6s ease;
 }
+
 .mint-ovd-gauge[data-gauges="cpu"] .mint-ovd-ring-fg { stroke: var(--mz-color-primary); }
+
 .mint-ovd-gauge[data-gauges="memory"] .mint-ovd-ring-fg { stroke: var(--mz-color-success); }
+
 .mint-ovd-gauge[data-gauges="temperature"] .mint-ovd-ring-fg { stroke: var(--mz-color-warning); }
+
 .mint-ovd-gauge[data-gauges="storage"] .mint-ovd-ring-fg { stroke: var(--mz-color-info, #0ea5e9); }
+
 .mint-ovd-ring-center {
 	position: absolute;
 	inset: 0;
@@ -103,15 +126,20 @@
 	justify-content: center;
 	line-height: 1;
 }
+
 .mint-ovd-ring-num {
 	font-size: 1.25rem;
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	color: var(--ovd-text);
 }
+
 .mint-ovd-ring-unit { font-size: .72rem; color: var(--ovd-muted); margin-top: 1px; }
+
 .mint-ovd-gauge-meta { min-width: 0; flex: 1; }
+
 .mint-ovd-gauge-label { font-size: .82rem; font-weight: 600; color: var(--ovd-text); }
+
 .mint-ovd-gauge-sub {
 	font-size: .74rem;
 	color: var(--ovd-muted);
@@ -128,6 +156,7 @@
 	gap: var(--ovd-gap);
 	margin-bottom: var(--ovd-gap);
 }
+
 .mint-ovd-stat {
 	padding: 0;
 	background: transparent;
@@ -136,7 +165,9 @@
 	box-shadow: none;
 	min-width: 0;
 }
+
 .mint-ovd-stat-label { font-size: .76rem; color: var(--ovd-muted); }
+
 .mint-ovd-stat-value {
 	font-size: 1rem;
 	font-weight: 600;
@@ -146,6 +177,7 @@
 	overflow-wrap: anywhere;
 	word-break: break-word;
 }
+
 .mint-ovd-stat-sub {
 	font-size: .74rem;
 	color: var(--ovd-muted);
@@ -161,6 +193,7 @@
 	gap: var(--ovd-gap);
 	margin-bottom: var(--ovd-gap);
 }
+
 .mint-ovd-chart {
 	padding: 0;
 	background: transparent;
@@ -171,6 +204,7 @@
 	display: flex;
 	flex-direction: column;
 }
+
 .mint-ovd-chart-head {
 	display: flex;
 	align-items: baseline;
@@ -178,13 +212,17 @@
 	gap: 8px;
 	margin-bottom: 6px;
 }
+
 .mint-ovd-chart-title { font-size: .82rem; font-weight: 600; color: var(--ovd-text); }
+
 .mint-ovd-chart-now { font-size: .72rem; color: var(--ovd-muted); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .mint-ovd-canvas {
 	width: 100%;
 	height: 150px;
 	display: block;
 }
+
 .mint-ovd-chart-sr {
 	position: absolute;
 	width: 1px; height: 1px;
@@ -203,12 +241,18 @@
 	border-radius: 0;
 	box-shadow: none;
 }
+
 .mint-ovd-sys-title { font-size: .9rem; font-weight: 650; margin: 0 0 var(--mz-spacing-sm); }
-/* 3 columns, not 4. The grid holds exactly NINE items (hostname, model,
+
+/* 3 columns,
+not 4. The grid holds exactly NINE items (hostname, model,
    arch, temperature, target, firmware, kernel, openwrt, luci - see
-   overview-dashboard.js buildDom()). With 4 columns that is 4+4+1, so the
+   overview-dashboard.js buildDom()). With 4 columns that is 4+4+1,
+so the
    last row carried one item and THREE empty tracks - ~958px of blank on a
-   1536px desktop, the "右边空着一大片" report. 9 = 3x3 exactly, so 3 columns
+   1536px desktop,
+the "右边空着一大片" report. 9 = 3x3 exactly,
+so 3 columns
    leaves no ragged row at ANY width (1, 3 and 9 are the only divisors of 9).
    It also lines the System Information block up with the 3-column rhythm of
    .mint-ovd-stats and .mint-ovd-charts above it. Do not "restore" 4 without
@@ -218,12 +262,15 @@
 	grid-template-columns: repeat(3, 1fr);
 	gap: 10px var(--mz-spacing-md);
 }
+
 .mint-ovd-sys-item {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
 }
+
 .mint-ovd-sys-label { font-size: .72rem; color: var(--ovd-muted); }
+
 .mint-ovd-sys-value {
 	font-size: .84rem;
 	color: var(--ovd-text);
@@ -242,38 +289,56 @@
  * Responsive: PC >=1200 / Tablet 768-1199 / Mobile <768 / <=420
  * ================================================================ */
 @media (max-width: 1199px) {
-	.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
-	.mint-ovd-charts { grid-template-columns: repeat(2, 1fr); }
-	.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: 1 / -1; }
+.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
+
+.mint-ovd-charts { grid-template-columns: repeat(2, 1fr); }
+
+.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 767px) {
-	.mint-ovd-stats { grid-template-columns: repeat(2, 1fr); }
-	.mint-ovd-charts { grid-template-columns: 1fr; }
-	.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: auto; }
-	.mint-ovd-sys-grid { grid-template-columns: repeat(2, 1fr); }
-	.mint-ovd-gauge { padding: var(--mz-spacing-sm); }
-	.mint-ovd-ring-wrap { width: 72px; height: 72px; flex-basis: 72px; }
-	.mint-ovd-ring { width: 72px; height: 72px; }
-	.mint-ovd-ring-num { font-size: 1.05rem; }
-	.mint-overview-dashboard { --ovd-gap: var(--mz-spacing-sm); }
+.mint-ovd-stats { grid-template-columns: repeat(2, 1fr); }
+
+.mint-ovd-charts { grid-template-columns: 1fr; }
+
+.mint-ovd-charts .mint-ovd-chart:last-child { grid-column: auto; }
+
+.mint-ovd-sys-grid { grid-template-columns: repeat(2, 1fr); }
+
+.mint-ovd-gauge { padding: var(--mz-spacing-sm); }
+
+.mint-ovd-ring-wrap { width: 72px; height: 72px; flex-basis: 72px; }
+
+.mint-ovd-ring { width: 72px; height: 72px; }
+
+.mint-ovd-ring-num { font-size: 1.05rem; }
+
+.mint-overview-dashboard { --ovd-gap: var(--mz-spacing-sm); }
 }
 
 @media (max-width: 420px) {
-	.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
-	.mint-ovd-stats { grid-template-columns: 1fr; }
-	.mint-ovd-sys-grid { grid-template-columns: 1fr; }
-	.mint-ovd-ring-wrap { width: 64px; height: 64px; flex-basis: 64px; }
-	.mint-ovd-ring { width: 64px; height: 64px; }
-	.mint-ovd-ring-num { font-size: .95rem; }
-	.mint-ovd-canvas { height: 120px; }
+.mint-ovd-gauges { grid-template-columns: repeat(2, 1fr); }
+
+.mint-ovd-stats { grid-template-columns: 1fr; }
+
+.mint-ovd-sys-grid { grid-template-columns: 1fr; }
+
+.mint-ovd-ring-wrap { width: 64px; height: 64px; flex-basis: 64px; }
+
+.mint-ovd-ring { width: 64px; height: 64px; }
+
+.mint-ovd-ring-num { font-size: .95rem; }
+
+.mint-ovd-canvas { height: 120px; }
 }
 
 /* ---- reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
-	.mint-ovd-ring-fg { transition: none; }
-	.mint-ovd-refresh.is-loading svg { animation: none; }
-	.mint-ovd-refresh { transition: none; }
+.mint-ovd-ring-fg { transition: none; }
+
+.mint-ovd-refresh.is-loading svg { animation: none; }
+
+.mint-ovd-refresh { transition: none; }
 }
 
 /* ==================================================================
@@ -293,26 +358,26 @@
  * the live values sit right-aligned underneath.
  * ---------------------------------------------------------------- */
 @media (max-width: 767px) {
-	.mint-ovd-chart-head {
+.mint-ovd-chart-head {
 		flex-wrap: wrap;
 		row-gap: 2px;
 	}
 
-	.mint-ovd-chart-title {
+.mint-ovd-chart-title {
 		flex: 1 1 100%;
 	}
 
-	.mint-ovd-chart-now {
+.mint-ovd-chart-now {
 		flex: 0 0 auto;
 		margin-left: auto;
 		white-space: nowrap;
 	}
 
-	.mint-ovd-gauges {
+.mint-ovd-gauges {
 		gap: 10px;
 	}
 
-	.mint-ovd-chart {
+.mint-ovd-chart {
 		min-width: 0;
 	}
 }
