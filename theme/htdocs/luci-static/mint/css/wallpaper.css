@@ -439,6 +439,17 @@ so the grid never reads as a second card layer. */
 	aspect-ratio: 16 / 10;
 	object-fit: cover;
 	background: var(--mz-color-surface-2);
+	/* The tile keeps its background-image as an instant placeholder;
+	   the lazy <img> painted on top (wallpaper.js) covers it once the
+	   real thumbnail has decoded. */
+	overflow: hidden;
+}
+
+.mz-wp-thumb img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .mz-wp-thumb-random,

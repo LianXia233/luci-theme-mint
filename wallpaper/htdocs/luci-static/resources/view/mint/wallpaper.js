@@ -347,9 +347,9 @@ return view.extend({
 		mSources.depends('mobile_mode', 'random');
 
 		const overlay = s.option(form.Value, 'overlay', _('Overlay opacity'),
-			_('Dark overlay strength over the wallpaper (0.0 - 1.0).'));
+			_('Scrim strength over the wallpaper (0.0 - 1.0). Lower values show more of the picture; the Aurora Glass default is 0.38.'));
 		overlay.datatype = 'ufloat';
-		overlay.default = '0.45';
+		overlay.default = '0.38';
 		overlay.validate = function(sid, v) {
 			const n = parseFloat(v);
 			return (isNaN(n) || n < 0 || n > 1) ? _('Must be a number between 0.0 and 1.0.') : true;
@@ -448,7 +448,19 @@ return view.extend({
 				E('div', {
 					'class': 'mz-wp-thumb',
 					'style': 'background-image:url("' + w.url + '")'
-				}, []),
+				}, [
+					/* A real <img>, not the div's background-image: lazy loading
+					   only works for element images, and a library tile pointing
+					   at a multi-megabyte photo must not be fetched until it is
+					   about to scroll into view. The div keeps its background-
+					   image as the paint-while-decoding placeholder. */
+					E('img', {
+						'src': w.url,
+						'alt': '',
+						'loading': 'lazy',
+						'decoding': 'async'
+					})
+				]),
 				E('div', { 'class': 'mz-wp-meta' }, [
 					E('span', { 'class': 'mz-wp-name', 'title': w.name }, [w.name]),
 					E('span', { 'class': 'mz-wp-badge' }, [side || _('library')])
@@ -492,10 +504,7 @@ return view.extend({
 				(data && data.legacy) || {},
 				activeNames(data)
 			);
-			while (grid.firstChild)
-				grid.removeChild(grid.firstChild);
-			for (let i = 0; i < nodes.length; i++)
-				grid.appendChild(nodes[i]);
+			grid.replaceChildren.apply(grid, nodes);
 			return data;
 		});
 	},
