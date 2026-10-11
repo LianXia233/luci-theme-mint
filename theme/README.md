@@ -189,7 +189,7 @@ make package/luci-theme-mint/compile V=s
 ## Changelog
 
 Notable changes are tracked in [../CHANGELOG.md](../CHANGELOG.md).
-Current asset revision: `20261011d` (Aurora Glass — clearer wallpaper,
+Current asset revision: `20261011e` (Aurora Glass — clearer wallpaper,
 faster loading, dead-CSS audit, slimmed logo assets).
 
 ## License

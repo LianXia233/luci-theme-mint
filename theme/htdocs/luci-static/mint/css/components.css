@@ -3,16 +3,10 @@
  * Copyright (C) 2026 LianXia233
  * Licensed to the public under the GNU General Public License v3.0.
  *
- * The shared component vocabulary: buttons,
-form controls,
-tables,
-* modals,
-badges,
-alerts,
-progress and loading states. Every entry is a
+ * The shared component vocabulary: buttons, form controls, tables,
+ * modals, badges, alerts, progress and loading states. Every entry is a
  * real LuCI class or a theme class - nothing is matched with a universal
- * selector,
-so third-party views keep their own markup working.
+ * selector, so third-party views keep their own markup working.
  */
 
 /* ---------------------------------------------------------------- */
@@ -94,18 +88,62 @@ input[type="button"].cbi-button:hover,
 	color: #fff;
 }
 
-/* Destructive */
-.cbi-button-negative,
+/* Destructive - SOLID only when explicitly opted in via .btn.danger.
+   The LuCI-native .cbi-button-negative stays SOFT (see the semantic
+   variants below): a page full of solid red buttons reads as an alarm,
+   and the save/reset family is soft-tinted too, so hardening only on
+   hover keeps the whole action row at one visual volume. */
 .btn.danger {
 	background: var(--mz-color-danger);
 	border-color: var(--mz-color-danger);
 	color: #fff;
 }
 
-.cbi-button-negative:hover,
 .btn.danger:hover {
 	background: #c33d44;
 	border-color: #c33d44;
+	color: #fff;
+}
+
+/* ----------------------------------------------------------------
+   Semantic button variants - the owning layer for the whole
+   save/apply/reset/remove family. compat.css carries older copies of
+   these; this file is imported AFTER it, so the values here win and
+   the semantics live in one place:
+
+     apply / action ....... SOLID primary  (the irreversible step)
+     save / positive ...... SOFT primary   (the everyday step)
+     reset / remove ....... SOFT danger    (hardens on hover)
+     neutral / important .. SOLID ink
+   ---------------------------------------------------------------- */
+
+.cbi-button-save,
+.cbi-button-positive {
+	background: var(--mz-color-primary-soft);
+	border-color: transparent;
+	color: var(--mz-color-primary);
+}
+
+.cbi-button-save:hover,
+.cbi-button-positive:hover {
+	background: var(--mz-color-primary);
+	border-color: var(--mz-color-primary);
+	color: #fff;
+}
+
+.cbi-button-reset,
+.cbi-button-remove,
+.cbi-button-negative {
+	background: var(--mz-color-danger-soft);
+	border-color: transparent;
+	color: var(--mz-color-danger);
+}
+
+.cbi-button-reset:hover,
+.cbi-button-remove:hover,
+.cbi-button-negative:hover {
+	background: var(--mz-color-danger);
+	border-color: var(--mz-color-danger);
 	color: #fff;
 }
 
@@ -505,43 +543,81 @@ html[data-theme="dark"] .alert-message.success {
 /* ---------------------------------------------------------------- */
 /* Modal                                                              */
 /* ---------------------------------------------------------------- */
+/* State machine (compat.css): the overlay is opacity:0 /
+   pointer-events:none until LuCI's ui.js flips `body.modal-overlay-
+   active`, which lights the scrim and reveals the dialog. The rules
+   here carry the ID specificity (1,1,0) so they WIN the tie against
+   compat's `#modal_overlay .modal` (imported earlier) - the previous
+   plain `.modal` block silently lost every collision and only its
+   leftovers applied. Visual language: same asymmetric card radius and
+   glass fill as .mz-view, one hairline, no second shadow family. */
 
 #modal_overlay {
 	position: fixed;
 	inset: 0;
 	z-index: var(--mz-z-modal);
 	display: flex;
-	align-items: center;
+	align-items: flex-start;   /* top-anchored: long dialogs scroll */
 	justify-content: center;
-	padding: var(--mz-spacing-md);
-	background: var(--mz-scrim);
+	padding: 5vh 16px 40px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	/* Scrim + one blur; the compat state gate keeps opacity at 0 and
+	   pointer-events at none until modal-overlay-active lands. */
 	backdrop-filter: blur(4px);
 	-webkit-backdrop-filter: blur(4px);
-	animation: mz-overlay-in var(--mz-dur-control) var(--mz-ease);
 }
 
-.modal,
+#modal_overlay .modal,
+#modal_overlay .cbi-modal,
 .cbi-modal {
 	position: relative;
-	width: min(560px, 100%);
-	max-height: 88vh;
-	overflow: auto;
+	width: 100%;
+	max-width: 720px;
+	max-height: 90vh;
+	overflow-y: auto;
 	overscroll-behavior: contain;
+	margin: 0 auto;
 	padding: var(--mz-spacing-lg);
+	box-sizing: border-box;
+	overflow-wrap: break-word;
 	border: 1px solid var(--mz-color-border);
 	border-radius: var(--mz-radius-card);
 	background: var(--mz-modal-bg);
 	box-shadow: var(--mz-shadow-lg);
+	color: var(--mz-color-text);
 	animation: mz-modal-in var(--mz-dur-panel) var(--mz-ease);
 }
 
-.modal > h3,
+/* LuCI keeps its own open/close transition (translateY + opacity on
+   .modal-overlay-active); the re-triggered entrance animation above
+   plays on each reveal because the dialog goes display:none -> block. */
+
+#modal_overlay .modal > h3,
 .cbi-modal > h3 {
 	margin: 0 0 var(--mz-spacing-md);
 	padding-bottom: 11px;
 	border-bottom: 2px solid var(--mz-color-border);
 	font-size: 1.02rem;
 	font-weight: 750;
+}
+
+/* Buttons inside a dialog hug the bottom edge and never stretch. */
+#modal_overlay .modal .btn,
+#modal_overlay .modal .cbi-button {
+	flex: 0 0 auto;
+}
+
+#modal_overlay .modal .left,
+#modal_overlay .modal .right {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+#modal_overlay .modal .right {
+	justify-content: flex-end;
 }
 
 /* ---------------------------------------------------------------- */
@@ -622,6 +698,21 @@ so the viewport clamp needs the one
 .cbi-dropdown > ul.dropdown > li:hover {
 	background: var(--mz-color-primary-soft);
 	color: var(--mz-color-primary);
+}
+
+/* Selected entries keep their marker while the popup is open: without
+   this the open list looks identical to the closed value strip and the
+   user loses track of the current choice. */
+.cbi-dropdown > ul.dropdown > li[selected] {
+	background: var(--mz-color-primary-soft);
+	color: var(--mz-color-primary);
+	font-weight: 600;
+}
+
+/* Keyboard navigation (LuCI's dropdown JS moves focus between items). */
+.cbi-dropdown > ul.dropdown > li:focus-visible {
+	outline: 2px solid var(--mz-color-primary);
+	outline-offset: -2px;
 }
 
 /* ---------------------------------------------------------------- */
@@ -740,4 +831,23 @@ so the viewport clamp needs the one
 .mz-dl-del:hover {
 	background: var(--mz-color-danger-soft);
 	color: var(--mz-color-danger);
+}
+
+/* ---------------------------------------------------------------- */
+/* Modal - phone pass                                                 */
+/* ---------------------------------------------------------------- */
+/* compat.css carries the same overrides inside its own 640px block,
+   but components.css is imported AFTER it: at (1,0,0) the values here
+   would win the tie for EVERY width, so the tight phone paddings must
+   be restated in this layer to survive at all. */
+
+@media (max-width: 640px) {
+	#modal_overlay {
+		padding: 2vh 10px 24px;
+	}
+
+	#modal_overlay .modal,
+	#modal_overlay .cbi-modal {
+		padding: 16px 14px 18px;
+	}
 }

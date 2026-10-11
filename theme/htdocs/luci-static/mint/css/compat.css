@@ -1562,78 +1562,6 @@ which is
 	}
 }
 
-/* ================================================================
- * cbi-dropdown (保存并应用/强制应用) fix
- * ================================================================ */
-.cbi-dropdown {
-	position: relative;
-	display: inline-flex;
-	align-items: center;
-	cursor: pointer;
-	user-select: none;
-}
-
-.cbi-dropdown > ul {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-	display: inline;
-}
-
-.cbi-dropdown > ul > li {
-	display: none;
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-
-.cbi-dropdown > ul > li[selected] {
-	display: inline;
-}
-
-.cbi-dropdown[open] > ul {
-	position: absolute;
-	/* Positioning is owned by LuCI's dropdown JS, NOT by the theme: the JS
-	   writes an inline `top` when the menu opens downwards and an inline
-	   `bottom` when there is no room below and the menu must flip upwards.
-	   Hard-coding `top: 100%` here over-constrained the box whenever the
-	   upward strategy was chosen (top AND bottom both resolved), which
-	   collapsed the menu to 0px of content height while every <li> still
-	   measured 48px - the menu rendered as a 10px sliver. Both offsets stay
-	   auto so whichever one the JS writes wins. */
-	top: auto;
-	left: 0;
-	z-index: var(--mz-z-dropdown);
-	min-width: 180px;
-	background: var(--mz-color-surface);
-	border: 1px solid var(--mz-color-border);
-	border-radius: var(--mz-radius-md);
-	box-shadow: var(--mz-shadow-md);
-	padding: 4px;
-	margin-top: 4px;
-	display: block;
-}
-
-.cbi-dropdown[open] > ul.dropdown > li {
-	display: block;
-	padding: 8px 12px;
-	border-radius: var(--mz-radius-sm);
-	color: var(--mz-color-text);
-	font-size: .9rem;
-	white-space: nowrap;
-}
-
-.cbi-dropdown[open] > ul.dropdown > li:hover {
-	background: var(--mz-color-surface-2);
-}
-
-.cbi-dropdown .more,
-.cbi-dropdown .open {
-	margin-left: 6px;
-	font-size: .8rem;
-	opacity: .7;
-}
-
 /* Hide duplicate bottom modemenu (管理权 already in top menu) */
 .mz-sidebar-footer #modemenu,
 #modemenu {
@@ -1685,8 +1613,8 @@ which is
 	min-width: 180px;
 	background: var(--mz-color-surface);
 	border: 1px solid var(--mz-color-border);
-	border-radius: 8px;
-	box-shadow: 0 4px 16px rgba(0,0,0,.12);
+	border-radius: var(--mz-radius-md);
+	box-shadow: var(--mz-shadow-md);
 	padding: 4px;
 	margin: 0;
 	display: block;
@@ -1695,7 +1623,7 @@ which is
 .cbi-dropdown[open] > ul.dropdown > li {
 	display: block;
 	padding: 8px 12px;
-	border-radius: 6px;
+	border-radius: var(--mz-radius-sm);
 	color: var(--mz-color-text);
 	font-size: .88rem;
 	font-weight: 400;

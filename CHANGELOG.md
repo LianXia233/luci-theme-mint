@@ -7,6 +7,35 @@
 
 ---
 
+## [20261011e] - 2026-10-11 · 组件审查（弹窗 / 下拉 / 按钮）
+
+### Fixed 修复
+
+- **弹窗权威层错位**：components.css 原 `.modal` 规则（0,1,0）全部输给
+  compat.css 的 `#modal_overlay .modal`（1,1,0），玻璃填充、卡片圆角、
+  入场动画从未真正生效。现以 (1,1,0) 特异性重写为权威层：
+  `--mz-modal-bg` 玻璃填充、`--mz-radius-card`、每次打开重放
+  `mz-modal-in`；保留 compat 的 `modal-overlay-active` 状态机与
+  顶部锚定长对话框滚动；移动端 640px 紧凑内边距补回本层。
+- **overlay 遮罩**：静态期不再常驻 scrim 背景与 `mz-overlay-in`
+  动画（该 keyframe 已无引用，删除）；blur(4px) 保留。
+- **cbi-dropdown 整块重复**：compat.css 连续两段几乎相同的
+  dropdown 修复块（含冲突的 margin/radius/shadow），删除前一份
+  （其后一份早已按层叠规则胜出，删除零渲染差异），保留块数值
+  全部 token 化（8px/6px/手写阴影 → radius-md/sm + shadow-md）。
+
+### Added 新增
+
+- 下拉菜单**选中项高亮**：`ul.dropdown > li[selected]` 品牌软底 +
+  加粗，展开时不再与闭合值条无法区分；键盘导航
+  `li:focus-visible` 描边。
+- 按钮语义族收编进 components.css 单一所有者：
+  apply/action 实心主色、save/positive 软主色、
+  reset/remove/negative 软危险色（悬停才硬化为实心红，
+  与整排按钮视觉音量一致）、`btn.danger` 显式实心保留。
+
+---
+
 ## [20261011d] - 2026-10-11 · Aurora Glass
 
 本轮四个提交（`c22019f` → `7c939f3`）构成一次完整视觉迭代：
