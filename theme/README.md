@@ -186,6 +186,13 @@ make package/luci-theme-mint/compile V=s
 - To switch color scheme, use the sidebar toggle (Cycle: system -> light ->
   dark -> system). Only one theme variant (`Mint`) is registered.
 
+## Changelog
+
+Notable changes are tracked in [../CHANGELOG.md](../CHANGELOG.md).
+Current asset revision: `20261011d` (Aurora Glass — clearer wallpaper,
+faster loading, dead-CSS audit, slimmed logo assets).
+
 ## License
+
 
 GPL-3.0. See [../LICENSE](../LICENSE).

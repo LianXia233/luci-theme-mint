@@ -7,7 +7,7 @@
 **面向 OpenWrt main / LuCI master 的下一代现代化原生主题**
 
 基于纯净 ucode 模板引擎构建 • 融合 Apple / Linear 级极简与克制美学  
-单层视效容器 • 四态独立角色立绘 • 现代设计令牌 (Tokens) 系统 • 独立壁纸扩展包
+Aurora Glass 玻璃拟态 • 单层视效容器 • 四态独立角色立绘 • 现代设计令牌 (Tokens) 系统 • 独立壁纸扩展包
 
 <p align="center">
   <img src="https://img.shields.io/badge/OpenWrt-23.05%20%2F%2024.10%20%2F%20main-188fff?style=flat-square&logo=openwrt&logoColor=white" alt="OpenWrt">
@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/License-GPL--3.0-orange?style=flat-square" alt="License">
 </p>
 
-[✨ 功能特性](#-功能特性) • [🖼️ 界面预览](#-界面预览) • [📁 目录结构](#-目录结构) • [🚀 快速启用](#-主题启用) • [📦 编译指南](#-编译指南) • [🎨 背景机制](#-背景与壁纸机制) • [⚙️ 壁纸配置](#️-壁纸设置) • [🌐 兼容性](#-兼容性) • [🛠️ 排错与授权](#️-故障排查)
+[✨ 功能特性](#-功能特性) • [🖼️ 界面预览](#-界面预览) • [📁 目录结构](#-目录结构) • [🚀 快速启用](#-主题启用) • [📦 编译指南](#-编译指南) • [🎨 背景机制](#-背景与壁纸机制) • [⚙️ 壁纸配置](#️-壁纸设置) • [🌐 兼容性](#-兼容性) • [🛠️ 排错与授权](#️-故障排查) • [📜 更新日志](CHANGELOG.md)
 
 ---
 
@@ -56,11 +56,11 @@
 
 ### 🏛️ 结构工程与视觉规范
 - **单层视觉容器架构**：全站仅保留一个视觉容器 `.mz-view`，统一绘制背景、边框、圆角与阴影；内部 Section / CBI / 表格 / 卡片全部透明扁平化，禁止嵌套卡片（Card 套 Card）。
-- **单次模糊设计**：壁纸置于最底层，每页仅触发一次模糊计算，杜绝创建杂乱的层叠上下文（Stacking Context），彻底消除下拉菜单被截断的弊端。
+- **单次模糊设计**：壁纸置于最底层，每页仅触发一次模糊计算，杜绝创建杂乱的层叠上下文（Stacking Context），彻底消除下拉菜单被截断的弊端；固定背景层 `contain: strict` 渲染隔离，≤854px 自动降档 blur（10/12px）省一半 GPU。
 - **独立底栏**：Action Bar（操作栏）为独立功能层，底部全出血粘性吸附（Sticky），体验沉浸。
 - **分层 CSS 编排**：`cascade.css` 严格作为入口仅执行 `@import`，将规则按职责解耦为 `compat / tokens / base / layout / navigation / container / components / wallpaper / background / dark / animations / responsive / login` 共十三层。全站静态资源带 `?v=<MINT_ASSET_REV>` 统一版本戳。
 - **容器几何单一所有者**：`.mz-view` 的尺寸与留白严格由 `layout.css` 与 `container.css` 配合 Tokens 控制，大屏居中对称，最大宽度约束为 `--mz-content-max: 1920px`。
-- **Glass & Layered 视觉系统**：不对称微妙圆角、品牌色偏移阴影、节标题强调色条、侧栏半透毛玻璃、菜单线性 SVG 图标与平滑折叠箭头。
+- **Aurora Glass 视觉系统**：不对称微妙圆角、品牌色偏移阴影、节标题强调色条、侧栏半透毛玻璃、菜单线性 SVG 图标与平滑折叠箭头；玻璃层按「壁纸清晰可见、文字对比度 ≥ 7:1」调校（页面 .70 / 角色背景下 .62），容器顶部 120px Aurora sheen 受光边，壁纸遮罩改为「顶部强、底部淡」的渐变洗白，风景照下半段保留原色。
 
 ### 🎭 角色背景与色彩模式
 - **纯 CSS 四态角色背景**：默认预置四套独立立绘层（PC 亮色 Arona / PC 暗色 Plana / 移动端亮暗两套独立 3:4 竖版构图）。媒体查询判别设备，`<html data-theme>` 控制色彩，**首帧即达，无需 JS 介入，切换平滑交叉淡入**。
@@ -69,10 +69,12 @@
 
 ### ⚡ 性能与交互打磨
 - **零外部资源依赖**：无 CDN、无外部 Web 字体、无体积沉重的图标字体、无重量级前端框架、无 jQuery。
+- **加载优先级分级**：登录 logo `fetchpriority=high`（LCP 元素）；壁纸图片 `fetchPriority=low + decoding=async`（装饰性资源永不抢占内容带宽）；随机壁纸 API `preconnect` 预热握手；壁纸库缩略图 `loading=lazy` 按需加载。
 - **现代化响应式断点**：480px 至 1280px+ 全段平滑适配；移动端自动收纳为抽屉式遮罩导航，复杂数据表格自动重排为可读性更高的卡片流。
 - **真实总览增强仪表盘**：重构 Overview 总览页（仅在对应路由按需加载），实时卡片化展示网络端口、系统硬件、DHCP / Wireless / UPnP 拓扑；不支持的指标一律展示 `N/A`，恪守真实原则。
 - **细节交互优化**：全局统一 8px 半透明细滚动条、网络接口页定制状态色标卡、LuCI 原生弹窗与 `cbi-dropdown` 全面深度重构。
 - **模块化解耦**：壁纸设置功能完整拆分为独立包 `luci-app-mint-wallpaper`，提供可视化配置、rpcd 后端、cron 缓存刷新与 UCI 驱动，支持独立部署/更新。
+- **轻量资产**：全部 logo / favicon PNG 经 256 色量化（-59% ~ -92%），CSS 全量审计后净减约 1800 行死规则（旧仪表盘家族），像素级无损。
 
 ---
 
