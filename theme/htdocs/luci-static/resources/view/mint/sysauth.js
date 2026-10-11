@@ -127,6 +127,12 @@ return view.extend({
 				const img = new Image();
 				const timer = window.setTimeout(() => { img.src = ''; }, 16000);
 
+				/* Decoration, never content: the logo (fetchpriority=high,
+				   sysauth.ut) and the form win the bandwidth race first.
+				   Both assignments are guarded - older engines throw on
+				   unknown IDL attributes in strict mode. */
+				try { img.fetchPriority = 'low'; } catch (e) {}
+				try { img.decoding = 'async'; } catch (e) {}
 				img.referrerPolicy = 'no-referrer'; /* TZ-13: don't leak the router URL */
 				img.onload = () => {
 					window.clearTimeout(timer);

@@ -66,7 +66,10 @@
 	<div class="mz-login-overlay" aria-hidden="true"></div>
 
 	<div class="mz-login-card" role="main">
-		<img src="{{ media }}/login-logo.png" alt="" class="mz-login-logo">
+		{# fetchpriority=high: the logo is the login screen's LCP element,
+		   it must win the bandwidth race; everything decorative (the
+		   wallpaper, see sysauth.js) is fetched last. #}
+		<img src="{{ media }}/login-logo.png" alt="" class="mz-login-logo" fetchpriority="high">
 		<p class="mz-login-welcome">{{ _('Welcome back! Log in to manage your network.') }}</p>
 
 		{% if (auth_message): %}

@@ -195,10 +195,13 @@ body.mz-wp-custom .mint-background.mz-login-char {
 	z-index: var(--mz-z-wallpaper-overlay);
 	pointer-events: none;
 	/* A whisper of a veil so the card always has something to sit on,
-	   without dulling the backdrop into a flat wash. */
+	   without dulling the backdrop into a flat wash. 2026-10 pass: the
+	   bottom stop eases .08 -> .05 so the artwork's lower half keeps
+	   its own colour - the top of the screen still carries the wash
+	   the version line and the card top sit against. */
 	background: linear-gradient(180deg,
 		rgba(255, 255, 255, .30) 0%,
-		rgba(255, 255, 255, .08) 100%);
+		rgba(255, 255, 255, .05) 100%);
 }
 
 html[data-theme="dark"] .mz-login-overlay {
@@ -219,7 +222,16 @@ html[data-theme="dark"] .mz-login-overlay {
 	padding: var(--mz-spacing-xl) var(--mz-spacing-lg) var(--mz-spacing-lg);
 	border: 1px solid var(--mz-glass-border);
 	border-radius: var(--mz-radius-card);
-	background: rgba(255, 255, 255, .82);
+	/* Aurora Glass (20261011a pass): the login card is this screen's
+	   ONE frosted sheet, so it follows the same recipe as .mz-view -
+	   thinned .82 -> .68 (light) / .92 -> .86 (dark) so Plana and the
+	   gradient read through the card, while the inputs keep their own
+	   opaque --mz-input-bg and the text keeps its contrast. The card
+	   legitimately owns a backdrop-filter: it is the only blur consumer
+	   on this page (the wallpaper blur var is 0px by default). */
+	background: rgba(255, 255, 255, .68);
+	/* Aurora sheen: same lit-edge token the admin sheet uses. */
+	background-image: var(--mz-view-sheen, none);
 	backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
 	-webkit-backdrop-filter: blur(var(--mz-glass-blur-strong)) saturate(var(--mz-glass-saturate));
 	box-shadow: var(--mz-shadow-lg);
@@ -227,7 +239,9 @@ html[data-theme="dark"] .mz-login-overlay {
 }
 
 html[data-theme="dark"] .mz-login-card {
-	background: rgba(32, 37, 45, .92);
+	/* background-COLOR, not the shorthand: the shorthand would reset
+	   background-image and drop the sheen. */
+	background-color: rgba(32, 37, 45, .86);
 	border-color: rgba(255, 255, 255, .10);
 }
 
