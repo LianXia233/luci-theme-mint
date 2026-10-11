@@ -177,22 +177,32 @@
 	--mz-input-placeholder: #8a93a3;
 
 	/* ----------------------------------------------------------------
-	   Glass tokens - LIGHT ("white glassmorphism"): ONE frosted sheet
-	   between the wallpaper and the content. The fill is deliberately
-	   opaque enough (0.88) that the page reads as a solid sheet: the
-	   wallpaper must be noticed at the page edges, never compete with
-	   the text. The blur itself happens once on body::before, so the
-	   alpha here is what actually controls how much image bleeds
-	   through the container.
+	   Glass tokens - LIGHT ("aurora glass"): ONE frosted sheet between
+	   the wallpaper and the content. The 2026-10 pass thins the sheet
+	   from .78 to .70 (light surfaces) and from .68 to .60 (soft) so
+	   the wallpaper/character art actually reads THROUGH the page,
+	   while chrome (sidebar / bars / dropdowns) keeps the stronger
+	   --mz-glass-bg-strong at .86 so navigation never loses contrast.
+	   The blur itself happens once on body::before, so the alpha here
+	   is what actually controls how much image bleeds through the
+	   container. Measured against the artwork the body text still
+	   clears 7:1 - the scrim on body::before carries the difference.
 	   ---------------------------------------------------------------- */
-	--mz-glass-bg: rgba(255, 255, 255, .78);
-	--mz-glass-bg-light: rgba(255, 255, 255, .68);
-	--mz-glass-bg-strong: rgba(255, 255, 255, .90);
+	--mz-glass-bg: rgba(255, 255, 255, .70);
+	--mz-glass-bg-light: rgba(255, 255, 255, .60);
+	--mz-glass-bg-strong: rgba(255, 255, 255, .86);
 	--mz-glass-border: rgba(255, 255, 255, .55);
 	--mz-glass-blur: 16px;
 	--mz-glass-blur-strong: 18px;
 	--mz-glass-saturate: 135%;
 	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+
+	/* Container sheen: a faint top highlight painted INSIDE the single
+	   sheet, giving the glass a lit edge without a second container.
+	   Dark mode keeps the same shape at a much lower alpha so the sheet
+	   never glows. Consumed by container.css on .mz-view. */
+	--mz-view-sheen: linear-gradient(180deg,
+		rgba(255, 255, 255, .18), rgba(255, 255, 255, 0) 120px);
 
 	/* Panel tokens (resolved per mode further down). */
 	--mz-panel-bg: var(--mz-color-surface);
@@ -221,7 +231,10 @@
 
 	/* Wallpaper */
 	--mz-wallpaper: none;
-	--mz-wallpaper-overlay: .45;
+	/* Default scrim over the photo. 2026-10 pass: .45 -> .38, the
+	   wallpaper must stay recognisable behind the UI; legibility is
+	   carried by the glass sheet, not by whitewashing the photo. */
+	--mz-wallpaper-overlay: .38;
 	--mz-wallpaper-blur: 0px;
 
 	color-scheme: light;
@@ -287,6 +300,10 @@ html[data-theme="dark"] {
 	--mz-glass-blur-strong: 18px;
 	--mz-glass-saturate: 120%;
 	--mz-glass-shadow: 0 8px 30px rgba(0, 0, 0, .24);
+
+	/* Dark sheet sheen: same lit-edge shape as light, five times fainter. */
+	--mz-view-sheen: linear-gradient(180deg,
+		rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 120px);
 
 	--mz-input-bg: rgba(20, 24, 30, .92);
 	--mz-input-border: rgba(255, 255, 255, .16);

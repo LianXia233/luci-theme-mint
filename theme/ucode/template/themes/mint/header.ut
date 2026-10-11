@@ -62,7 +62,7 @@
 	   headers, so a revision bump is the only reliable way to make
 	   browsers pick up an updated stylesheet. Bump it whenever any file
 	   under htdocs/luci-static/mint changes. */
-	const MINT_ASSET_REV = '20260913m';
+	const MINT_ASSET_REV = '20261011a';
 -%}
 
 <!DOCTYPE html>
@@ -112,6 +112,22 @@
 		#}
 		<meta name="mz-asset-rev" content="{{ MINT_ASSET_REV }}">
 		<link rel="stylesheet" href="{{ media }}/cascade.css?v={{ MINT_ASSET_REV }}">
+		{#
+		  LOADING: warm the connection to the random-wallpaper APIs in
+		  parallel with the document instead of after it. The wallpaper is
+		  decorative and fetched last (fetchPriority: low, see mzWpUtil),
+		  but its DNS + TLS handshake otherwise START only once the page
+		  has rendered - on a cold cache that is 300-600ms of grey
+		  gradient. Only the built-in defaults are preconnected: a custom
+		  source list is user-defined, so guessing hosts for it would
+		  waste connections. Skipped entirely when the random wallpaper
+		  is off.
+		#}
+		{% if (wp_random && length(wallpaper.pc?.sources ?? []) == 0 && length(wallpaper.mobile?.sources ?? []) == 0): %}
+		<link rel="preconnect" href="https://api.paugram.com" crossorigin>
+		<link rel="preconnect" href="https://t.alcy.cc" crossorigin>
+		<link rel="dns-prefetch" href="https://api.seaya.link">
+		{% endif %}
 		<link rel="icon" href="{{ media }}/favicon/favicon.svg" sizes="any" type="image/svg+xml">
 		<link rel="icon" href="{{ media }}/favicon/favicon-48.png" sizes="48x48">
 		<link rel="apple-touch-icon" href="{{ media }}/favicon/favicon-180.png">
@@ -207,6 +223,13 @@
 					var target = self.stamp(url);
 					var img = new Image();
 					var settled = false;
+					/* The wallpaper is decoration, never content: let every
+					   image LuCI actually needs (charts, badges, previews)
+					   win the bandwidth race first. fetchPriority is still
+					   young, so a browser that does not know it must not
+					   blow up - hence the try/catch. */
+					try { img.fetchPriority = 'low'; } catch (e) {}
+					try { img.decoding = 'async'; } catch (e) {}
 					var finish = function(ok) {
 						if (settled) return;
 						settled = true;

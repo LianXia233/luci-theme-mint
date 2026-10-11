@@ -51,10 +51,17 @@ body.mz-has-wallpaper::before {
 	inset: 0;
 	z-index: var(--mz-z-wallpaper-overlay);
 	pointer-events: none;
-	/* Light theme: a soft white wash brightens the image so the frosted
-	   sheet with dark text reads naturally. Without this wash the
-	   saturated parts of a photo win over the UI. */
-	background: rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.55));
+	/* Light theme scrim: a GRADIENT wash instead of a flat one. The top
+	   of the viewport (where the topbar and the first headings live)
+	   keeps the strong brightening wash; towards the bottom the wash
+	   fades to ~45% of its strength, so a landscape wallpaper keeps
+	   its own colour where the eye actually sees it. --mz-wallpaper-
+	   overlay is still the single UCI-driven strength (menu-mint.js
+	   writes a bare number), scaled per stop with calc(). */
+	background:
+		linear-gradient(180deg,
+			rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.38)) 0%,
+			rgba(255, 255, 255, calc(var(--mz-wallpaper-overlay, 0.38) * .45)) 100%);
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 }
@@ -163,6 +170,12 @@ html[data-theme="dark"] body.mz-has-wallpaper {
    layer by layer. */
 body.mz-has-wallpaper .mz-view {
 	background: var(--mz-container-background);
+	/* Aurora sheen: a faint lit edge inside the TOP of the single sheet.
+	   A background-IMAGE, not a second fill - it never stacks another
+	   opaque layer over the wallpaper, it only catches the top 120px
+	   where light would naturally fall. Dark mode resolves the same
+	   token at .05 alpha (tokens.css). */
+	background-image: var(--mz-view-sheen, none);
 	border-color: var(--mz-glass-border);
 }
 

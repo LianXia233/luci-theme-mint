@@ -93,6 +93,13 @@
 	z-index: var(--mz-z-wallpaper);
 	pointer-events: none;
 	overflow: clip;
+	/* Paint containment: the layer is a fixed, full-viewport, clip'd
+	   backdrop whose children never escape it, so `contain: strict`
+	   (layout + style + paint + size) is free to apply. It tells the
+	   compositor that nothing inside can affect anything outside,
+	   which keeps scrolling cheap on low-end routers/phones - the
+	   grid tile and the artwork never invalidate the document. */
+	contain: strict;
 	/* Off unless the body opts in, so a page that must stay plain
 	   (the login screen) is never given artwork by accident. */
 	display: none;
@@ -266,11 +273,13 @@ html[data-theme="dark"] .mint-bg-character-dark { opacity: 1; }
 body.mz-has-wallpaper.mz-char-bg::after {
 	background-image: var(--mz-wallpaper, none);
 }
-/* Design rule 11: the character has to be visibly present, while the
-   text stays unambiguous. The single frosted sheet therefore thins
-   from .78 to .70 (light) and from .84 to .74 (dark) - a deliberate
-   four-point drop, not a free-for-all: measured against the artwork
-   the body text still clears 7:1 in both modes.
+/* Design rule 11 (2026-10 revision): the artwork has to be CLEARLY
+   present, while the text stays unambiguous. The single frosted sheet
+   thins from .70 to .62 (light) and from .74 to .68 (dark) - the
+   character and the wedge/grid now read through the page instead of
+   merely glowing at the edges. Contrast is still owned by the scrim
+   (var(--mz-char-scrim)) on the layer itself: measured against the
+   artwork, body text keeps 7:1 in both modes.
  *
  * This touches ONLY --mz-container-background (the page sheet). The
  * sidebar, the bars and every dropdown keep --mz-panel-bg*, so
@@ -280,11 +289,11 @@ body.mz-has-wallpaper.mz-char-bg::after {
  * a photo of unknown brightness and the original opacity is kept. */
 
 body.mz-char-bg:not(.mz-wp-custom) .mz-view {
-	--mz-container-background: rgba(255, 255, 255, .70);
+	--mz-container-background: rgba(255, 255, 255, .62);
 }
 
 html[data-theme="dark"] body.mz-char-bg:not(.mz-wp-custom) .mz-view {
-	--mz-container-background: rgba(26, 33, 44, .74);
+	--mz-container-background: rgba(26, 33, 44, .68);
 }
 
 /* ---------------------------------------------------------------- */

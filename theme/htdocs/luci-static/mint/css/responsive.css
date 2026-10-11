@@ -65,6 +65,22 @@
 		--mz-container-pad: 18px;
 	}
 
+	/* ----------------------------------------------------------------
+	   Cheaper compositing on phones. The glass look is a function of
+	   blur RADIUS, not of exact pixels: 16/18px reads as frost on a
+	   6-inch screen too, but blurs half the area a desktop does and
+	   costs half the GPU time per frame while the drawer or the page
+	   scrolls. The override MUST carry html[data-theme] (0,1,1) - a
+	   plain :root would lose the tie against html[data-theme="dark"]
+	   in tokens.css. responsive.css is imported AFTER dark.css, so at
+	   equal specificity this block is the one that wins in both modes.
+	   ---------------------------------------------------------------- */
+	html[data-theme] {
+		--mz-glass-blur: 10px;
+		--mz-glass-blur-strong: 12px;
+		--mz-glass-saturate: 115%;
+	}
+
 	.mz-sidebar {
 		transform: translateX(-100%);
 		box-shadow: var(--mz-shadow-lg);
