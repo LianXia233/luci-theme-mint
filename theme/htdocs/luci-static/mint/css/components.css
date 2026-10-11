@@ -390,6 +390,19 @@ table.cbi-section-table tbody tr:hover {
 	background: var(--mz-color-primary-soft);
 }
 
+/* Zebra whisper: alternating rows get --mz-row-alt so wide tables stay
+   scannable on the glass sheet. Hover always wins (declared later in
+   the cascade ties are resolved by file order, so restate it here). */
+table.table tbody tr:nth-child(even),
+table.cbi-section-table tbody tr:nth-child(even) {
+	background: var(--mz-row-alt);
+}
+
+table.table tbody tr:nth-child(even):hover,
+table.cbi-section-table tbody tr:nth-child(even):hover {
+	background: var(--mz-color-primary-soft);
+}
+
 /* Tables already wrapped in a card do not need a second frame. */
 .cbi-section table.table,
 .cbi-section-node table.table {
@@ -559,7 +572,8 @@ html[data-theme="dark"] .alert-message.success {
 	display: flex;
 	align-items: flex-start;   /* top-anchored: long dialogs scroll */
 	justify-content: center;
-	padding: 5vh 16px 40px;
+	/* Bottom padding respects the iOS/Android gesture bar. */
+	padding: 5vh 16px max(40px, env(safe-area-inset-bottom, 40px));
 	box-sizing: border-box;
 	overflow-y: auto;
 	/* Scrim + one blur; the compat state gate keeps opacity at 0 and
@@ -574,7 +588,11 @@ html[data-theme="dark"] .alert-message.success {
 	position: relative;
 	width: 100%;
 	max-width: 720px;
+	/* 90vh for engines without dynamic-viewport units; dvh keeps the
+	   dialog inside the VISIBLE viewport on phones where the URL bar
+	   collapses and expands (vh alone overflows there). */
 	max-height: 90vh;
+	max-height: min(90vh, calc(100dvh - 5vh - 40px));
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	margin: 0 auto;
@@ -843,11 +861,18 @@ so the viewport clamp needs the one
 
 @media (max-width: 640px) {
 	#modal_overlay {
-		padding: 2vh 10px 24px;
+		padding: 2vh 10px max(24px, env(safe-area-inset-bottom, 24px));
 	}
 
 	#modal_overlay .modal,
 	#modal_overlay .cbi-modal {
 		padding: 16px 14px 18px;
+	}
+
+	/* Landscape phones are the worst case: 100dvh minus the chrome
+	   leaves very little, so the dialog body must scroll, not overflow. */
+	#modal_overlay .modal,
+	#modal_overlay .cbi-modal {
+		max-height: calc(100dvh - 4vh - 24px);
 	}
 }

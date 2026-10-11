@@ -27,6 +27,6 @@ config mint 'wallpaper'
 	list mobile_sources 'https://api.seaya.link/wap'
 	list mobile_sources 'https://t.alcy.cc/mp'
 	# Dark overlay opacity over the wallpaper (0.0 - 1.0)
-	option overlay '0.38'
+	option overlay '0.32'
 	# Background blur in px (0 = disabled, max 40)
 	option blur '0'

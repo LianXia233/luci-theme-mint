@@ -122,8 +122,8 @@ so the login
 	   is a soft top-down wash instead; it eases the header area and the
 	   version/copyright lines without touching the artwork's own colour. */
 	--mz-char-scrim: linear-gradient(180deg,
-		rgba(231, 244, 251, .52) 0%,
-		rgba(246, 251, 253, .20) 46%,
+		rgba(231, 244, 251, .42) 0%,
+		rgba(246, 251, 253, .14) 46%,
 		rgba(231, 244, 251, 0) 80%);
 }
 
@@ -142,8 +142,8 @@ html[data-theme="dark"] .mint-background.mz-login-char {
 		rgba(25, 64, 84, .60) 100%);
 
 	--mz-char-scrim: linear-gradient(180deg,
-		rgba(11, 26, 38, .50) 0%,
-		rgba(16, 36, 51, .18) 46%,
+		rgba(11, 26, 38, .40) 0%,
+		rgba(16, 36, 51, .12) 46%,
 		rgba(11, 26, 38, 0) 80%);
 }
 
@@ -220,8 +220,8 @@ body.mz-wp-custom .mint-background.mz-login-char {
 	   its own colour - the top of the screen still carries the wash
 	   the version line and the card top sit against. */
 	background: linear-gradient(180deg,
-		rgba(255, 255, 255, .30) 0%,
-		rgba(255, 255, 255, .05) 100%);
+		rgba(255, 255, 255, .22) 0%,
+		rgba(255, 255, 255, .03) 100%);
 }
 
 html[data-theme="dark"] .mz-login-overlay {

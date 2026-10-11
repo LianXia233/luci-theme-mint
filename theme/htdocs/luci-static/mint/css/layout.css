@@ -220,7 +220,10 @@ so the
 	position: fixed;
 	inset: 0;
 	z-index: var(--mz-z-scrim);
-	background: var(--mz-scrim);
+	/* SOFT scrim: the drawer covers the user's own page - dimming the
+	   wallpaper is a side effect here, not the goal. The strong scrim
+	   stays reserved for the modal backdrop. */
+	background: var(--mz-scrim-soft);
 	opacity: 0;
 	transition: opacity var(--mz-dur-control) var(--mz-ease);
 }

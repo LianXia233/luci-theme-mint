@@ -62,7 +62,7 @@
 	   headers, so a revision bump is the only reliable way to make
 	   browsers pick up an updated stylesheet. Bump it whenever any file
 	   under htdocs/luci-static/mint changes. */
-	const MINT_ASSET_REV = '20261011e';
+	const MINT_ASSET_REV = '20261011f';
 -%}
 
 <!DOCTYPE html>
@@ -144,7 +144,7 @@
 			   no extra request). */
 			window.mintWallpaper = {
 				enabled: {{ (wp.enabled == '0' || wallpaper.enabled == false) ? 'false' : 'true' }},
-				overlay: {{ sprintf('%J', wallpaper.overlay ?? '0.38') }},
+				overlay: {{ sprintf('%J', wallpaper.overlay ?? '0.32') }},
 				blur: {{ sprintf('%J', wallpaper.blur ?? '0') }},
 				/* Missing ui_random means the uci default ('0', see
 				   wallpaper.uc "?? '0'"): admin-page random wallpaper is

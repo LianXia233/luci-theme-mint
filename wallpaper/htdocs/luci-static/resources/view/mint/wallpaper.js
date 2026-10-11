@@ -347,9 +347,9 @@ return view.extend({
 		mSources.depends('mobile_mode', 'random');
 
 		const overlay = s.option(form.Value, 'overlay', _('Overlay opacity'),
-			_('Scrim strength over the wallpaper (0.0 - 1.0). Lower values show more of the picture; the Aurora Glass default is 0.38.'));
+			_('Scrim strength over the wallpaper (0.0 - 1.0). Lower values show more of the picture; the Aurora Glass default is 0.32.'));
 		overlay.datatype = 'ufloat';
-		overlay.default = '0.38';
+		overlay.default = '0.32';
 		overlay.validate = function(sid, v) {
 			const n = parseFloat(v);
 			return (isNaN(n) || n < 0 || n > 1) ? _('Must be a number between 0.0 and 1.0.') : true;

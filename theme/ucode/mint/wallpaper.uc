@@ -173,7 +173,7 @@ function validOverlay(v) {
 function clampOverlay(v) {
 	if (type(v) == 'string' && validOverlay(v))
 		return copyStr(v);
-	return copyStr('0.38');
+	return copyStr('0.32');
 }
 
 function clampBlur(v) {

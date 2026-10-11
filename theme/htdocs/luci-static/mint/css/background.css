@@ -112,8 +112,8 @@
 	   fully gone by ~68% - the artwork keeps its own colour on the
 	   right instead of being washed out across the whole screen. */
 	--mz-char-scrim: linear-gradient(90deg,
-		rgba(246, 251, 253, .92) 0%,
-		rgba(246, 251, 253, .52) 46%,
+		rgba(246, 251, 253, .86) 0%,
+		rgba(246, 251, 253, .44) 46%,
 		rgba(246, 251, 253, 0) 70%);
 
 	background-color: var(--mz-char-base);
@@ -135,8 +135,8 @@ html[data-theme="dark"] .mint-background {
 	--mz-char-wedge: linear-gradient(150deg, #15394c, #123247 64%, #194054);
 	--mz-char-grid: url("../images/triangle-grid-dark.webp");
 	--mz-char-scrim: linear-gradient(90deg,
-		rgba(16, 36, 51, .90) 0%,
-		rgba(16, 36, 51, .50) 46%,
+		rgba(16, 36, 51, .84) 0%,
+		rgba(16, 36, 51, .42) 46%,
 		rgba(16, 36, 51, 0) 70%);
 }
 
@@ -247,15 +247,15 @@ html[data-theme="dark"] .mint-bg-character-dark { opacity: 1; }
 	/* Content reads top-down on a phone, so the veil follows. */
 	.mint-background {
 		--mz-char-scrim: linear-gradient(180deg,
-			rgba(246, 251, 253, .94) 0%,
-			rgba(246, 251, 253, .58) 42%,
+			rgba(246, 251, 253, .88) 0%,
+			rgba(246, 251, 253, .48) 42%,
 			rgba(246, 251, 253, 0) 72%);
 	}
 
 	html[data-theme="dark"] .mint-background {
 		--mz-char-scrim: linear-gradient(180deg,
-			rgba(16, 36, 51, .92) 0%,
-			rgba(16, 36, 51, .56) 42%,
+			rgba(16, 36, 51, .86) 0%,
+			rgba(16, 36, 51, .46) 42%,
 			rgba(16, 36, 51, 0) 72%);
 	}
 }

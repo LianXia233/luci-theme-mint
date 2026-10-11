@@ -3056,7 +3056,7 @@ body.mz-has-wallpaper::before {
 	   the overlay stays very light there. Light theme: a soft white wash
 	   brightens the image so white frosted glass with dark text reads
 	   naturally. */
-	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.38));
+	background: rgba(15, 23, 42, var(--mz-wallpaper-overlay, 0.32));
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 }

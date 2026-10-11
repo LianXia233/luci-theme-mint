@@ -111,7 +111,7 @@ A settings page is provided under `System` > `Mint Wallpaper` >
 | mobile_mode | enum | random | mobile source (random / custom) |
 | mobile_url | direct link | empty | mobile custom image http(s) link |
 | mobile_sources | list | seaya + t.alcy.cc/mp | mobile random sources (one URL per entry, shuffled, retried on failure) |
-| overlay | float | 0.38 | scrim strength over the wallpaper (0.0 - 1.0) |
+| overlay | float | 0.32 | scrim strength over the wallpaper (0.0 - 1.0) |
 | blur | px | 0 | background blur (0 disables, max 40) |
 
 Uploaded images are written to `/www/luci-static/mint/custom-pc.jpg` and

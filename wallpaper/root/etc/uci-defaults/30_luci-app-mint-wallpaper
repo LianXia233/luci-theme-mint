@@ -51,7 +51,7 @@ if ! uci -q get mint.wallpaper 2>/dev/null; then
 	uci -q set mint.wallpaper.ui_random=0
 	uci -q set mint.wallpaper.pc_mode=random
 	uci -q set mint.wallpaper.mobile_mode=random
-	uci -q set mint.wallpaper.overlay=0.38
+	uci -q set mint.wallpaper.overlay=0.32
 	uci -q set mint.wallpaper.blur=0
 	# Random multi-source defaults (empty list -> backend built-ins)
 	uci -q add_list mint.wallpaper.pc_sources='https://api.paugram.com/wallpaper/'

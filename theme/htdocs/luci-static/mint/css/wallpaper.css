@@ -66,8 +66,8 @@ body.mz-has-wallpaper::before {
 	   writes a bare number), scaled per stop with calc(). */
 	background:
 		linear-gradient(180deg,
-			rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.38)) 0%,
-			rgba(255, 255, 255, calc(var(--mz-wallpaper-overlay, 0.38) * .45)) 100%);
+			rgba(255, 255, 255, var(--mz-wallpaper-overlay, 0.32)) 0%,
+			rgba(255, 255, 255, calc(var(--mz-wallpaper-overlay, 0.32) * .40)) 100%);
 	backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 	-webkit-backdrop-filter: blur(var(--mz-wallpaper-blur, 0px));
 }
@@ -421,11 +421,15 @@ so the grid never reads as a second card layer. */
 	box-shadow: none;
 	overflow: hidden;
 	cursor: pointer;
-	transition: border-color var(--mz-dur-control) var(--mz-ease);
+	transition: border-color var(--mz-dur-control) var(--mz-ease),
+		box-shadow var(--mz-dur-control) var(--mz-ease);
 }
 
 .mz-wp-card:hover {
 	border-color: rgba(var(--mz-color-primary-rgb), .4);
+	/* Gentle hover feedback for the media tile: one small shadow, no
+	   transform - the tile stays planted, only the border lights up. */
+	box-shadow: var(--mz-shadow-sm);
 }
 
 .mz-wp-card.is-active {
