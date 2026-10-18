@@ -7,6 +7,34 @@
 
 ---
 
+## [20261019a] - 2026-10-19 · 修复 ucode 兼容性（issue #17）
+
+### Fixed 修复
+
+- **主题在 ImmortalWrt 25.12 上整体回退（THEME FALLBACK）**：
+  `theme/ucode/mint/wallpaper.uc` 使用 `export function` 声明导出，
+  而 ucode 在 2026-02-11 修复（commit `552ca3cf55`，"allow export
+  function declarations without trailing semicolon"）之前，
+  `compile_export()` 会在函数声明后强制消费一个分号，导致模块编译
+  失败（`Unexpected token / Expecting ';'`）。ImmortalWrt 25.12.1
+  自带的 ucode v0.0.20250529 早于该修复，于是
+  `luci.mint.wallpaper` 编译失败 → `header.ut` 模板编译失败 →
+  整个主题加载失败并回退默认主题（issue #17）。
+  现将三个导出改为普通 `function` 声明 + 文件末尾单条
+  `export { getWallpapers, isValidWallpaperName, wallpaperDir };`，
+  该写法在所有支持模块语法的 ucode 版本上均可编译。
+
+### Added 新增
+
+- **CI 旧版 ucode 兼容门禁**（`scripts/verify-ucode-compat.sh`）：
+  静态层直接拒绝 `export function` 形式；编译层拉取并构建
+  ucode v0.0.20250529（ImmortalWrt 25.12 时代版本、修复前），
+  以「模块导入 + 模板编译」两条路径真实编译全部 `.uc` / `.ut`
+  资产（仓库外导入以等名桩模块补齐），任何无法过编译的写法
+  直接在 CI 失败，防止同类问题再次进入发布包。
+
+---
+
 ## [20261011f] - 2026-10-11 · 遮罩减负 · 弹窗响应式 · 内容卡片
 
 ### Changed 变更

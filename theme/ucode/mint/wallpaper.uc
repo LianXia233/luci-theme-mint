@@ -287,7 +287,18 @@ function deviceGroup(cfg, kind) {
 	};
 }
 
-export function getWallpapers() {
+/* Public API. Declared as plain functions + a single `export { ... }`
+   statement at the bottom of this file on purpose: do NOT convert these
+   back to `export function` declarations. ucode before the 2026-02-11
+   fix (commit 552ca3cf55, "allow export function declarations without
+   trailing semicolon") demands a semicolon after every `export
+   function` declaration, so a module using that form fails to compile
+   with "Unexpected token / Expecting ';'" on the affected builds -
+   including the ucode shipped with ImmortalWrt 25.12 - and the theme
+   then falls back to the default one (issue #17). The `export { ... }`
+   list form is accepted by every ucode version that supports modules
+   at all. */
+function getWallpapers() {
 	const cfg = loadConfig();
 
 	if (cfg.enabled == '0') {
@@ -311,10 +322,12 @@ export function getWallpapers() {
 
 /* Exposed for the settings page / tests: validate a library file name
    the same way the resolver does. */
-export function isValidWallpaperName(name) {
+function isValidWallpaperName(name) {
 	return validWallpaperName(name) != null;
 }
 
-export function wallpaperDir() {
+function wallpaperDir() {
 	return copyStr(WALLPAPER_DIR);
 }
+
+export { getWallpapers, isValidWallpaperName, wallpaperDir };
