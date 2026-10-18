@@ -59,6 +59,15 @@ jobs:
           # opkg is best effort: the install test falls back to a
           # structural payload check when it is missing.
           sudo apt-get install -y -qq opkg || echo "opkg not in apt - structural install test will be used"
+          # ucode compatibility gate (scripts/verify-ucode-compat.sh) builds
+          # the pinned reference ucode from source.
+          sudo apt-get install -y -qq cmake libjson-c-dev || true
+
+      - name: Verify ucode compatibility (oldest supported interpreter)
+        # Issue #17: `export function` declarations do not compile on ucode
+        # before 2026-02-11 (ImmortalWrt 25.12). This gate compiles every
+        # .uc module and .ut template against that exact interpreter vintage.
+        run: bash scripts/verify-ucode-compat.sh
 
       - name: Build IPK + APK packages
         id: build
