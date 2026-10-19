@@ -38,7 +38,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
-  RELEASE_VERSION: ${{ inputs.release_version || 'nightly' }}
+  # Artifact label: a tag push (refs/tags/v*) publishes under its own
+  # version (github.ref_name, e.g. v1.4.0), a manual dispatch may pass
+  # release_version, and everything else - the main-branch pipeline -
+  # stays nightly. The Release workflow resolves the publishable tag
+  # independently; this only drives artifact file names.
+  RELEASE_VERSION: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.ref_name) || inputs.release_version || 'nightly' }}
 
 jobs:
   build:

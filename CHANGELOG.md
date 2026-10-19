@@ -12,6 +12,12 @@
 
 ### Fixed 修复
 
+- **正式版发布产物不再使用 nightly 命名**：`build.yml` 的
+  `RELEASE_VERSION` 现按事件派生——推送 `v*` tag 时取 tag 名
+  （如 `v1.4.0`），手动 dispatch 可传 `release_version`，main 分支
+  流水线仍为 `nightly`。此前 tag 构建的产物文件名固定为
+  `*-nightly-*.ipk/apk`，与 nightly 通道难以区分；包内真实版本仍由
+  git HEAD 派生，不受影响。
 - `scripts/verify-ucode-compat.sh` 的桩生成器在提取 import 名单时，别名
   剥离规则 `s/[[:space:]]*as[[:space:]]*.*//` 因空白可选且未锚定，把任何
   以 `as` 开头的标识符（本版新增的 `assetRev`）整段抹除；单名导入
