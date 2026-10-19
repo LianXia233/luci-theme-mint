@@ -56,7 +56,31 @@ ADBI_PI_MAX = 0x16
 
 PKG_PKGINFO = 1
 PKG_PATHS = 2
+PKG_SCRIPTS = 3
 ADBI_PKG_MAX = 6
+
+# install/upgrade/deinstall scripts (apk-tools 3.0.5, src/apk_adb.h
+# ADBI_SCRPT_*). apk stores ONE scripts object per package; each script type
+# is a named field of that object, which is what `apk mkpkg --script
+# "<name>:<file>"` writes (src/app_mkpkg.c).
+SCRPT_TRIGGER = 1
+SCRPT_PREINST = 2
+SCRPT_POSTINST = 3
+SCRPT_PREDEINST = 4
+SCRPT_POSTDEINST = 5
+SCRPT_PREUPGRADE = 6
+SCRPT_POSTUPGRADE = 7
+ADBI_SCRPT_MAX = 8
+
+SCRIPT_FIELDS = {
+    'trigger': SCRPT_TRIGGER,
+    'pre-install': SCRPT_PREINST,
+    'post-install': SCRPT_POSTINST,
+    'pre-deinstall': SCRPT_PREDEINST,
+    'post-deinstall': SCRPT_POSTDEINST,
+    'pre-upgrade': SCRPT_PREUPGRADE,
+    'post-upgrade': SCRPT_POSTUPGRADE,
+}
 
 DI_NAME = 1
 DI_ACL = 2
@@ -201,7 +225,8 @@ def scan_dirs(root):
 
 
 def build_package(name, version, arch, origin, url, license_, maintainer,
-                  description, depends, files_dir, out, exec_paths=None):
+                  description, depends, files_dir, out, exec_paths=None,
+                  scripts=None):
     db = DB()
     # struct adb_hdr: u8 compat_ver, u8 ver, u16 reserved, u32 root
     db.raw(b'\x00\x00\x00\x00' + struct.pack('<I', 0), 8)
@@ -305,6 +330,15 @@ def build_package(name, version, arch, origin, url, license_, maintainer,
     pkg = Obj(db, ADBI_PKG_MAX)
     pkg.obj(PKG_PKGINFO, pkginfo)
     pkg.obj(PKG_PATHS, paths)
+    if scripts:
+        # One scripts object per package; each script type is a field of it
+        # (see SCRIPT_FIELDS / src/apk_adb.c schema_scripts).
+        sobj = Obj(db, ADBI_SCRPT_MAX)
+        for sname, body_bytes in scripts:
+            if sname not in SCRIPT_FIELDS:
+                raise SystemExit('mkadbpkg: unknown script type: %s' % sname)
+            sobj.blob(SCRIPT_FIELDS[sname], body_bytes)
+        pkg.obj(PKG_SCRIPTS, sobj)
     root_val = pkg.commit()
     db.buf[4:8] = struct.pack('<I', root_val)
 
@@ -359,12 +393,28 @@ def main():
                     help='relative payload path that must carry the exec bit '
                          '(repeatable; forces 0755 even when the host FS '
                          'cannot represent Unix modes)')
+    ap.add_argument('--script', dest='scripts', action='append', default=[],
+                    metavar='TYPE:PATH',
+                    help='install script, same syntax as `apk mkpkg --script` '
+                         '(repeatable). TYPE is one of: '
+                         + ', '.join(sorted(SCRIPT_FIELDS)))
     args = ap.parse_args()
+
+    scripts = []
+    for spec in args.scripts:
+        stype, sep, spath = spec.partition(':')
+        if not sep or not spath:
+            raise SystemExit('mkadbpkg: --script expects TYPE:PATH, got %r' % spec)
+        if stype not in SCRIPT_FIELDS:
+            raise SystemExit('mkadbpkg: unknown script type %r (expected one of: %s)'
+                             % (stype, ', '.join(sorted(SCRIPT_FIELDS))))
+        with open(spath, 'rb') as fh:
+            scripts.append((stype, fh.read()))
 
     build_package(args.name, args.version, args.arch, args.origin, args.url,
                   args.license_, args.maintainer, args.description,
                   split_depends(args.depends), args.files, args.out,
-                  exec_paths=args.exec_paths)
+                  exec_paths=args.exec_paths, scripts=scripts)
 
 
 if __name__ == '__main__':

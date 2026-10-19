@@ -296,6 +296,15 @@ THEME_POSTINST='#!/bin/sh
 		*/mint-dark|*/mint-light|*/mintzero-dark|*/mintzero-light|*/mintzero)
 			uci -q set luci.main.mediaurlbase=/luci-static/mint ;;
 	esac
+	# opkg does not scan /etc/uci-defaults either: run the registration now
+	# (that is what writes luci.themes.mint) and drop the file so the boot
+	# scan does not repeat it. default_postinst is the other path that runs
+	# it; running both is harmless because the script only fills in missing
+	# keys.
+	if [ -f /etc/uci-defaults/30_luci-theme-mint ]; then
+		( cd /etc/uci-defaults && . ./30_luci-theme-mint ) || true
+		rm -f /etc/uci-defaults/30_luci-theme-mint
+	fi
 	uci -q commit luci
 	# The wallpaper registrations moved to luci-app-mint-wallpaper
 	# (2026-09-11). This is the copy that matters on a version upgrade:
@@ -351,9 +360,39 @@ exit 0'
 # and change nothing on an upgrade.
 WALLPAPER_POSTINST='#!/bin/sh
 [ -n "${IPKG_INSTROOT}" ] || {
+	# opkg/apk do not run /etc/uci-defaults on their own; the wallpaper
+	# directory, /etc/config/mint and the cache cron all come from there.
+	if [ -f /etc/uci-defaults/30_luci-app-mint-wallpaper ]; then
+		( cd /etc/uci-defaults && . ./30_luci-app-mint-wallpaper ) || true
+		rm -f /etc/uci-defaults/30_luci-app-mint-wallpaper
+	fi
 	rm -f /tmp/luci-indexcache*
 	rm -rf /tmp/luci-modulecache/
 	/etc/init.d/rpcd reload >/dev/null 2>&1 || true
+}
+exit 0'
+
+# Translation packages have no uci code of their own; they only need the
+# luci.languages entry their uci-defaults script writes.
+I18N_POSTINST='#!/bin/sh
+[ -n "${IPKG_INSTROOT}" ] || {
+	if [ -f /etc/uci-defaults/luci-i18n-mint-zh-cn ]; then
+		( cd /etc/uci-defaults && . ./luci-i18n-mint-zh-cn ) || true
+		rm -f /etc/uci-defaults/luci-i18n-mint-zh-cn
+	fi
+	rm -f /tmp/luci-indexcache*
+	rm -rf /tmp/luci-modulecache/
+}
+exit 0'
+
+WALLPAPER_I18N_POSTINST='#!/bin/sh
+[ -n "${IPKG_INSTROOT}" ] || {
+	if [ -f /etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn ]; then
+		( cd /etc/uci-defaults && . ./luci-i18n-mint-wallpaper-zh-cn ) || true
+		rm -f /etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn
+	fi
+	rm -f /tmp/luci-indexcache*
+	rm -rf /tmp/luci-modulecache/
 }
 exit 0'
 
@@ -397,6 +436,66 @@ build_apk() {
 		"$@"
 }
 
+# apk install scripts (same set OpenWrt's include/package-pack.mk generates).
+#
+# Why this exists: `apk add` does NOT scan /etc/uci-defaults. On OpenWrt the
+# post-install script calls default_postinst(), which reads the package file
+# list (/lib/apk/packages/<pkg>.list), runs every /etc/uci-defaults/* entry
+# the package owns and then `uci commit`s. Packages built by the SDK get that
+# script automatically; build-direct.sh used to only pass --exec, so a freshly
+# installed v1.3.2 theme stayed unregistered in luci.themes (System -> Design
+# showed no "Mint" entry) until the next boot re-ran the uci-defaults scan.
+#
+# The generated scripts stay defensive: if default_postinst / functions.sh are
+# missing they fall back to sourcing the uci-defaults files directly, and the
+# trailing body (the package's own postinst/postrm) is always executed.
+apk_script() {
+	# <outfile> <pkgname> <0|1 PKG_UPGRADE> <body|-> <uci-defaults glob>...
+	local out="$1" pkg="$2" upgrade="$3" body="$4"
+	shift 4
+	{
+		printf '%s\n' '#!/bin/sh'
+		[ "$upgrade" = "1" ] && printf '%s\n' 'export PKG_UPGRADE=1'
+		printf '%s\n' 'export root="${IPKG_INSTROOT}"'
+		printf 'export pkgname="%s"\n' "$pkg"
+		printf '%s\n' '[ -f /lib/functions.sh ] && . /lib/functions.sh'
+		printf '%s\n' 'if command -v default_postinst >/dev/null 2>&1; then'
+		printf '%s\n' '	command -v add_group_and_user >/dev/null 2>&1 && add_group_and_user'
+		printf '%s\n' '	default_postinst'
+		printf '%s\n' 'else'
+		local g
+		for g in "$@"; do
+			printf '\tfor f in /etc/uci-defaults/%s; do\n' "$g"
+			printf '%s\n' '		[ -f "$f" ] || continue'
+			printf '%s\n' '		( cd "$(dirname "$f")" && . "./$(basename "$f")" ) && rm -f "$f"'
+			printf '%s\n' '	done'
+			printf '%s\n' '	uci -q commit luci'
+		done
+		printf '%s\n' 'fi'
+		if [ "$body" != "-" ]; then
+			# Drop the shebang: this is a fragment of the combined script.
+			printf '%s\n' "$body" | sed '/^#!/d'
+		fi
+		printf '%s\n' 'exit 0'
+	} > "$out"
+}
+
+prepare_apk_payload() {
+	# <src-payload> <dst-payload> <pkgname>
+	#
+	# apk packages need the same /lib/apk/packages/<pkg>.list that
+	# package-pack.mk writes, because default_postinst() greps it to find the
+	# /etc/uci-defaults entries it must run on install.
+	local src="$1" dst="$2" pkg="$3"
+	rm -rf "$dst"
+	mkdir -p "$dst"
+	cp -a "$src/." "$dst/"
+	mkdir -p "$dst/lib/apk/packages"
+	( cd "$dst" && find . \( -type f -o -type l \) -printf '/%P\n' | sort ) \
+		> "$dst/lib/apk/packages/$pkg.list"
+	chmod 0644 "$dst/lib/apk/packages/$pkg.list"
+}
+
 # ---------------------------------------------------------------------------
 # 5. pack all four artifacts
 # ---------------------------------------------------------------------------
@@ -422,27 +521,71 @@ build_ipk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base, curl" \
 	"$WPAYLOAD" "/etc/config/mint" "$WALLPAPER_POSTINST" "$WALLPAPER_POSTRM" \
 	"$WALLPAPER_IPK"
 build_ipk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
-	"$IPAYLOAD" "-" "-" "-" \
+	"$IPAYLOAD" "-" "$I18N_POSTINST" "-" \
 	"$I18N_IPK"
 build_ipk luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" "luci-app-mint-wallpaper" \
-	"$WIPAYLOAD" "-" "-" "-" \
+	"$WIPAYLOAD" "-" "$WALLPAPER_I18N_POSTINST" "-" \
 	"$WALLPAPER_I18N_IPK"
 
 log "packing apk"
+
+# Every apk payload carries /lib/apk/packages/<pkg>.list (what package-pack.mk
+# ships) so default_postinst() can locate the uci-defaults to run.
+APAYLOAD="$STAGE/apayload"
+WAPAYLOAD="$STAGE/wapayload"
+IAPAYLOAD="$STAGE/iapyload"
+WIAPAYLOAD="$STAGE/wiapyload"
+prepare_apk_payload "$PAYLOAD" "$APAYLOAD" luci-theme-mint
+prepare_apk_payload "$WPAYLOAD" "$WAPAYLOAD" luci-app-mint-wallpaper
+prepare_apk_payload "$IPAYLOAD" "$IAPAYLOAD" luci-i18n-mint-zh-cn
+prepare_apk_payload "$WIPAYLOAD" "$WIAPAYLOAD" luci-i18n-mint-wallpaper-zh-cn
+
+ASCRIPT="$STAGE/apkscripts"
+mkdir -p "$ASCRIPT"
+
+# Theme: install/upgrade must register luci.themes.mint (and clean the stale
+# zero/light entries) without waiting for a reboot; deinstall must undo it.
+apk_script "$ASCRIPT/theme-post-install" luci-theme-mint 0 - \
+	30_luci-theme-mint
+apk_script "$ASCRIPT/theme-post-upgrade" luci-theme-mint 1 - \
+	30_luci-theme-mint
+apk_script "$ASCRIPT/theme-post-deinstall" luci-theme-mint 0 "$THEME_POSTRM"
+
+# Wallpaper app: mount the wallpapers dir / mint config / cron line on install.
+apk_script "$ASCRIPT/wp-post-install" luci-app-mint-wallpaper 0 "$WALLPAPER_POSTINST" \
+	30_luci-app-mint-wallpaper
+apk_script "$ASCRIPT/wp-post-upgrade" luci-app-mint-wallpaper 1 "$WALLPAPER_POSTINST" \
+	30_luci-app-mint-wallpaper
+apk_script "$ASCRIPT/wp-post-deinstall" luci-app-mint-wallpaper 0 "$WALLPAPER_POSTRM"
+
+# Translations: register the locale in luci.languages on install.
+apk_script "$ASCRIPT/i18n-post-install" luci-i18n-mint-zh-cn 0 - \
+	luci-i18n-mint-zh-cn
+apk_script "$ASCRIPT/i18n-wp-post-install" luci-i18n-mint-wallpaper-zh-cn 0 - \
+	luci-i18n-mint-wallpaper-zh-cn
+
 build_apk luci-theme-mint "$THEME_PKG_VERSION" "luci-base" \
-	"Mint Theme" "$PAYLOAD" "$THEME_APK" \
-	--exec etc/uci-defaults/30_luci-theme-mint
+	"Mint Theme" "$APAYLOAD" "$THEME_APK" \
+	--exec etc/uci-defaults/30_luci-theme-mint \
+	--script "post-install:$ASCRIPT/theme-post-install" \
+	--script "post-upgrade:$ASCRIPT/theme-post-upgrade" \
+	--script "post-deinstall:$ASCRIPT/theme-post-deinstall"
 build_apk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base,curl" \
-	"Mint Wallpaper settings" "$WPAYLOAD" "$WALLPAPER_APK" \
+	"Mint Wallpaper settings" "$WAPAYLOAD" "$WALLPAPER_APK" \
 	--exec usr/bin/mz-wallpaper-fetch.sh \
 	--exec usr/libexec/rpcd/mint \
-	--exec etc/uci-defaults/30_luci-app-mint-wallpaper
+	--exec etc/uci-defaults/30_luci-app-mint-wallpaper \
+	--script "post-install:$ASCRIPT/wp-post-install" \
+	--script "post-upgrade:$ASCRIPT/wp-post-upgrade" \
+	--script "post-deinstall:$ASCRIPT/wp-post-deinstall"
 build_apk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
-	"Mint Theme - zh-cn translation" "$IPAYLOAD" "$I18N_APK" \
-	--exec etc/uci-defaults/luci-i18n-mint-zh-cn
+	"Mint Theme - zh-cn translation" "$IAPAYLOAD" "$I18N_APK" \
+	--exec etc/uci-defaults/luci-i18n-mint-zh-cn \
+	--script "post-install:$ASCRIPT/i18n-post-install"
 build_apk luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" "luci-app-mint-wallpaper" \
-	"Mint Wallpaper - zh-cn translation" "$WIPAYLOAD" "$WALLPAPER_I18N_APK" \
-	--exec etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn
+	"Mint Wallpaper - zh-cn translation" "$WIAPAYLOAD" "$WALLPAPER_I18N_APK" \
+	--exec etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn \
+	--script "post-install:$ASCRIPT/i18n-wp-post-install"
 
 for f in "$THEME_IPK" "$WALLPAPER_IPK" "$I18N_IPK" "$WALLPAPER_I18N_IPK" \
 	"$THEME_APK" "$WALLPAPER_APK" "$I18N_APK" "$WALLPAPER_I18N_APK"; do
