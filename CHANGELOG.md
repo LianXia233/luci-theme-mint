@@ -7,6 +7,30 @@
 
 ---
 
+## [20261019b] - 2026-10-19 · 安装即注册（打包与升级链路修复）
+
+### Fixed 修复
+
+- **装完重启前 `系统 → 设计` 里没有 Mint**：`apk add` 与 `opkg install` 都不会扫描 `/etc/uci-defaults`，旧包体只在安装时执行了 `--exec`，注册脚本要等下次开机才被消费，于是 `luci.themes` 里缺少 `mint` 项。现在：
+  - `scripts/mkadbpkg.py` 生成 apk 的 `scripts` 对象（`post-install` / `post-upgrade` / `post-deinstall`），等价于 `apk mkpkg --script TYPE:FILE`；
+  - `scripts/build-direct.sh` 随包附带 `/lib/apk/packages/<pkg>.list`，使 `default_postinst()` 能找到包自带的 `uci-defaults`，并在缺少 `functions.sh` 时直接 `source` 兜底；
+  - IPK 的 `postinst` 同样即时执行注册脚本（opkg 也不扫描 `uci-defaults`），执行后删除该文件，避免开机重复运行。
+- **`apk del` 报 `syntax error: unexpected fi`**：不带 `uci-defaults` 的包会生成空的 `else ... fi` 分支，导致 `post-deinstall` 以退出码 2 失败、`postrm` 不清 `uci` 条目。现仅在包确实拥有 `uci-defaults` 时才输出 `default_postinst` 块。
+- **简中语言项始终写不进去**：生成的脚本写的是 `uci set luci.languages.zh-cn=...`，而 `uci` 选项名不允许 `-`，每次安装都打印 `uci: Parse error`。LuCI 实际使用的键是 `luci.languages.zh_cn`，已改正。
+- **升级时 i18n 包的 `uci-defaults` 残留**：两个翻译包只声明了 `post-install`，`apk upgrade` 不会调用任何脚本，`/etc/uci-defaults/luci-i18n-*` 会留到下次开机。现已补 `post-upgrade`（与安装共用同一脚本体），升级后语言项立即写入并消费脚本。
+
+### Changed 变更
+
+- 主题、壁纸与翻译包在安装/升级后统一清理 `/tmp/luci-indexcache*` 与 `/tmp/luci-modulecache/`，并热重载 `rpcd`；不重启服务，已登录会话不中断。
+- 资产修订戳 `20261019a → 20261019b`（静态资产无变化，仅用于区分修复后的包体）。
+
+### 兼容性
+
+- 包名、UCI 键与配置默认值不变；`luci.themes.mint` 与 `luci.languages.zh_cn` 为新增/修正的注册项。
+- 实机验证：ImmortalWrt SNAPSHOT（apk-tools 3.0.5），删除 `luci.themes.mint` 后 `apk add` 四个包，注册与语言项立即生效，无需重启；`apk del` 无报错并清理 `uci` 条目。
+
+---
+
 ## [20261019a] - 2026-10-19 · 修复 ucode 兼容性（issue #17）
 
 ### Fixed 修复

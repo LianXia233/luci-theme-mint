@@ -228,7 +228,7 @@ echo "CONFIG_CCACHE=y" >> .config && make defconfig
 
 ## 🚀 主题启用
 
-安装后 `uci-defaults` 脚本会自动注册并启用主题；如需手动指定，可在终端中执行：
+安装或升级时由包管理器钩子立即执行 `uci-defaults` 完成注册与启用（apk 的 `post-install` / `post-upgrade`，opkg 的 `postinst`），**无需重启**；注册脚本执行后即被消费，后续开机不会重复运行。如需手动指定，可在终端中执行：
 
 ```bash
 # 设置 Mint 为默认视觉媒体目录
@@ -238,6 +238,8 @@ uci commit luci
 # 重载 rpcd 守护进程使变动立即生效
 /etc/init.d/rpcd reload
 ```
+
+验证注册结果：`uci get luci.themes.mint` 应返回 `/luci-static/mint`。若为空，通常说明安装的是旧版包体（v1.3.2 及更早），重新安装本次发布即可。
 
 ---
 
@@ -318,6 +320,8 @@ graph TD
 
 发布流水线提供架构无关的 `all` / `noarch` 产物，根据路由系统所用的包管理器（opkg 或 apk）挑选对应文件安装即可。
 
+APK 包在元数据中声明 `post-install` / `post-upgrade` / `post-deinstall` 脚本对象，并附带 `/lib/apk/packages/<pkg>.list`，使 `default_postinst()` 能定位包自带的 `uci-defaults`；IPK 包在 `postinst` 中直接执行同一批脚本。两条路径执行后都会删除对应的 `uci-defaults` 文件，因此注册只发生一次，升级时也不会残留到下次开机。
+
 ### 运行时依赖
 
 | 依赖包名 | 角色分类 | 必需度 | 说明 |
@@ -339,13 +343,13 @@ graph TD
 
 - 主题采用无源码架构（纯静态资源与 ucode 模板），构建标记为通用全平台支持（`PKGARCH:=all`）。
 - 编译依赖 `luci-base/host` 提供的 `po2lmo` 与 `jsmin` 工具；默认不开启 `csstidy` 以免引入额外的 feed 依赖。
-- 主题在升级安装时执行 `postinst` 仅热重载 rpcd 进程，确保不中断已登录管理员的活动会话。
+- 安装与升级均由包管理器钩子即时执行 `uci-defaults`（主题注册、壁纸目录与 `luci.languages.zh_cn` 语言项），随后清理 `/tmp/luci-indexcache*` 与模块缓存并热重载 `rpcd`；不重启服务，不中断已登录管理员的活动会话。
 
 ---
 
 ## 🛠️ 故障排查
 
-- **主题无法选择**：若安装后主题列表未更新，请通过 SSH 登录执行以下指令强制注册：
+- **主题无法选择**：正常情况下安装或升级后即刻完成注册，无需重启。若主题列表仍未更新（多见于手动解包覆盖、或安装了 v1.3.2 及更早的旧包体），请通过 SSH 登录执行以下指令强制注册：
   ```bash
   sh /etc/uci-defaults/30_luci-theme-mint
   /etc/init.d/rpcd reload
