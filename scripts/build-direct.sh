@@ -567,7 +567,11 @@ apk_script "$ASCRIPT/wp-post-deinstall" luci-app-mint-wallpaper 0 "$WALLPAPER_PO
 # Translations: register the locale in luci.languages on install.
 apk_script "$ASCRIPT/i18n-post-install" luci-i18n-mint-zh-cn 0 - \
 	luci-i18n-mint-zh-cn
+apk_script "$ASCRIPT/i18n-post-upgrade" luci-i18n-mint-zh-cn 1 - \
+	luci-i18n-mint-zh-cn
 apk_script "$ASCRIPT/i18n-wp-post-install" luci-i18n-mint-wallpaper-zh-cn 0 - \
+	luci-i18n-mint-wallpaper-zh-cn
+apk_script "$ASCRIPT/i18n-wp-post-upgrade" luci-i18n-mint-wallpaper-zh-cn 1 - \
 	luci-i18n-mint-wallpaper-zh-cn
 
 build_apk luci-theme-mint "$THEME_PKG_VERSION" "luci-base" \
@@ -587,11 +591,13 @@ build_apk luci-app-mint-wallpaper "$THEME_PKG_VERSION" "luci-base,curl" \
 build_apk luci-i18n-mint-zh-cn "$I18N_PKG_VERSION" "luci-theme-mint" \
 	"Mint Theme - zh-cn translation" "$IAPAYLOAD" "$I18N_APK" \
 	--exec etc/uci-defaults/luci-i18n-mint-zh-cn \
-	--script "post-install:$ASCRIPT/i18n-post-install"
+	--script "post-install:$ASCRIPT/i18n-post-install" \
+	--script "post-upgrade:$ASCRIPT/i18n-post-upgrade"
 build_apk luci-i18n-mint-wallpaper-zh-cn "$I18N_PKG_VERSION" "luci-app-mint-wallpaper" \
 	"Mint Wallpaper - zh-cn translation" "$WIAPAYLOAD" "$WALLPAPER_I18N_APK" \
 	--exec etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn \
-	--script "post-install:$ASCRIPT/i18n-wp-post-install"
+	--script "post-install:$ASCRIPT/i18n-wp-post-install" \
+	--script "post-upgrade:$ASCRIPT/i18n-wp-post-upgrade"
 
 for f in "$THEME_IPK" "$WALLPAPER_IPK" "$I18N_IPK" "$WALLPAPER_I18N_IPK" \
 	"$THEME_APK" "$WALLPAPER_APK" "$I18N_APK" "$WALLPAPER_I18N_APK"; do
