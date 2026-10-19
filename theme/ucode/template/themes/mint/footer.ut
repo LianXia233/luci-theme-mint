@@ -4,12 +4,15 @@
  Licensed to the public under the GNU General Public License v3.0.
 -#}
 
+{%
+	import { assetRev } from 'luci.mint.wallpaper';
+-%}
 		{# Asset cache revision. footer.ut is a separate ucode template, so it
-		   cannot see header.ut's constant: keep this in sync with the
-		   MINT_ASSET_REV in header.ut AND the ?v= of the @import lines in
-		   cascade.css. Bump whenever any file under htdocs/luci-static/mint
-		   changes. #}
-		{% const MINT_ASSET_REV = '20261019b'; %}
+		   cannot see header.ut's constant; it recomputes the SAME value via
+		   wallpaper.uc#assetRev (mtime-based, deterministic within a
+		   request). Keep the stylesheet/script ?v= usages below in sync with
+		   header.ut's layer links. #}
+		{% const MINT_ASSET_REV = assetRev(media); %}
 
 		{% if (!blank_page): %}
 			</main>

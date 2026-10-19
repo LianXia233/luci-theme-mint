@@ -43,6 +43,21 @@
 		catch (e) { return s; }
 	};
 
+	/* 2026-10-19 external feedback, problem 5: this script must not rely
+	   on String.prototype.format. The engine does not provide it and
+	   neither do current LuCI builds, so any .format() call here would
+	   throw and abort the toolbar/summary rendering. Substitute the %s /
+	   %d placeholders locally instead. */
+	function mzFmt(str) {
+		var args = Array.prototype.slice.call(arguments, 1);
+		var i = 0;
+		return String(str).replace(/%[%sd]/g, function (m) {
+			if (m === '%%')
+				return '%';
+			return (i < args.length) ? String(args[i++]) : m;
+		});
+	}
+
 	var GROUPS = [
 		{ key: 'basic',    label: __('Base chains (input / forward / output / prerouting / postrouting)') },
 		{ key: 'nat',      label: __('NAT chains') },
@@ -210,8 +225,8 @@
 
 		var bar = el('div', 'mz-nft-toolbar');
 		bar.appendChild(el('div', 'mz-nft-tb-stats',
-			__('%s tables · %s chains · %s rules · %s with traffic (%s)')
-				.format(tables.length, totalChains, totalRules, nonZero, fmtBytes(totalBytes))));
+			mzFmt(__('%s tables · %s chains · %s rules · %s with traffic (%s)'),
+				tables.length, totalChains, totalRules, nonZero, fmtBytes(totalBytes))));
 
 		var controls = el('div', 'mz-nft-tb-controls');
 		var btnAll = el('button', 'mz-nft-btn', __('Expand all'));
@@ -250,7 +265,7 @@
 		var h3 = tbl.querySelector(':scope > h3');
 		var chains = tbl.querySelectorAll(':scope > .nft-chains > .nft-chain');
 		var sum = el('div', 'mz-nft-table-summary',
-			__('%s chains · %s rules').format(chains.length, countRules(tbl)));
+			mzFmt(__('%s chains · %s rules'), chains.length, countRules(tbl)));
 		if (h3 && h3.nextSibling)
 			tbl.insertBefore(sum, h3.nextSibling);
 		else
@@ -290,7 +305,7 @@
 			var head = el('div', 'mz-nft-grouptitle');
 			head.dataset.bucket = g.key;
 			head.appendChild(el('span', null, g.label));
-			head.appendChild(el('span', 'mz-nft-grouptitle-count', __('%s chains').format(members.length)));
+			head.appendChild(el('span', 'mz-nft-grouptitle-count', mzFmt(__('%s chains'), members.length)));
 			groupsEl.appendChild(head);
 			Array.prototype.forEach.call(members, function (m) { groupsEl.appendChild(m); });
 		});
@@ -342,10 +357,10 @@
 		   natural click target so we wrap the click on the h4. */
 		var stats = chainStats(chainEl);
 		var summary = el('span', 'mz-nft-chain-summary',
-			__('%s rules').format(stats.ruleRows));
+			mzFmt(__('%s rules'), stats.ruleRows));
 		if (stats.nonZero > 0)
 			summary.appendChild(el('span', 'mz-nft-chain-nonzero',
-				' · ' + __('%s with traffic (%s)').format(stats.nonZero, fmtBytes(stats.totalBytes))));
+				' · ' + mzFmt(__('%s with traffic (%s)'), stats.nonZero, fmtBytes(stats.totalBytes))));
 		else
 			summary.appendChild(el('span', 'mz-nft-chain-zero', ' · ' + __('0 traffic')));
 

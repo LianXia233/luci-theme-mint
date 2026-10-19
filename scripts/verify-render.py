@@ -39,8 +39,11 @@ CHECK_PAGES = [
 ]
 
 # Strings that must appear in a healthy themed page.
+# 2026-10-19: pages load the CSS layers directly (header.ut <link> tags,
+# dynamic ?v=); cascade.css is only a fallback aggregate, so assert on
+# the layer link instead.
 MUST_HAVE = [
-    'cascade.css',
+    'css/tokens.css',
     'mz-sidebar',
     'mainmenu',
 ]
@@ -83,7 +86,7 @@ def inspect(c):
     cmd = r"""python3 - <<'PY'
 import io, sys
 s = io.open('/tmp/mz-page.html', encoding='utf-8', errors='replace').read()
-must = ['cascade.css', 'mz-sidebar', 'mainmenu']
+must = ['css/tokens.css', 'mz-sidebar', 'mainmenu']
 bad  = ['ucode:', 'Syntax error', 'Failed to render', 'Attempt to index']
 print('LEN', len(s))
 for m in must:

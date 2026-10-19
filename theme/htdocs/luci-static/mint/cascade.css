@@ -30,25 +30,26 @@
  *
  * Do not add rules here; add a layer under css/ and import it.
  *
- * CACHE BUSTING: every @import carries ?v=<MINT_ASSET_REV>, the SAME
- * revision string that header.ut appends to cascade.css itself. The
- * router serves these files with long-lived cache headers, so without
- * the query a browser happily keeps a week-old tokens.css and the page
- * renders with a half-updated theme (transparent container, missing
- * layers). When you change any file under css/, bump the revision in
- * BOTH places.
+ * CACHE BUSTING (2026-10-19): the LuCI pages no longer load this file.
+ * header.ut emits the layer <link> tags directly, each carrying the
+ * dynamic ?v= derived from the file mtimes (wallpaper.uc#assetRev), so
+ * a package upgrade invalidates every layer without a manual bump.
+ * The @imports below keep a STATIC ?v= (ucode cannot rewrite a static
+ * CSS file); this file remains in the package only as a fallback
+ * aggregate for direct/manual loads. When you change any file under
+ * css/, bump every ?v= below to the same new value.
  */
 
-@import url("css/compat.css?v=20261019a");
-@import url("css/tokens.css?v=20261019a");
-@import url("css/base.css?v=20261019a");
-@import url("css/layout.css?v=20261019a");
-@import url("css/navigation.css?v=20261019a");
-@import url("css/container.css?v=20261019a");
-@import url("css/components.css?v=20261019a");
-@import url("css/wallpaper.css?v=20261019a");
-@import url("css/background.css?v=20261019a");
-@import url("css/dark.css?v=20261019a");
-@import url("css/animations.css?v=20261019a");
-@import url("css/responsive.css?v=20261019a");
-@import url("css/login.css?v=20261019a");
+@import url("css/compat.css?v=20261019c");
+@import url("css/tokens.css?v=20261019c");
+@import url("css/base.css?v=20261019c");
+@import url("css/layout.css?v=20261019c");
+@import url("css/navigation.css?v=20261019c");
+@import url("css/container.css?v=20261019c");
+@import url("css/components.css?v=20261019c");
+@import url("css/wallpaper.css?v=20261019c");
+@import url("css/background.css?v=20261019c");
+@import url("css/dark.css?v=20261019c");
+@import url("css/animations.css?v=20261019c");
+@import url("css/responsive.css?v=20261019c");
+@import url("css/login.css?v=20261019c");

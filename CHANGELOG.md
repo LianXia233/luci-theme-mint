@@ -3,7 +3,81 @@
 本文件记录 luci-theme-mint 与 luci-app-mint-wallpaper 的所有显著变更。
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
-版本号沿用资产修订戳（`MINT_ASSET_REV`，格式 `YYYYMMDDx`）。
+版本号沿用资产修订戳（`MINT_ASSET_REV`，格式 `YYYYMMDDx`；自 20261019c
+起修订戳由文件 mtime 动态生成，见下条）。
+
+---
+
+## [20261019c] - 2026-10-19 · 第三方插件兼容性修复（modem-pro 反馈清单）
+
+针对 modem-pro（5G 终端）插件方在实机（ImmortalWrt SNAPSHOT + LuCI
+Master 26.275）反馈的 LuCI 第三方主题问题清单逐项处置。
+
+### Fixed 修复
+
+- **问题 1：静态资源硬编码版本戳，升级后 JS/CSS 永久缓存**。原实现把
+  `?v=` 写死为常量（`header.ut` / `footer.ut` / `cascade.css` 三处），
+  包升级替换了 `/www/luci-static/` 下的文件但 URL 不变，客户端永远拿旧
+  文件，强刷也无效。现改为：
+  - `wallpaper.uc` 新增 `assetRev(media)`：遍历主题静态树（media 目录
+    两层深度，排除壁纸 cron 缓存与用户上传等运行时易变文件）与
+    `resources/menu-mint.js`、`resources/view/mint/sysauth.js`、
+    `resources/view/mint/wallpaper.js` 的 mtime，取最大值作为修订戳；
+    包升级重写文件后 mtime 变化，所有 `?v=` 随之失效；两次升级之间
+    数值稳定，正常 HTTP 缓存与 304 复用不受影响。文件系统遍历失败时
+    回退静态戳 `20261019c`。
+  - `header.ut` 不再通过 `cascade.css` 的 `@import` 加载样式层——
+    `@import` 内的静态 `?v=` 无法被 ucode 重写，是升级后子样式仍走旧
+    缓存的死角。改为模板直接按原级联顺序输出 13 个 `<link>`（compat →
+    tokens → base → layout → navigation → container → components →
+    wallpaper → background → dark → animations → responsive → login），
+    每层携带同一动态修订戳；`cascade.css` 保留作为直连加载的回退聚合
+    入口。
+  - `overview-banner.png` / `login-logo.png` 的 `<img src>` 同样加动态
+    版本戳；`background.css` 中 6 个内置图片 URL 补上静态版本戳。
+  - `footer.ut` 的 `L.env.resource_version` 重打逻辑不变：主题类模块
+    （`menu-mint.js`、`resources/view/mint/*.js`）继续随主题修订戳
+    失效，现在该戳同样由 mtime 驱动。
+- **问题 4：TAB 子菜单缺失**。`menu-mint.js` 的 `render()` 原来只走
+  三层调度路径并把 TAB 条固定挂在该层节点上，二层根节点
+  （`admin/services` 等）与三层以下的插件子页（自注册 children 的
+  5G 终端子页等）永远没有 TAB 条。现改为遍历完整调度路径，把 TAB 条
+  挂到路径上最后一个拥有 children 的节点，激活项按对应深度匹配；
+  `#tabmenu` 容器一直存在，未再改动。
+- **问题 5：JS 依赖不存在的 `String.prototype.format`**。浏览器与当前
+  LuCI 构建均不提供该原型方法，`%s/%s.js%s".format is not a function`
+  会中断所在代码路径。`mz-nftables.js`（5 处）、登录页 `sysauth.js`
+  （1 处）、壁纸设置页 `wallpaper.js`（12 处）全部改为本地 `mzFmt()`
+  助手（支持 `%s` / `%d` / `%%`），不再触碰字符串原型。
+
+### 已核实无需修复
+
+- **问题 2：服务端菜单缓存 `/tmp/luci-menu.json` 不随升级失效**：mint
+  不做任何服务端菜单缓存，菜单树由前端经 `ui.menu.load()` 实时拉取；
+  该文件来自 aurora 等其他主题。LuCI 自身的 `/tmp/luci-indexcache*`
+  与 `/tmp/luci-modulecache/` 清理已由本主题三个包的 postinst 覆盖
+  （20261019b 引入），无需额外动作。
+- **问题 3：pjax 拦截干扰动态视图挂载**：mint 全程使用 LuCI 标准的
+  SPA 导航（dispatcher 重放 `L.require` 视图加载），主题内无任何
+  pjax / history 拦截代码；该现象同样来自 aurora。
+
+### Changed 变更
+
+- 资产修订戳机制从手工常量改为 mtime 动态生成；`cascade.css` 13 处
+  `@import` 与 `background.css` 图片 URL 的静态戳统一基线至
+  `20261019c`。
+- `scripts/verify-render.py` 的页面健康断言由 `cascade.css` 改为
+  `css/tokens.css`（页面不再引用聚合入口）。
+
+### 兼容性
+
+- 包名、UCI 键、菜单与 ACL 均不变；新增逻辑只依赖 `luci-base` 已携带
+  的 `ucode-mod-fs`。
+- `header.ut` / `footer.ut` / `sysauth.ut` 对 `luci.mint.wallpaper`
+  模块新增 `assetRev` 读取——该模块与模板同包发布，整包升级无顺序
+  问题；手工热部署时需同步更新 `wallpaper.uc`。
+- 版本戳数值不再呈 `YYYYMMDDx` 格式（为十进制 mtime），仅影响 URL
+  查询串外观，不影响任何功能。
 
 ---
 

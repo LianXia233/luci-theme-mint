@@ -6,7 +6,7 @@
 
 {%
 	import { getuid, getspnam } from 'luci.core';
-	import { getWallpapers } from 'luci.mint.wallpaper';
+	import { getWallpapers, assetRev } from 'luci.mint.wallpaper';
 
 	const boardinfo = ubus.call('system', 'board') ?? {};
 
@@ -57,12 +57,18 @@
 
 	http.prepare_content('text/html; charset=UTF-8');
 
-	/* Asset cache revision. MUST match the ?v= of the @import lines in
-	   cascade.css: the static files are served with long-lived cache
-	   headers, so a revision bump is the only reliable way to make
-	   browsers pick up an updated stylesheet. Bump it whenever any file
-	   under htdocs/luci-static/mint changes. */
-	const MINT_ASSET_REV = '20261019b';
+	/* Asset cache revision (2026-10-19 external feedback, problem 1).
+	   It used to be a hand-bumped constant here, in footer.ut and in
+	   the cascade.css @import lines. A package upgrade replaced the
+	   files under /www/luci-static/ but the ?v= of an already-cached
+	   page stayed the same, so browsers kept running the previous
+	   JS/CSS (menus missing, hard refresh useless) until the constant
+	   moved. The revision is now derived from the mtimes of every file
+	   in the theme's static tree: installing a new package rewrites
+	   those files, the mtimes move and every ?v= changes with them.
+	   Between upgrades the value is stable, so normal caching and the
+	   uhttpd 304 path keep working. See wallpaper.uc#assetRev. */
+	const MINT_ASSET_REV = assetRev(media);
 -%}
 
 <!DOCTYPE html>
@@ -111,7 +117,34 @@
 		  source of truth instead of a copy per template.
 		#}
 		<meta name="mz-asset-rev" content="{{ MINT_ASSET_REV }}">
-		<link rel="stylesheet" href="{{ media }}/cascade.css?v={{ MINT_ASSET_REV }}">
+		{#
+		  Stylesheet layers (2026-10-19 external feedback, problem 1).
+		  The layers used to be pulled in by cascade.css via @import, and
+		  those @import URLs carried a STATIC ?v= that ucode cannot
+		  rewrite: even with a dynamic revision on cascade.css itself the
+		  browser kept serving week-old layer files from cache after an
+		  upgrade. The cascade order is therefore emitted from the
+		  template directly - every layer gets the SAME dynamic revision,
+		  and the order below MUST stay identical to the @import order in
+		  cascade.css (which remains in the package as a fallback
+		  aggregate for direct loads):
+		    compat -> tokens -> base -> layout -> navigation -> container
+		    -> components -> wallpaper -> background -> dark
+		    -> animations -> responsive -> login
+		#}
+		<link rel="stylesheet" href="{{ media }}/css/compat.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/tokens.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/base.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/layout.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/navigation.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/container.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/components.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/wallpaper.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/background.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/dark.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/animations.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/responsive.css?v={{ MINT_ASSET_REV }}">
+		<link rel="stylesheet" href="{{ media }}/css/login.css?v={{ MINT_ASSET_REV }}">
 		{#
 		  LOADING: warm the connection to the random-wallpaper APIs in
 		  parallel with the document instead of after it. The wallpaper is
@@ -300,7 +333,7 @@
 		<aside id="mz-sidebar" class="mz-sidebar" aria-label="{{ _('Main navigation') }}">
 			<div class="mz-brand">
 				<a href="/" class="mz-brand-link">
-					<img src="{{ media }}/overview-banner.png" alt="Mint" class="mz-brand-logo" width="40" height="40">
+					<img src="{{ media }}/overview-banner.png?v={{ MINT_ASSET_REV }}" alt="Mint" class="mz-brand-logo" width="40" height="40">
 				</a>
 			</div>
 

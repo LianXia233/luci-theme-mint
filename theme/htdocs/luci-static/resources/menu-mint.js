@@ -242,19 +242,37 @@ return baseclass.extend({
 	render(tree) {
 		this.renderMainMenu(tree);
 		this.ensureCbiForm();
-		/* Tab menu for pages with sub-views */
+		/* Tab menu for pages with sub-views (2026-10-19 external feedback,
+		   problem 4: tabs disappeared for app sub-pages). The old code
+		   walked exactly THREE path segments and attached the tab bar to
+		   that node only, so
+		     - two-segment roots (admin/services ...) and
+		     - pages nested deeper than admin/<app>/<page> (plugin views
+		       registering their own children, e.g. 5G modem sub-pages)
+		   never got a tab bar, and any page whose tab list belonged to a
+		   shallower node lost it. Walk the FULL dispatch path instead and
+		   attach the tabs to the deepest node along it that actually has
+		   children - which is exactly the node LuCI would render tabs
+		   for. */
 		let node = tree;
 		let url = '';
+		let tabNode = null;
+		let tabUrl = '';
+		let tabDepth = 0;
 
-		if (L.env.dispatchpath.length >= 3) {
-			for (let i = 0; i < 3 && node; i++) {
-				node = node.children[L.env.dispatchpath[i]];
-				url = url + (url ? '/' : '') + L.env.dispatchpath[i];
+		for (let i = 0; i < L.env.dispatchpath.length && node; i++) {
+			node = node.children[L.env.dispatchpath[i]];
+			url = url + (url ? '/' : '') + L.env.dispatchpath[i];
+
+			if (node && ui.menu.getChildren(node).length > 0) {
+				tabNode = node;
+				tabUrl = url;
+				tabDepth = i + 1;
 			}
-
-			if (node)
-				this.renderTabMenu(node, url);
 		}
+
+		if (tabNode)
+			this.renderTabMenu(tabNode, tabUrl, tabDepth);
 	},
 
 	renderMainMenu(tree) {
@@ -302,21 +320,24 @@ return baseclass.extend({
 		return ul;
 	},
 
-	renderTabMenu(tree, url) {
+	/* `segCount` is the number of dispatch-path segments that make up
+	   `url`: the active tab is the child whose name is the NEXT path
+	   segment. Undefined (current page IS the tab parent) simply marks
+	   no tab active. */
+	renderTabMenu(tree, url, segCount) {
 		const container = document.querySelector('#tabmenu');
+		if (!container)
+			return;
+
 		const ul = E('ul', { 'class': 'tabs' });
 		const children = ui.menu.getChildren(tree);
-		let activeNode = null;
 
 		children.forEach((child) => {
-			const isActive = (L.env.dispatchpath[3] == child.name);
+			const isActive = (L.env.dispatchpath[segCount] == child.name);
 
 			ul.appendChild(E('li', { 'class': isActive ? 'active' : '' }, [
 				E('a', { 'href': L.url(url, child.name) }, [ _(child.title) ])
 			]));
-
-			if (isActive)
-				activeNode = child;
 		});
 
 		if (ul.children.length == 0)

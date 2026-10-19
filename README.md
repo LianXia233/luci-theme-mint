@@ -58,7 +58,7 @@ Aurora Glass 玻璃拟态 • 单层视效容器 • 四态独立角色立绘 �
 - **单层视觉容器架构**：全站仅保留一个视觉容器 `.mz-view`，统一绘制背景、边框、圆角与阴影；内部 Section / CBI / 表格 / 卡片全部透明扁平化，禁止嵌套卡片（Card 套 Card）。
 - **单次模糊设计**：壁纸置于最底层，每页仅触发一次模糊计算，杜绝创建杂乱的层叠上下文（Stacking Context），彻底消除下拉菜单被截断的弊端；固定背景层 `contain: strict` 渲染隔离，≤854px 自动降档 blur（10/12px）省一半 GPU。
 - **独立底栏**：Action Bar（操作栏）为独立功能层，底部全出血粘性吸附（Sticky），体验沉浸。
-- **分层 CSS 编排**：`cascade.css` 严格作为入口仅执行 `@import`，将规则按职责解耦为 `compat / tokens / base / layout / navigation / container / components / wallpaper / background / dark / animations / responsive / login` 共十三层。全站静态资源带 `?v=<MINT_ASSET_REV>` 统一版本戳。
+- **分层 CSS 编排**：样式规则按职责解耦为 `compat / tokens / base / layout / navigation / container / components / wallpaper / background / dark / animations / responsive / login` 共十三层。`header.ut` 按级联顺序直接输出 13 个 `<link>`（每层携带动态版本戳）；`cascade.css` 仅作为直连加载的回退聚合入口保留 `@import`。全站静态资源带 `?v=<MINT_ASSET_REV>` 统一版本戳。
 - **容器几何单一所有者**：`.mz-view` 的尺寸与留白严格由 `layout.css` 与 `container.css` 配合 Tokens 控制，大屏居中对称，最大宽度约束为 `--mz-content-max: 1920px`。
 - **Aurora Glass 视觉系统**：不对称微妙圆角、品牌色偏移阴影、节标题强调色条、侧栏半透毛玻璃、菜单线性 SVG 图标与平滑折叠箭头；玻璃层按「壁纸清晰可见、文字对比度 ≥ 7:1」调校（页面 .70 / 角色背景下 .62），容器顶部 120px Aurora sheen 受光边，壁纸遮罩改为「顶部强、底部淡」的渐变洗白，风景照下半段保留原色。
 
@@ -101,7 +101,7 @@ Aurora Glass 玻璃拟态 • 单层视效容器 • 四态独立角色立绘 �
 theme/                          # 主题核心包源码（luci-theme-mint，纯 UI 模板）
 ├── Makefile                    # 基于 luci.mk 的包定义
 ├── htdocs/luci-static/mint/
-│   ├── cascade.css             # 样式主入口：十三层样式加载顺序编排
+│   ├── cascade.css             # 回退聚合入口：十三层 @import 编排（页面改由 header.ut 直接 <link> 各层）
 │   ├── css/                    # 严格分层样式体系
 │   │   ├── compat.css          # 旧版规则保留（LuCI 兼容 / 第三方插件视图底座）
 │   │   ├── tokens.css          # 设计系统 Tokens（色彩、间距、玻璃参数、动效）
@@ -272,13 +272,15 @@ graph TD
 无论外部网络状况如何，页面渲染绝对不会被壁纸资源所阻塞。
 
 ### 4. 缓存戳机制
-工程内严格维系 `MINT_ASSET_REV` 版本标识：
-- `header.ut` 与 `footer.ut` 模板
-- `cascade.css` 内所有 `@import` 引用的 `?v=` 查询串
-- 注入至 `<meta name="mz-asset-rev">` 供 `L.env.resource_version` 复用
+自 20261019c 起，`MINT_ASSET_REV` 由 `wallpaper.uc#assetRev()` 动态生成：遍历主题静态树（`/www/luci-static/mint` 两层深度，排除壁纸 cron 缓存与用户上传等运行时易变文件）与 `resources/menu-mint.js`、`resources/view/mint/sysauth.js`、`resources/view/mint/wallpaper.js` 的 mtime 并取最大值。包升级重写文件后 mtime 变化，所有 `?v=` 自动失效；两次升级之间数值稳定，正常缓存与 304 复用不受影响。文件系统遍历失败时回退静态戳 `20261019c`。
+
+该值注入至：
+- `header.ut` / `footer.ut` / `sysauth.ut` 模板输出的全部资源 URL
+- `header.ut` 直接输出的 13 个样式层 `<link>`（不再经 `cascade.css` 的 `@import`——静态 CSS 内的 `?v=` 无法被 ucode 重写，是升级后旧缓存存活的死角）
+- `<meta name="mz-asset-rev">`，由 `footer.ut` 写入 `L.env.resource_version`，使主题类模块（`menu-mint.js`、`resources/view/mint/*.js`）随主题修订戳失效
 
 > [!IMPORTANT]
-> 修改 `htdocs/luci-static/mint/` 目录下的任何前端静态文件后，必须同步递增这三处的版本号，防止浏览器长缓存造成页面错位。
+> 修改 `htdocs/luci-static/mint/` 下的模板可达文件（CSS 层、JS、图片）后**无需**手工递增版本号，升级包安装即自动失效。仅两处静态戳需要手工维护：`cascade.css` 的 `@import` 查询串（回退入口）与 `background.css` 的 6 个内置图片 URL。
 
 ---
 

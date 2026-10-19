@@ -126,7 +126,8 @@ Directory layout (follows current LuCI master conventions):
 luci-theme-mint/
 ├── Makefile                  # luci.mk based package
 ├── htdocs/luci-static/mint/
-│   ├── cascade.css           # design system + layout + components
+│   ├── cascade.css           # fallback aggregate (@import layers); pages
+│   │                         # load the layers directly via header.ut
 │   ├── overview-dashboard.js # status overview dashboard
 │   ├── overview-banner.png   # topbar brand image
 │   ├── login-logo.png        # login page logo

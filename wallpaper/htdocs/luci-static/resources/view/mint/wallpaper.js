@@ -56,6 +56,19 @@ var callMintWpRefresh = rpc.declare({
 });
 
 var MAX_UPLOAD = 8 * 1024 * 1024; /* 8 MB — matches mz-wallpaper-fetch cap */
+
+/* 2026-10-19 external feedback, problem 5: do not rely on
+   String.prototype.format - browsers do not provide it and neither do
+   current LuCI builds. Substitute %s / %d locally. */
+function mzFmt(str) {
+	const args = Array.prototype.slice.call(arguments, 1);
+	let i = 0;
+	return String(str).replace(/%[%sd]/g, (m) => {
+		if (m === '%%')
+			return '%';
+		return (i < args.length) ? String(args[i++]) : m;
+	});
+}
 var OK_EXT = /\.(jpe?g|png|webp|gif)$/i;
 
 /* Load the mint config, retrying across LuCI's initial anonymous-session
@@ -564,15 +577,15 @@ return view.extend({
 				}
 			}
 			applyLiveWallpaper(url, target);
-			self.setStatus(_('Wallpaper applied: %s (%s)').format(value, target === 'mobile' ? _('Mobile') : _('Desktop')), 'ok');
+			self.setStatus(mzFmt(_('Wallpaper applied: %s (%s)'), value, target === 'mobile' ? _('Mobile') : _('Desktop')), 'ok');
 		}).catch(function (e) {
-			self.setStatus(_('Failed to apply wallpaper: %s').format(e && e.message || e), 'error');
+			self.setStatus(mzFmt(_('Failed to apply wallpaper: %s'), e && e.message || e), 'error');
 		});
 	},
 
 	handleDelete(name) {
 		const self = this;
-		if (!window.confirm(_('Delete wallpaper “%s”? This cannot be undone.').format(name)))
+		if (!window.confirm(mzFmt(_('Delete wallpaper “%s”? This cannot be undone.'), name)))
 			return Promise.resolve();
 
 		return callMintWpDelete(name).then(function () {
@@ -587,9 +600,9 @@ return view.extend({
 				applyLiveWallpaper(null, 'pc');
 			if (cur.mobile !== name)
 				applyLiveWallpaper(null, 'mobile');
-			self.setStatus(_('Wallpaper deleted: %s').format(name), 'ok');
+			self.setStatus(mzFmt(_('Wallpaper deleted: %s'), name), 'ok');
 		}).catch(function (e) {
-			self.setStatus(_('Delete failed: %s').format(e && e.message || e), 'error');
+			self.setStatus(mzFmt(_('Delete failed: %s'), e && e.message || e), 'error');
 		});
 	},
 
@@ -600,7 +613,7 @@ return view.extend({
 		   wallpaper-mobile.img); a manual refresh must never rewrite both. */
 		const kind = (document.querySelector('input[name="mz-wp-target"]:checked') || {}).value || 'pc';
 		const label = kind === 'mobile' ? _('Mobile') : _('Desktop');
-		this.setStatus(_('Refreshing random wallpaper cache (%s)…').format(label), 'busy');
+		this.setStatus(mzFmt(_('Refreshing random wallpaper cache (%s)…'), label), 'busy');
 		return callMintWpRefresh(kind).then(function (res) {
 			return self.reloadGrid().then(function (data) {
 				const cur = activeNames(data);
@@ -613,10 +626,10 @@ return view.extend({
 				const url = (mode === 'random' && !sel) ? (res && res.url) : null;
 				if (url)
 					applyLiveWallpaper(url, kind);
-				self.setStatus(_('Wallpaper cache refreshed (%s).').format(label), 'ok');
+				self.setStatus(mzFmt(_('Wallpaper cache refreshed (%s).'), label), 'ok');
 			});
 		}).catch(function (e) {
-			self.setStatus(_('Cache refresh failed: %s').format(e && e.message || e), 'error');
+			self.setStatus(mzFmt(_('Cache refresh failed: %s'), e && e.message || e), 'error');
 		});
 	},
 
@@ -642,7 +655,7 @@ return view.extend({
 			return Promise.resolve();
 		}
 		if (file.size > MAX_UPLOAD) {
-			ui.addNotification(null, E('p', _('Image is too large (max %d MB).').format(MAX_UPLOAD / (1024 * 1024))), 'error');
+			ui.addNotification(null, E('p', mzFmt(_('Image is too large (max %d MB).'), MAX_UPLOAD / (1024 * 1024))), 'error');
 			done();
 			return Promise.resolve();
 		}
@@ -681,11 +694,11 @@ return view.extend({
 			/* File is on disk — immediately apply it to this device. */
 			return self.handleSelect(safeName, target).then(function () {
 				ui.addNotification(null, E('p',
-					_('Wallpaper uploaded and applied: %s').format(safeName)), 'notice');
-				self.setStatus(_('Uploaded: %s').format(safeName), 'ok');
+					mzFmt(_('Wallpaper uploaded and applied: %s'), safeName)), 'notice');
+				self.setStatus(mzFmt(_('Uploaded: %s'), safeName), 'ok');
 			});
 		}).catch(function (e) {
-			ui.addNotification(null, E('p', _('Upload failed: %s').format(e && e.message || e)), 'error');
+			ui.addNotification(null, E('p', mzFmt(_('Upload failed: %s'), e && e.message || e)), 'error');
 			self.setStatus(_('Upload failed.'), 'error');
 		}).then(done, done);
 	}

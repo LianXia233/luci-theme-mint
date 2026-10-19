@@ -20,7 +20,7 @@
 
 'use strict';
 
-import { stat } from 'fs';
+import { stat, lsdir } from 'fs';
 import { cursor } from 'uci';
 
 // Legacy single-slot uploads (pre wallpaper-library). Still honoured so
@@ -330,4 +330,102 @@ function wallpaperDir() {
 	return copyStr(WALLPAPER_DIR);
 }
 
-export { getWallpapers, isValidWallpaperName, wallpaperDir };
+/* ----- Dynamic asset revision (2026-10-19 external feedback, problem 1) --
+   The theme used to stamp every static resource with a hand-bumped
+   ?v= constant (MINT_ASSET_REV). A package upgrade replaced the files
+   under /www/luci-static/ but the ?v= of an already-cached page stayed
+   the same, so browsers kept running the previous JS/CSS until the
+   constant in the templates moved - "upgraded, menu gone, hard refresh
+   does not help".
+
+   assetRev() derives the revision from the filesystem instead: it walks
+   the theme's static tree (and the theme's class modules under
+   resources/) and returns the newest mtime found. Installing a new
+   package rewrites those files, the mtimes move, and every ?v= built
+   from the return value changes with them. Between upgrades the value
+   is stable, so normal HTTP caching (and the uhttpd 304 path) keeps
+   working. Falls back to a static stamp when the walk fails so the
+   templates keep rendering on exotic webroot layouts.
+
+   `media` is the dispatcher's media URL base ('/luci-static/mint');
+   uhttpd serves it from ASSET_WEBROOT. */
+const ASSET_WEBROOT = '/www';
+const ASSET_FALLBACK_REV = '20261019c';
+
+/* Runtime files must NOT feed the revision: the cron job rewrites
+   wallpaper-pc.img / wallpaper-mobile.img every five minutes and users
+   re-upload custom-*.jpg / wallpapers/* at will. Counting them would
+   change every ?v= on the site with every cron tick and annihilate the
+   browser cache. They carry their OWN cache handling instead (the
+   resolver stamps library/custom images with ?v=<mtime>, see
+   withVersion(); the proxy imgs are stable URLs served with real 304
+   revalidation). */
+const ASSET_SKIP_FILES = [
+	'wallpaper-pc.img', 'wallpaper-mobile.img',
+	'custom-pc.jpg', 'custom-mobile.jpg'
+];
+const ASSET_SKIP_DIRS = [ 'wallpapers' ];
+
+function assetTreeMtime(dir, depth) {
+	let m = 0;
+	let entries;
+
+	try { entries = lsdir(dir); } catch (e) { return 0; }
+
+	if (type(entries) != 'array')
+		return 0;
+
+	for (let i = 0; i < length(entries); i++) {
+		if (index(ASSET_SKIP_FILES, entries[i]) > -1)
+			continue;
+		if (index(ASSET_SKIP_DIRS, entries[i]) > -1)
+			continue;
+
+		const p = dir + '/' + entries[i];
+		let st = null;
+
+		try { st = stat(p); } catch (e) { st = null; }
+
+		if (!st)
+			continue;
+
+		if (st.type == 'dir' && depth > 0) {
+			const sub = assetTreeMtime(p, depth - 1);
+			if (sub > m)
+				m = sub;
+		}
+		else if (st.mtime > m) {
+			m = st.mtime;
+		}
+	}
+
+	return m;
+}
+
+function assetFileMtime(path) {
+	try { return stat(path)?.mtime ?? 0; } catch (e) { return 0; }
+}
+
+function assetRev(media) {
+	let m = assetTreeMtime(ASSET_WEBROOT + media, 2);
+
+	/* The theme's class modules live OUTSIDE the media directory (they
+	   are required through LuCI's loader and versioned via
+	   L.env.resource_version, which header/footer stamp with this same
+	   value), so their mtimes must feed the revision too. */
+	const extra = [
+		'/luci-static/resources/menu-mint.js',
+		'/luci-static/resources/view/mint/sysauth.js',
+		'/luci-static/resources/view/mint/wallpaper.js'
+	];
+
+	for (let i = 0; i < length(extra); i++) {
+		const mt = assetFileMtime(ASSET_WEBROOT + extra[i]);
+		if (mt > m)
+			m = mt;
+	}
+
+	return (m > 0) ? sprintf('%d', m) : ASSET_FALLBACK_REV;
+}
+
+export { getWallpapers, isValidWallpaperName, wallpaperDir, assetRev };

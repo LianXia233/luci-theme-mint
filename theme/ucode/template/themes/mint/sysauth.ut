@@ -10,7 +10,12 @@
 -#}
 
 {%
-	import { getWallpapers } from 'luci.mint.wallpaper';
+	import { getWallpapers, assetRev } from 'luci.mint.wallpaper';
+
+	/* Same dynamic asset revision as header.ut / footer.ut (mtime-based,
+	   see wallpaper.uc#assetRev): stamps the login logo so an upgraded
+	   package cannot be served from the browser cache. */
+	const MINT_ASSET_REV = assetRev(media);
 
 	/* Mirror of the gate header.ut applies to the admin layer, so ONE
 	   setting (mint.wallpaper.enabled=0) turns the built-in artwork off
@@ -69,7 +74,7 @@
 		{# fetchpriority=high: the logo is the login screen's LCP element,
 		   it must win the bandwidth race; everything decorative (the
 		   wallpaper, see sysauth.js) is fetched last. #}
-		<img src="{{ media }}/login-logo.png" alt="" class="mz-login-logo" width="76" height="76" fetchpriority="high">
+		<img src="{{ media }}/login-logo.png?v={{ MINT_ASSET_REV }}" alt="" class="mz-login-logo" width="76" height="76" fetchpriority="high">
 		<p class="mz-login-welcome">{{ _('Welcome back! Log in to manage your network.') }}</p>
 
 		{% if (auth_message): %}

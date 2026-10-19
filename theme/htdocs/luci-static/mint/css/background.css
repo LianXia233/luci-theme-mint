@@ -78,9 +78,13 @@
  * which therefore wins at equal specificity. Nothing in this file needs
  * to know about it.
  *
- * CACHE BUSTING: the images carry ?v=<MINT_ASSET_REV> - the SAME
- * revision string as header.ut / footer.ut / cascade.css. Bump all
- * four when any file under images/ changes.
+ * CACHE BUSTING: the image URLs below carry a STATIC ?v= (ucode cannot
+ * rewrite a static CSS file; the dynamic revision from
+ * wallpaper.uc#assetRev only covers the template-emitted <link> tags).
+ * This stylesheet itself IS covered by that dynamic revision, so an
+ * upgrade refetches it - the static stamp below only matters when the
+ * artwork files under images/ change. Bump all six when any file under
+ * images/ changes.
  */
 
 /* ---------------------------------------------------------------- */
@@ -107,7 +111,7 @@
 	/* Reference palette - light. */
 	--mz-char-base: #f6fbfd;
 	--mz-char-wedge: linear-gradient(150deg, #e4f5fa 0%, #f1faff 64%, #e0f4fc 100%);
-	--mz-char-grid: url("../images/triangle-grid-light.webp");
+	--mz-char-grid: url("../images/triangle-grid-light.webp?v=20261019c");
 	/* Content sits on the LEFT, so the veil is strongest there and is
 	   fully gone by ~68% - the artwork keeps its own colour on the
 	   right instead of being washed out across the whole screen. */
@@ -133,7 +137,7 @@ body.mz-char-bg.mz-wp-custom .mint-background {
 html[data-theme="dark"] .mint-background {
 	--mz-char-base: #102433;
 	--mz-char-wedge: linear-gradient(150deg, #15394c, #123247 64%, #194054);
-	--mz-char-grid: url("../images/triangle-grid-dark.webp");
+	--mz-char-grid: url("../images/triangle-grid-dark.webp?v=20261019c");
 	--mz-char-scrim: linear-gradient(90deg,
 		rgba(16, 36, 51, .84) 0%,
 		rgba(16, 36, 51, .42) 46%,
@@ -186,11 +190,11 @@ html[data-theme="dark"] .mint-background {
 
 /* --- PC (default) --- */
 .mint-bg-character-light {
-	background-image: url("../images/character-pc-light.webp");
+	background-image: url("../images/character-pc-light.webp?v=20261019c");
 }
 
 .mint-bg-character-dark {
-	background-image: url("../images/character-pc-dark.webp");
+	background-image: url("../images/character-pc-dark.webp?v=20261019c");
 }
 
 .mint-bg-character-light { opacity: 1; }
@@ -223,11 +227,11 @@ html[data-theme="dark"] .mint-bg-character-dark { opacity: 1; }
 	/* Mobile artwork: a portrait re-framing of the same two characters,
 	   not a scaled desktop square. */
 	.mint-bg-character-light {
-		background-image: url("../images/character-mobile-light.webp");
+		background-image: url("../images/character-mobile-light.webp?v=20261019c");
 	}
 
 	.mint-bg-character-dark {
-		background-image: url("../images/character-mobile-dark.webp");
+		background-image: url("../images/character-mobile-dark.webp?v=20261019c");
 	}
 
 	/* Bottom-anchored: the figure rises from the bottom edge with its

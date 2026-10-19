@@ -79,6 +79,11 @@ FILES = [
      '/usr/share/ucode/luci/template/themes/mint/footer.ut'),
     (os.path.join(REPO, 'theme', 'ucode', 'template', 'themes', 'mint', 'sysauth.ut'),
      '/usr/share/ucode/luci/template/themes/mint/sysauth.ut'),
+    # The templates call wallpaper.uc#assetRev (dynamic asset revision);
+    # a hot deploy MUST ship the module too or every page 500s on a
+    # device that still runs the old module without that export.
+    (os.path.join(REPO, 'theme', 'ucode', 'mint', 'wallpaper.uc'),
+     '/usr/share/ucode/luci/mint/wallpaper.uc'),
     (WP_JS,
      '/www/luci-static/resources/view/mint/wallpaper.js'),
 ]

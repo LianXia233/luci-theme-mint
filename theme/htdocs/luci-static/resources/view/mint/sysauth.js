@@ -41,6 +41,19 @@ function mzWp() {
 	return (typeof window !== 'undefined' && window.mzWpUtil) ? window.mzWpUtil : {};
 }
 
+/* 2026-10-19 external feedback, problem 5: do not rely on
+   String.prototype.format - browsers do not provide it and neither do
+   current LuCI builds. Substitute %s / %d locally. */
+function mzFmt(str) {
+	const args = Array.prototype.slice.call(arguments, 1);
+	let i = 0;
+	return String(str).replace(/%[%sd]/g, (m) => {
+		if (m === '%%')
+			return '%';
+		return (i < args.length) ? String(args[i++]) : m;
+	});
+}
+
 function applyWallpaperSettings(wp) {
 	if (!wp)
 		return;
@@ -160,7 +173,7 @@ return view.extend({
 				label = _('Local custom image');
 			} else {
 				try {
-					label = _('Image source: %s').format(new URL(group.url).hostname);
+					label = mzFmt(_('Image source: %s'), new URL(group.url).hostname);
 				} catch (e) {
 					label = _('Custom image');
 				}
