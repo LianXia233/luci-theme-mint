@@ -8,6 +8,23 @@
 
 ---
 
+## [20261019d] - 2026-10-19 · CI 修复：ucode 兼容门禁静默崩溃
+
+### Fixed 修复
+
+- `scripts/verify-ucode-compat.sh` 的桩生成器在提取 import 名单时，别名
+  剥离规则 `s/[[:space:]]*as[[:space:]]*.*//` 因空白可选且未锚定，把任何
+  以 `as` 开头的标识符（本版新增的 `assetRev`）整段抹除；单名导入
+  （footer.ut 的 `import { assetRev } from ...`）被抹成空名单后
+  `grep -v '^$'` 以退出码 1 失败，在 `set -e` 下静默终止整个校验脚本，
+  造成 Build packages 工作流「building ucode 之后零输出、exit 1」。现改
+  为锚定且强制空白的别名规则（`orig as alias` 才改写），空名单删除改用
+  恒返回 0 的 `sed '/^$/d'`，并新增 `set -E` ERR 陷阱：今后任何未守卫的
+  命令失败都会打印确切行号与命令，不再静默。cmake/make 失败时额外输出
+  构建日志尾部便于诊断。校验逻辑与门禁结果不变。
+
+---
+
 ## [20261019c] - 2026-10-19 · 第三方插件兼容性修复（modem-pro 反馈清单）
 
 针对 modem-pro（5G 终端）插件方在实机（ImmortalWrt SNAPSHOT + LuCI

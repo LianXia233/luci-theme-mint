@@ -30,8 +30,6 @@
 #
 # Exits non-zero when any check fails.
 
-set -euo pipefail
-
 log()  { printf '[ucode-compat] %s\n' "$*"; }
 warn() { printf '[ucode-compat] WARN: %s\n' "$*" >&2; }
 fail() { printf '[ucode-compat] FAIL: %s\n' "$*" >&2; FAILURES=$((FAILURES + 1)); }
@@ -40,6 +38,14 @@ FAILURES=0
 REPO_ROOT=""
 UCODE_VERSION="v0.0.20250529"   # newest tagged release; pre-dates the fix
 KEEP_WORKDIR=0
+
+set -euo pipefail
+set -E
+# Never die silently again: an unguarded command failure (e.g. a command
+# substitution returning non-zero inside make_stubs) used to abort the
+# script with exit 1 and zero output, which took a CI bisect round to
+# locate. Report the exact line, then let set -e do the exit.
+trap 'fail "internal error at line $LINENO: $BASH_COMMAND"' ERR
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -89,10 +95,14 @@ build_ucode() {
 	fi
 	log "building ucode in $srcdir"
 	if ! (cd "$srcdir" && cmake . -DCMAKE_BUILD_TYPE=Release > "$WORKDIR/cmake.log" 2>&1); then
+		warn "cmake failed - last lines of cmake.log:"
+		tail -n 10 "$WORKDIR/cmake.log" >&2 || true
 		warn "cmake failed (see $WORKDIR/cmake.log) - compile gate skipped"
 		return 1
 	fi
 	if ! (cd "$srcdir" && make -j"$(nproc)" > "$WORKDIR/make.log" 2>&1); then
+		warn "make failed - last lines of make.log:"
+		tail -n 20 "$WORKDIR/make.log" >&2 || true
 		warn "make failed (see $WORKDIR/make.log) - compile gate skipped"
 		return 1
 	fi
@@ -123,8 +133,23 @@ make_stubs() {
 	local line mod names name src
 	while IFS= read -r line; do
 		mod="$(printf '%s' "$line" | sed -E "s/.*from[[:space:]]+'([^']+)'.*/\1/")"
+		# Extract the imported names. Order matters:
+		#   1. trim leading/trailing whitespace of each comma token
+		#   2. rewrite an alias "orig as alias" to "orig" - the spaces
+		#      around `as` are MANDATORY and the rule is anchored, so a
+		#      name that merely STARTS with "as" (assetRev!) is left
+		#      alone; the old unanchored s/as.*// wiped it and, for a
+		#      single-name import like footer.ut's
+		#      "import { assetRev } from 'luci.mint.wallpaper';",
+		#      produced an empty name list, whose `grep -v '^$'` then
+		#      exited 1 and - under set -e - killed the whole script
+		#      silently (exit 1 right after "building ucode").
+		#   3. drop the remaining inner whitespace
+		#   4. delete empty tokens with sed (always exits 0), never
+		#      with grep (exits 1 when everything is filtered)
 		names="$(printf '%s' "$line" | sed -E "s/import[[:space:]]*\{([^}]*)\}.*/\1/" \
-			| tr ',' '\n' | sed -E 's/[[:space:]]//g; s/[[:space:]]*as[[:space:]]*.*//' | grep -v '^$')"
+			| tr ',' '\n' \
+			| sed -E 's/^[[:space:]]+|[[:space:]]+$//g; s/^([A-Za-z_][A-Za-z0-9_]*)[[:space:]]+as[[:space:]]+[^[:space:]]+.*$/\1/; s/[[:space:]]//g; /^$/d')"
 		for name in $names; do
 			IMPORTS["$mod"]="${IMPORTS[$mod]:-} $name"
 		done
