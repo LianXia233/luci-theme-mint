@@ -191,7 +191,7 @@ python3 "$SCRIPT_DIR/po2lmo.py" "$PO_FILE" "$LMO_OUT" \
 
 # Register zh-cn in LuCI (same uci-defaults luci.mk emits for translation pkgs)
 {
-	printf '%s\n' "uci set luci.languages.zh-cn='简体中文 (Simplified Chinese)'"
+	printf '%s\n' "uci set luci.languages.zh_cn='简体中文 (Simplified Chinese)'"
 	printf '%s\n' "uci commit luci"
 } > "$IPAYLOAD/etc/uci-defaults/luci-i18n-mint-zh-cn"
 chmod 0755 "$IPAYLOAD/etc/uci-defaults/luci-i18n-mint-zh-cn" 2>/dev/null || true
@@ -213,7 +213,7 @@ python3 "$SCRIPT_DIR/po2lmo.py" "$WPO_FILE" "$WLMO_OUT" \
 	|| die "po2lmo failed for the wallpaper catalogue"
 [ -s "$WLMO_OUT" ] || die "po2lmo produced an empty wallpaper lmo"
 {
-	printf '%s\n' "uci set luci.languages.zh-cn='简体中文 (Simplified Chinese)'"
+	printf '%s\n' "uci set luci.languages.zh_cn='简体中文 (Simplified Chinese)'"
 	printf '%s\n' "uci commit luci"
 } > "$WIPAYLOAD/etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn"
 chmod 0755 "$WIPAYLOAD/etc/uci-defaults/luci-i18n-mint-wallpaper-zh-cn" 2>/dev/null || true
@@ -458,20 +458,26 @@ apk_script() {
 		[ "$upgrade" = "1" ] && printf '%s\n' 'export PKG_UPGRADE=1'
 		printf '%s\n' 'export root="${IPKG_INSTROOT}"'
 		printf 'export pkgname="%s"\n' "$pkg"
-		printf '%s\n' '[ -f /lib/functions.sh ] && . /lib/functions.sh'
-		printf '%s\n' 'if command -v default_postinst >/dev/null 2>&1; then'
-		printf '%s\n' '	command -v add_group_and_user >/dev/null 2>&1 && add_group_and_user'
-		printf '%s\n' '	default_postinst'
-		printf '%s\n' 'else'
-		local g
-		for g in "$@"; do
-			printf '\tfor f in /etc/uci-defaults/%s; do\n' "$g"
-			printf '%s\n' '		[ -f "$f" ] || continue'
-			printf '%s\n' '		( cd "$(dirname "$f")" && . "./$(basename "$f")" ) && rm -f "$f"'
-			printf '%s\n' '	done'
-			printf '%s\n' '	uci -q commit luci'
-		done
-		printf '%s\n' 'fi'
+		# Only packages that actually ship uci-defaults need the default_postinst
+		# dance (it greps /lib/apk/packages/<pkg>.list for /etc/uci-defaults/).
+		# Without this guard a package with no globs leaves an empty else/fi
+		# pair behind and /bin/sh aborts the script at run time.
+		if [ "$#" -gt 0 ]; then
+			printf '%s\n' '[ -f /lib/functions.sh ] && . /lib/functions.sh'
+			printf '%s\n' 'if command -v default_postinst >/dev/null 2>&1; then'
+			printf '%s\n' '	command -v add_group_and_user >/dev/null 2>&1 && add_group_and_user'
+			printf '%s\n' '	default_postinst'
+			printf '%s\n' 'else'
+			local g
+			for g in "$@"; do
+				printf '\tfor f in /etc/uci-defaults/%s; do\n' "$g"
+				printf '%s\n' '		[ -f "$f" ] || continue'
+				printf '%s\n' '		( cd "$(dirname "$f")" && . "./$(basename "$f")" ) && rm -f "$f"'
+				printf '%s\n' '	done'
+				printf '%s\n' '	uci -q commit luci'
+			done
+			printf '%s\n' 'fi'
+		fi
 		if [ "$body" != "-" ]; then
 			# Drop the shebang: this is a fragment of the combined script.
 			printf '%s\n' "$body" | sed '/^#!/d'
