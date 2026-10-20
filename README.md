@@ -374,14 +374,14 @@ APK 包在元数据中声明 `post-install` / `post-upgrade` / `post-deinstall` 
 | 版权所有者 | `Copyright (C) 2026 LianXia233` |
 | 许可证 | GNU General Public License v3.0 |
 | SPDX 标识 | `GPL-3.0-only` |
-| 版本判定依据 | `LICENSE` 为 GPLv3 全文；`theme/Makefile` 声明 `PKG_LICENSE:=GPL-3.0-only` 并带 `SPDX-License-Identifier` 头；源码头统一为 `Licensed to the public under the GNU General Public License v3.0.`，未声明「or any later version」，故依 GPLv3 §14 锁定为 v3.0 |
+| 版本判定依据 | `LICENSE` 为 GPLv3 全文；`theme/Makefile` 声明 `PKG_LICENSE:=GPL-3.0-only` 并带 `SPDX-License-Identifier` 头；源码头统一为 `Licensed to the public under the GNU General Public License v3.0.`，未声明「or any later version」，故依 GPLv3 第 14 条锁定为 v3.0 |
 | 覆盖范围 | `theme/`（`ucode/` 模板、`htdocs/` 下的 CSS / JS，**不含** `images/` 内的角色素材）、`wallpaper/`、`scripts/`、`docs/` 中的原创文字 |
 
-**分发义务**（GPLv3 §4–§6、§10）
+**分发义务**（GPLv3 第 4–6 条、第 10 条）
 
 1. 分发 `.ipk` / `.apk` 或修改版时，须随附或以书面方式提供**完整的对应源码**；
-2. 须保留原有版权声明、许可证文本与免责声明（§0「Appropriate Legal Notices」）；
-3. 不得对本许可证授予的权利**附加额外限制**（§10）。
+2. 须保留原有版权声明、许可证文本与免责声明（第 0 条「Appropriate Legal Notices」）；
+3. 不得对本许可证授予的权利**附加额外限制**（第 10 条）。
 
 仅在本机安装、使用而不对外分发时，不触发上述义务。
 
@@ -411,7 +411,7 @@ APK 包在元数据中声明 `post-install` / `post-upgrade` / `post-deinstall` 
 **共同约定**
 
 - 素材仅用于主题界面装饰与交互展示（页面背景四态立绘层、登录页立绘、侧栏 Logo），不构成对上述作品的改编、衍生创作或官方合作；本项目未取得任何商业化授权。
-- 素材以**聚合（aggregate）**形式随包分发（GPLv3 §5 末段），其权利状态不因打包或本项目采用 GPL-3.0 而改变。
+- 素材以**聚合（aggregate）**形式随包分发（GPLv3 第 5 条末段），其权利状态不因打包或本项目采用 GPL-3.0 而改变。
 - `docs/previews/*.jpg` 等界面截图中出现的角色形象，同受本节约束。
 - 替换立绘的流程见 [`docs/character-background.md`](docs/character-background.md)；替换后须同步更新本节、`THIRD-PARTY-NOTICES.md` 与 `MINT_ASSET_REV`。
 
@@ -421,7 +421,7 @@ APK 包在元数据中声明 `post-install` / `post-upgrade` / `post-deinstall` 
 
 GPL-3.0 许可证仅适用于本项目有权以该许可证发布的代码及相关原创内容，**不自动涵盖**「薄荷」「阿罗娜」「普拉娜」等角色形象、游戏原始素材及其他第三方知识产权。对上述内容的使用、复制、修改或再分发，须遵守相关权利人的授权条件及适用法律法规。
 
-> 原 README 中「仅供交流学习与个人非商业部署使用」一句，对 GPL 覆盖的代码构成了额外使用限制，与 GPLv3 §10 不符，已从代码授权表述中删除；对第三方素材的使用范围，改由本节按权利人条件单独说明。
+> 原 README 中「仅供交流学习与个人非商业部署使用」一句，对 GPL 覆盖的代码构成了额外使用限制，与 GPLv3 第 10 条不符，已从代码授权表述中删除；对第三方素材的使用范围，改由本节按权利人条件单独说明。
 
 逐项清单、权利人、素材指纹与来源说明见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。
 
@@ -431,6 +431,6 @@ GPL-3.0 许可证仅适用于本项目有权以该许可证发布的代码及相
 
 ### 5. 免责与权利主张
 
-本主题按「现状」提供，适用 GPLv3 §15–§16 的担保免责与责任限制条款；本节不额外排除或限制 GPL-3.0 已赋予使用者的权利。
+本主题按「现状」提供，适用 GPLv3 第 15–16 条的担保免责与责任限制条款；本节不额外排除或限制 GPL-3.0 已赋予使用者的权利。
 
 如权利人认为本项目的使用超出合理范围，请通过 [GitHub Issues](https://github.com/LianXia233/luci-theme-mint/issues) 提出，并附权利证明与具体文件路径。维护者核实后将及时替换、补充署名或移除相关素材；具体授权事宜以权利人书面许可为准。
