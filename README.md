@@ -48,7 +48,7 @@ Aurora Glass 玻璃拟态 • 单层视效容器 • 四态独立角色立绘 �
   - [运行时依赖清单](#运行时依赖)
   - [浏览器与已知限制](#浏览器)
 - [🛠️ 故障排查](#️-故障排查)
-- [📄 开源许可证](#-许可证)
+- [📄 许可证与版权声明](#-许可证与版权声明)
 
 ---
 
@@ -361,6 +361,76 @@ APK 包在元数据中声明 `post-install` / `post-upgrade` / `post-deinstall` 
 
 ---
 
-## 📄 许可证
+## 📄 许可证与版权声明
 
-本项目遵循 [GPL-3.0](./LICENSE) 协议开放源码。主题内置包含的立绘角色素材版权归其原权利人所有，仅供交流学习与个人非商业部署使用。
+> 本节为项目对外声明的正式文本。若本节与 [`LICENSE`](./LICENSE) 原文或权利人授权条件冲突，以 `LICENSE` 原文及权利人授权条件为准。本节不构成法律意见。
+
+### 1. 开源许可证
+
+本主题以 **GNU General Public License v3.0** 发布，主题代码的使用、复制、修改及分发均须遵守该许可证条款。完整条款见仓库根目录 [`LICENSE`](./LICENSE)。
+
+| 项目 | 内容 |
+|:--|:--|
+| 版权所有者 | `Copyright (C) 2026 LianXia233` |
+| 许可证 | GNU General Public License v3.0 |
+| SPDX 标识 | `GPL-3.0-only` |
+| 版本判定依据 | `LICENSE` 为 GPLv3 全文；`theme/Makefile` 声明 `PKG_LICENSE:=GPL-3.0-only` 并带 `SPDX-License-Identifier` 头；源码头统一为 `Licensed to the public under the GNU General Public License v3.0.`，未声明「or any later version」，故依 GPLv3 §14 锁定为 v3.0 |
+| 覆盖范围 | `theme/`（`ucode/` 模板、`htdocs/` 下的 CSS / JS，**不含** `images/` 内的角色素材）、`wallpaper/`、`scripts/`、`docs/` 中的原创文字 |
+
+**分发义务**（GPLv3 §4–§6、§10）
+
+1. 分发 `.ipk` / `.apk` 或修改版时，须随附或以书面方式提供**完整的对应源码**；
+2. 须保留原有版权声明、许可证文本与免责声明（§0「Appropriate Legal Notices」）；
+3. 不得对本许可证授予的权利**附加额外限制**（§10）。
+
+仅在本机安装、使用而不对外分发时，不触发上述义务。
+
+### 2. 界面角色素材版权声明
+
+主题内置**两组来源不同**的角色素材，其权利归属各自独立，且**均不在** GPL-3.0 的授权范围内。
+
+**2.1 主题 Logo ——「薄荷」（Mint）**
+
+| 项目 | 内容 |
+|:--|:--|
+| 文件 | `assets/logo.png`（720×718 PNG，README 顶部 Logo） |
+| 角色 | 薄荷（Mint） |
+| 作品 | 《异环》（NTE, Neverness to Everness） |
+| 开发 / 著作权人 | 苏州幻塔网络科技有限公司（Hotta Studio，完美世界旗下工作室） |
+| 全球发行 | 完美世界游戏 |
+
+**2.2 四态立绘与登录页立绘 ——「阿罗娜」/「普拉娜」**
+
+| 文件 | 角色 | 作品 | 著作权人 |
+|:--|:--|:--|:--|
+| `theme/htdocs/luci-static/mint/images/character-{pc,mobile}-light.webp` | 阿罗娜（Arona） | 《蔚蓝档案》（Blue Archive） | NEXON Games Co., Ltd. |
+| `theme/htdocs/luci-static/mint/images/character-{pc,mobile}-dark.webp` | 普拉娜（Plana） | 《蔚蓝档案》（Blue Archive） | NEXON Games Co., Ltd. |
+
+《蔚蓝档案》由 NEXON Games Co., Ltd.（原 NAT Games，开发主体 MX Studio）开发；各地区发行由 Yostar（日本）、NEXON Korea（全球）、上海星啸（中国大陆）等获授权主体运营。上述发行商**不是**本主题的授权方。
+
+**共同约定**
+
+- 素材仅用于主题界面装饰与交互展示（页面背景四态立绘层、登录页立绘、侧栏 Logo），不构成对上述作品的改编、衍生创作或官方合作；本项目未取得任何商业化授权。
+- 素材以**聚合（aggregate）**形式随包分发（GPLv3 §5 末段），其权利状态不因打包或本项目采用 GPL-3.0 而改变。
+- `docs/previews/*.jpg` 等界面截图中出现的角色形象，同受本节约束。
+- 替换立绘的流程见 [`docs/character-background.md`](docs/character-background.md)；替换后须同步更新本节、`THIRD-PARTY-NOTICES.md` 与 `MINT_ASSET_REV`。
+
+本项目与苏州幻塔网络科技有限公司、Hotta Studio、完美世界及《异环》官方之间，与 NEXON Games Co., Ltd.、Yostar 及《蔚蓝档案》官方之间，均不存在任何明示或暗示的隶属、合作、赞助或授权关系。
+
+### 3. 第三方知识产权说明
+
+GPL-3.0 许可证仅适用于本项目有权以该许可证发布的代码及相关原创内容，**不自动涵盖**「薄荷」「阿罗娜」「普拉娜」等角色形象、游戏原始素材及其他第三方知识产权。对上述内容的使用、复制、修改或再分发，须遵守相关权利人的授权条件及适用法律法规。
+
+> 原 README 中「仅供交流学习与个人非商业部署使用」一句，对 GPL 覆盖的代码构成了额外使用限制，与 GPLv3 §10 不符，已从代码授权表述中删除；对第三方素材的使用范围，改由本节按权利人条件单独说明。
+
+逐项清单、权利人、素材指纹与来源说明见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。
+
+### 4. 名称与商标
+
+`OpenWrt`、`ImmortalWrt`、`LuCI` 等名称与标识归各自项目及其权利人所有；`Apple`、`Linear`、`GitHub` 等名称仅在设计风格比较或构建平台说明中作**指示性使用**（nominative use），不主张商标权，亦不表示背书。
+
+### 5. 免责与权利主张
+
+本主题按「现状」提供，适用 GPLv3 §15–§16 的担保免责与责任限制条款；本节不额外排除或限制 GPL-3.0 已赋予使用者的权利。
+
+如权利人认为本项目的使用超出合理范围，请通过 [GitHub Issues](https://github.com/LianXia233/luci-theme-mint/issues) 提出，并附权利证明与具体文件路径。维护者核实后将及时替换、补充署名或移除相关素材；具体授权事宜以权利人书面许可为准。

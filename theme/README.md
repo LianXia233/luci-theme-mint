@@ -197,3 +197,11 @@ faster loading, dead-CSS audit, slimmed logo assets).
 
 
 GPL-3.0. See [../LICENSE](../LICENSE).
+
+Theme code: GPL-3.0 only (`GPL-3.0-only`); the source headers do not state
+"or any later version" (see GPLv3 §14). Bundled character artwork is **not**
+covered by GPL-3.0 — Arona / Plana © NEXON Games Co., Ltd. (*Blue Archive*),
+Mint © Suzhou Hotta Network Technology Co., Ltd. / Hotta Studio, Perfect World
+(*Neverness to Everness*). They ship as an aggregate (GPLv3 §5) and remain the
+property of their respective rights holders. See
+[../THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md).
