@@ -1,260 +1,181 @@
 <div align="center">
 
-<img src="assets/logo.png" width="180" alt="Mint logo — 像素猫娘" style="margin-bottom: 16px;">
+<img src="assets/logo.png" width="160" alt="Mint logo — 像素猫娘" style="margin-bottom: 16px;">
 
-# Mint (luci-theme-mint)
-
-**面向 OpenWrt main / LuCI master 的下一代现代化原生主题**
-
-基于纯净 ucode 模板引擎构建 • 融合 Apple / Linear 级极简与克制美学  
-Aurora Glass 玻璃拟态 • 单层视效容器 • 四态独立角色立绘 • 现代设计令牌 (Tokens) 系统 • 独立壁纸扩展包
+# 🍃 Mint (luci-theme-mint)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/OpenWrt-23.05%20%2F%2024.10%20%2F%20main-188fff?style=flat-square&logo=openwrt&logoColor=white" alt="OpenWrt">
-  <img src="https://img.shields.io/badge/Template-ucode%20(.ut)-007acc?style=flat-square" alt="ucode">
-  <img src="https://img.shields.io/badge/Arch-all%20%2F%20noarch-10b981?style=flat-square" alt="Architecture">
-  <img src="https://img.shields.io/badge/Package-IPK%20%7C%20APK-8b5cf6?style=flat-square" alt="Package Formats">
-  <img src="https://img.shields.io/badge/License-GPL--3.0-orange?style=flat-square" alt="License">
+  <strong>面向 OpenWrt main / LuCI master 的下一代现代化原生玻璃拟态主题</strong>
 </p>
 
-[✨ 功能特性](#-功能特性) • [🖼️ 界面预览](#-界面预览) • [📁 目录结构](#-目录结构) • [🚀 快速启用](#-主题启用) • [📦 编译指南](#-编译指南) • [🎨 背景机制](#-背景与壁纸机制) • [⚙️ 壁纸配置](#️-壁纸设置) • [🌐 兼容性](#-兼容性) • [🛠️ 排错与授权](#️-故障排查) • [📜 更新日志](CHANGELOG.md)
+<p align="center">
+  <a href="https://github.com/LianXia233/luci-theme-mint/releases/latest"><img src="https://img.shields.io/github/v/release/LianXia233/luci-theme-mint?style=flat-square&color=3b82f6&label=%E7%89%88%E6%9C%AC" alt="Latest Release"></a>
+  <a href="https://openwrt.org/"><img src="https://img.shields.io/badge/OpenWrt-23.05%20%7C%2024.10%20%7C%20main-188fff?style=flat-square&logo=openwrt&logoColor=white" alt="OpenWrt"></a>
+  <a href="Makefile"><img src="https://img.shields.io/badge/Template-ucode%20(.ut)-007acc?style=flat-square" alt="ucode"></a>
+  <a href="Makefile"><img src="https://img.shields.io/badge/Arch-all%20%2F%20noarch-10b981?style=flat-square" alt="Architecture"></a>
+  <a href="https://github.com/LianXia233/luci-theme-mint/releases/latest"><img src="https://img.shields.io/badge/Package-IPK%20%7C%20APK-8b5cf6?style=flat-square" alt="Package Formats"></a>
+  <a href="https://github.com/LianXia233/luci-theme-mint/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/LianXia233/luci-theme-mint/build.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white" alt="Build Status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-orange?style=flat-square" alt="License"></a>
+  <a href="https://github.com/LianXia233/luci-theme-mint/stargazers"><img src="https://img.shields.io/github/stars/LianXia233/luci-theme-mint?style=flat-square&logo=github" alt="GitHub Stars"></a>
+</p>
+
+<p align="center">
+  <em>基于纯净 ucode 模板引擎 · Aurora Glass 玻璃拟态 · 单层视效容器 · 四态独立角色背景与壁纸系统 · 现代 Design Tokens</em>
+</p>
+
+<p align="center">
+  <a href="#features">✨ 功能特性</a> •
+  <a href="#previews">🖼️ 界面预览</a> •
+  <a href="#quick-start">🚀 快速安装</a> •
+  <a href="#architecture">📊 架构设计</a> •
+  <a href="#wallpaper">🎨 背景机制</a> •
+  <a href="#config">⚙️ 壁纸设置</a> •
+  <a href="#build">📦 编译指南</a> •
+  <a href="#compatibility">🌐 兼容性</a> •
+  <a href="#faq">🛠️ 故障排查</a> •
+  <a href="#license">📄 授权声明</a>
+</p>
 
 ---
 
 </div>
 
-> **Notice**: 本主题包名与路径已随 2026-09-07 更名统一为 `mint`。原生基于 LuCI master 的 ucode 模板与客户端渲染接口重构，并非传统针对旧主题的单纯 CSS 换肤。
+> [!NOTE]
+> **原生架构说明**：本主题包名与路径已统一为 `mint`。底层基于 LuCI master 的纯 ucode 模板引擎与客户端渲染接口重构，并非针对旧主题的传统 CSS 覆写换肤，具备现代化的渲染性能与纯净度。
 
 ---
 
-## 📖 目录
-
-- [✨ 功能特性](#-功能特性)
-- [🖼️ 界面预览](#-界面预览)
-- [📁 目录结构](#-目录结构)
-- [📦 编译指南](#-编译指南)
-  - [云编译（GitHub Actions）](#云编译github-actions)
-  - [本地编译（方式一：预编译 SDK 推荐）](#方式一官方预编译-sdk推荐)
-  - [本地编译（方式二：完整 Buildroot）](#方式二完整-buildroot)
-- [🚀 主题启用](#-主题启用)
-- [🎨 背景与壁纸机制](#-背景与壁纸机制)
-  - [四态独立角色层](#1-默认背景四态角色层无需任何配置)
-  - [用户自定义壁纸](#2-用户壁纸可选覆盖角色层)
-  - [离线行为与判定时序](#3-离线弹性兜底与执行流程)
-  - [静态版本缓存戳](#4-缓存戳机制)
-- [⚙️ 壁纸设置 (UCI 参数)](#️-壁纸设置)
-- [🌐 兼容性与运行规范](#-兼容性)
-  - [支持固件与包格式](#兼容的-openwrt--immortalwrt-版本)
-  - [运行时依赖清单](#运行时依赖)
-  - [浏览器与已知限制](#浏览器)
-- [🛠️ 故障排查](#️-故障排查)
-- [📄 许可证与版权声明](#-许可证与版权声明)
-
----
-
-## ✨ 功能特性
-
-### 🏛️ 结构工程与视觉规范
-- **单层视觉容器架构**：全站仅保留一个视觉容器 `.mz-view`，统一绘制背景、边框、圆角与阴影；内部 Section / CBI / 表格 / 卡片全部透明扁平化，禁止嵌套卡片（Card 套 Card）。
-- **单次模糊设计**：壁纸置于最底层，每页仅触发一次模糊计算，杜绝创建杂乱的层叠上下文（Stacking Context），彻底消除下拉菜单被截断的弊端；固定背景层 `contain: strict` 渲染隔离，≤854px 自动降档 blur（10/12px）省一半 GPU。
-- **独立底栏**：Action Bar（操作栏）为独立功能层，底部全出血粘性吸附（Sticky），体验沉浸。
-- **分层 CSS 编排**：样式规则按职责解耦为 `compat / tokens / base / layout / navigation / container / components / wallpaper / background / dark / animations / responsive / login` 共十三层。`header.ut` 按级联顺序直接输出 13 个 `<link>`（每层携带动态版本戳）；`cascade.css` 仅作为直连加载的回退聚合入口保留 `@import`。全站静态资源带 `?v=<MINT_ASSET_REV>` 统一版本戳。
-- **容器几何单一所有者**：`.mz-view` 的尺寸与留白严格由 `layout.css` 与 `container.css` 配合 Tokens 控制，大屏居中对称，最大宽度约束为 `--mz-content-max: 1920px`。
-- **Aurora Glass 视觉系统**：不对称微妙圆角、品牌色偏移阴影、节标题强调色条、侧栏半透毛玻璃、菜单线性 SVG 图标与平滑折叠箭头；玻璃层按「壁纸清晰可见、文字对比度 ≥ 7:1」调校（页面 .70 / 角色背景下 .62），容器顶部 120px Aurora sheen 受光边，壁纸遮罩改为「顶部强、底部淡」的渐变洗白，风景照下半段保留原色。
-
-### 🎭 角色背景与色彩模式
-- **纯 CSS 四态角色背景**：默认预置四套独立立绘层（PC 亮色 Arona / PC 暗色 Plana / 移动端亮暗两套独立 3:4 竖版构图）。媒体查询判别设备，`<html data-theme>` 控制色彩，**首帧即达，无需 JS 介入，切换平滑交叉淡入**。
-- **专属登录页角色（Plana）**：采用 `.mz-login-char` 单立绘节点，PC 端右侧锚定、移动端底部全幅展示，仅区分角色背景与自定义壁纸两态。
-- **三态色彩体系**：支持「浅色（白透毛玻璃）」、「深色（深灰磨砂，告别纯色死黑）」与「跟随系统」无缝切换。
-
-### ⚡ 性能与交互打磨
-- **零外部资源依赖**：无 CDN、无外部 Web 字体、无体积沉重的图标字体、无重量级前端框架、无 jQuery。
-- **加载优先级分级**：登录 logo `fetchpriority=high`（LCP 元素）；壁纸图片 `fetchPriority=low + decoding=async`（装饰性资源永不抢占内容带宽）；随机壁纸 API `preconnect` 预热握手；壁纸库缩略图 `loading=lazy` 按需加载。
-- **现代化响应式断点**：480px 至 1280px+ 全段平滑适配；移动端自动收纳为抽屉式遮罩导航，复杂数据表格自动重排为可读性更高的卡片流。
-- **真实总览增强仪表盘**：重构 Overview 总览页（仅在对应路由按需加载），实时卡片化展示网络端口、系统硬件、DHCP / Wireless / UPnP 拓扑；不支持的指标一律展示 `N/A`，恪守真实原则。
-- **细节交互优化**：全局统一 8px 半透明细滚动条、网络接口页定制状态色标卡、LuCI 原生弹窗与 `cbi-dropdown` 全面深度重构。
-- **模块化解耦**：壁纸设置功能完整拆分为独立包 `luci-app-mint-wallpaper`，提供可视化配置、rpcd 后端、cron 缓存刷新与 UCI 驱动，支持独立部署/更新。
-- **轻量资产**：全部 logo / favicon PNG 经 256 色量化（-59% ~ -92%），CSS 全量审计后净减约 1800 行死规则（旧仪表盘家族），像素级无损。
-
----
-
+<a id="previews"></a>
 ## 🖼️ 界面预览
 
-| 亮色概览 (Light Overview) | 暗色概览 (Dark Overview) |
+| 亮色模式 (Light Overview) | 暗色模式 (Dark Overview) |
 | :---: | :---: |
-| ![Light Overview](docs/previews/light-overview.jpg) | ![Dark Overview](docs/previews/dark-overview.jpg) |
-| **壁纸设置 (Wallpaper Settings)** | **登录界面 (Login Page)** |
-| ![Wallpaper Settings](docs/previews/wallpaper-settings.jpg) | ![Login Page](docs/previews/login.jpg) |
+| [![Light Overview](docs/previews/light-overview.jpg)](docs/previews/light-overview.jpg) | [![Dark Overview](docs/previews/dark-overview.jpg)](docs/previews/dark-overview.jpg) |
+| **壁纸设置控制台 (Wallpaper Settings)** | **独立登录页 (Login Page)** |
+| [![Wallpaper Settings](docs/previews/wallpaper-settings.jpg)](docs/previews/wallpaper-settings.jpg) | [![Login Page](docs/previews/login.jpg)](docs/previews/login.jpg) |
 
 ---
 
-## 📁 目录结构
+<a id="features"></a>
+## ✨ 核心特性
 
-<details>
-<summary><b>📂 点击展开查看完整源码架构树</b></summary>
+### 🏛️ 结构工程与视觉规范
+- **单层视觉容器架构**：全站仅保留一个主视觉容器 `.mz-view`，统一绘制背景、边框、圆角与阴影；内部 Section / CBI / 表格 / 卡片全部透明扁平化，坚决杜绝“卡片套卡片”的视觉杂乱。
+- **单次模糊性能设计**：壁纸置于最底层，全页仅触发一次硬件级背景模糊计算，杜绝创建多重层叠上下文（Stacking Context），彻底消除下拉菜单被截断的顽疾；固定背景层使用 `contain: strict` 渲染隔离，移动端（$\le 854\text{px}$）自动降档模糊半径（10/12px），节约 50% GPU 开销。
+- **沉浸式独立底栏**：Action Bar（底部操作栏）作为独立功能层，底部全出血粘性吸附（Sticky），交互自然沉浸。
+- **解耦式 13 层 CSS 编排**：样式按职责严格拆分为 `compat / tokens / base / layout / navigation / container / components / wallpaper / background / dark / animations / responsive / login` 共十三层。`header.ut` 按级联顺序直接输出 13 个带独立动态版本戳的 `<link>`，全站资源受统一版本戳 `?v=<MINT_ASSET_REV>` 保护，更新后客户端零缓存残留。
+- **明暗模式无缝切换**：原生支持 `跟随系统`、`明亮`、`暗黑` 三模循环切换，暗色模式基于深黑与磨砂质感优化，防止刺眼。
 
-```bash
-.github/workflows/
-├── build.yml                   # GitHub Actions：直出 .ipk + .apk（all/noarch 纯数据包）
-└── release.yml                 # 汇总校验产物并自动发布 GitHub Release
-
-theme/                          # 主题核心包源码（luci-theme-mint，纯 UI 模板）
-├── Makefile                    # 基于 luci.mk 的包定义
-├── htdocs/luci-static/mint/
-│   ├── cascade.css             # 回退聚合入口：十三层 @import 编排（页面改由 header.ut 直接 <link> 各层）
-│   ├── css/                    # 严格分层样式体系
-│   │   ├── compat.css          # 旧版规则保留（LuCI 兼容 / 第三方插件视图底座）
-│   │   ├── tokens.css          # 设计系统 Tokens（色彩、间距、玻璃参数、动效）
-│   │   ├── base.css            # 排版重置、全局盒模型与 8px 细滚动条
-│   │   ├── layout.css          # 页面骨架（侧栏 / 主视窗 / 底部 Action Bar）
-│   │   ├── navigation.css      # 侧栏实时菜单树 / 页签 / 面包屑导航
-│   │   ├── container.css       # 单层视觉容器 (.mz-view) 扁平化控制
-│   │   ├── components.css      # 表单 / 按钮 / 表格 / 模态框 / 徽章组件样式
-│   │   ├── wallpaper.css       # 壁纸栈分级（壁纸 -> 遮罩 -> 视效层）
-│   │   ├── background.css      # 四态角色背景层（PC/Mobile × Light/Dark 立绘与网格）
-│   │   ├── dark.css            # 深色模式专属色彩与磨砂质感控制
-│   │   ├── animations.css      # 入场关键帧动效（适配 prefers-reduced-motion）
-│   │   ├── responsive.css      # 854px (抽屉) / 640px (单行操作栏) / 400px 断点适配
-│   │   └── login.css           # 独立登录页样式
-│   ├── images/                 # 角色资源（4 张四态立绘 + 2 款三角网格 WebP）
-│   ├── overview-dashboard.js   # PC 端总览仪表盘增强脚本
-│   ├── overview-mobile.js      # 移动端总览适配组件
-│   ├── mz-ui.js                # 通用 UI 交互辅助驱动
-│   ├── overview-banner.png     # 顶栏品牌图
-│   ├── login-logo.png          # 登录页品牌 Logo
-│   └── favicon/                # favicon.svg 矢量图标及全规格位图
-├── htdocs/luci-static/resources/
-│   ├── menu-mint.js            # 侧栏与动态菜单树渲染引擎（LuCI JS API）
-│   └── view/mint/sysauth.js    # 登录页前端逻辑
-├── ucode/template/themes/mint/
-│   ├── header.ut               # 页面骨架、侧栏与顶栏
-│   ├── footer.ut               # 底部粘性区域与资源挂载
-│   └── sysauth.ut              # 登录页模板（保留原生认证逻辑）
-├── ucode/mint/wallpaper.uc     # 渲染期只读 UCI 配置解析器
-├── root/etc/uci-defaults/
-│   └── 30_luci-theme-mint      # 主题自动注册与版本迁移脚本
-└── po/                         # templates + zh_Hans 国际化源码
-
-wallpaper/                      # 壁纸设置扩展包源码（luci-app-mint-wallpaper）
-├── Makefile                    # 基于 luci.mk 的包定义（Depends: luci-base +curl）
-├── po/zh_Hans/                 # 独立语言包（编译为 luci-i18n-mint-wallpaper-zh-cn）
-├── htdocs/luci-static/resources/view/mint/
-│   └── wallpaper.js            # 壁纸设置可视化表单视图
-└── root/
-    ├── etc/config/mint         # 独立 UCI 配置文件
-    ├── etc/uci-defaults/30_luci-app-mint-wallpaper
-    ├── lib/upgrade/keep.d/luci-app-mint-wallpaper
-    ├── usr/bin/mz-wallpaper-fetch.sh # 服务端壁纸定时抓取脚本（cron 每 5 分钟）
-    ├── usr/libexec/rpcd/mint   # ubus 后端接口（save / refresh / dashboard）
-    └── usr/share/luci/menu.d/luci-app-mint-wallpaper.json # 顶级菜单定义入口
-```
-
-</details>
+### 🎨 智能背景与壁纸生态
+- **开箱即用四态角色立绘**：内置 PC/Mobile $\times$ Light/Dark 四套独立渲染的透明角色立绘（阿罗娜 / 普拉娜）与几何三角网格；纯 CSS 驱动，首帧秒出，无需复杂设置。
+- **可选壁纸扩展包 (`luci-app-mint-wallpaper`)**：支持上传本地图片、配置 HTTP(S) 图片直链、或接入 Bing 等多组远程随机壁纸图源池（失败自动故障转移）。
+- **离线与断网弹性兜底**：远程壁纸具有本地 5 分钟安全缓存，遇到外网波动或 API 故障时自动无缝降级至内置四态角色背景，页面渲染绝对不阻塞。
 
 ---
 
-## 📦 编译指南
+<a id="quick-start"></a>
+## 🚀 快速安装与启用
 
-### 云编译（GitHub Actions）
+本主题为全平台架构通用包（`PKGARCH=all` / `noarch`），无需区分 CPU 架构。前往 [Releases 最新发布页](https://github.com/LianXia233/luci-theme-mint/releases/latest) 下载即可。
 
-推送到 `main` 分支或发布版本标签（`v*`）时将自动触发 CI 流水线；亦可在 Actions 界面通过 `workflow_dispatch` 手动触发。
+### 1. 命令行快速安装
 
-| 工作流 | 职能与输出 | 技术特色 |
-| :--- | :--- | :--- |
-| **`build.yml`** | 一次产出全部 4 个包：<br>• `luci-theme-mint`<br>• `luci-i18n-mint-zh-cn`<br>（均含 `.ipk` 与 `.apk` 双格式，`all/noarch` 架构） | **免 SDK 秒级直出**：采用 `scripts/build-direct.sh` 装配标准载荷，使用与官方一致的容器格式极速打包，数十秒内即可完成。 |
-| **`release.yml`** | 汇总各包产物，自动发布 Nightly 或正式 Release | 附带 `.buildinfo.txt` 构建设据，先过结构校验再执行沙箱虚拟安装测试。 |
-
-> [!NOTE]
-> 遵循官方 LuCI 规范，国际化文本被编译为独立的 `luci-i18n-mint-zh-cn` 语言包。如需显示中文界面，需与主题包**成对安装**。
-
----
-
-### 本地编译
-
-本主题属于纯数据包（无 C/Lua 编译代码），但依赖的 `luci-base` 构建链需要交叉工具环境。**切勿**为它编译完整的工具链，推荐使用官方预编译 SDK 或利用已具备 ccache 的完整 Buildroot。
-
-#### 方式一：官方预编译 SDK（推荐）
+#### 方案 A：OpenWrt 25.12+ / ImmortalWrt SNAPSHOT (`apk` 包管理器)
 
 ```bash
-# 1. 抓取目标架构 SDK（以 x86_64 为例）
-BASE=https://downloads.openwrt.org/snapshots/targets/x86/64
-SDK=$(curl -fsSL "$BASE/" | grep -o 'openwrt-sdk-.*tar.zst' | head -1)
-curl -fsSLO "$BASE/$SDK"
-tar --zstd -xf "$SDK" && mv openwrt-sdk-* sdk && cd sdk
+# 1. 复制下载的 .apk 文件至路由器 /tmp 目录
+# 2. 安装主题包与简体中文语言包（必须成对安装以支持中文）
+apk add --allow-untrusted /tmp/luci-theme-mint-*.apk /tmp/luci-i18n-mint-zh-cn-*.apk
 
-# 2. 更新基础 feeds（保留 SDK 自带的 feeds.conf.default）
-./scripts/feeds update -a
-
-# 3. 注入主题源码并建立符号链接
-mkdir -p feeds/luci/themes/luci-theme-mint
-cp -a /本地路径/luci-theme-mint/theme/. feeds/luci/themes/luci-theme-mint/
-./scripts/feeds install -a
-mkdir -p package/feeds/luci
-ln -sfn ../../../feeds/luci/themes/luci-theme-mint package/feeds/luci/luci-theme-mint
-
-# 4. 生成配置并勾选包
-echo "CONFIG_PACKAGE_luci-theme-mint=m" >> .config
-echo "CONFIG_PACKAGE_luci-i18n-mint-zh-cn=m" >> .config   # 简中翻译（独立包）
-echo "CONFIG_LUCI_JSMIN=y" >> .config                    # jsmin 由 host 编译提供
-echo "# CONFIG_LUCI_CSSTIDY is not set" >> .config
-make defconfig
-grep -q '^CONFIG_PACKAGE_luci-theme-mint=m' .config       # 校验包配置状态
-
-# 5. 执行极速单包编译
-make package/feeds/luci/luci-base/host/compile -j$(nproc) V=s  # 构建 po2lmo/jsmin
-make package/feeds/luci/luci-theme-mint/compile -j$(nproc) V=s
+# 可选：安装壁纸设置管理器插件
+apk add --allow-untrusted /tmp/luci-app-mint-wallpaper-*.apk /tmp/luci-i18n-mint-wallpaper-zh-cn-*.apk
 ```
 
-> [!TIP]
-> SDK 产出的包格式由其自身配置决定（25.12+ / Snapshot 产出 `.apk`，24.10 产出 `.ipk`）。该逻辑与仓库内的 `scripts/build-package.sh` 等价。
-
-#### 方式二：完整 Buildroot
-
-将 `theme/` 目录复制至构建系统的 `feeds/luci/themes/luci-theme-mint/`，然后执行：
+#### 方案 B：OpenWrt 23.05 / 24.10 (`opkg` 包管理器)
 
 ```bash
-./scripts/feeds update -a
-./scripts/feeds install luci-theme-mint
-make menuconfig   # 定位至：LuCI -> 4. Themes -> [*] luci-theme-mint
-make package/luci-theme-mint/compile -j$(nproc) V=s
+# 1. 复制下载的 .ipk 文件至路由器 /tmp 目录
+# 2. 安装主题与对应语言包
+opkg install --force-downgrade /tmp/luci-theme-mint_*_all.ipk /tmp/luci-i18n-mint-zh-cn_*_all.ipk
+
+# 可选：安装壁纸设置管理器插件
+opkg install --force-downgrade /tmp/luci-app-mint-wallpaper_*_all.ipk /tmp/luci-i18n-mint-wallpaper-zh-cn_*_all.ipk
 ```
 
-在 Buildroot 环境下建议启用 ccache 加速后续增量构建：
-```bash
-echo "CONFIG_CCACHE=y" >> .config && make defconfig
-```
+### 2. 主题生效与验证
 
----
-
-## 🚀 主题启用
-
-安装或升级时由包管理器钩子立即执行 `uci-defaults` 完成注册与启用（apk 的 `post-install` / `post-upgrade`，opkg 的 `postinst`），**无需重启**；注册脚本执行后即被消费，后续开机不会重复运行。如需手动指定，可在终端中执行：
+安装或升级后，包管理器钩子会即时执行 `uci-defaults` 完成主题注册，**无需重启路由器**：
 
 ```bash
-# 设置 Mint 为默认视觉媒体目录
+# 若需手动将 Mint 设为系统默认主题：
 uci set luci.main.mediaurlbase='/luci-static/mint'
 uci commit luci
 
-# 重载 rpcd 守护进程使变动立即生效
+# 重载 rpcd 服务使配置即时生效
 /etc/init.d/rpcd reload
 ```
 
-验证注册结果：`uci get luci.themes.mint` 应返回 `/luci-static/mint`。若为空，通常说明安装的是旧版包体（v1.3.2 及更早），重新安装本次发布即可。
+验证结果：执行 `uci get luci.themes.mint`，控制台应输出 `/luci-static/mint`。
 
 ---
 
-## 🎨 背景与壁纸机制
+<a id="architecture"></a>
+## 📊 架构设计与渲染流
+
+```mermaid
+flowchart TD
+    subgraph Templates["🏛️ ucode 模板渲染层"]
+        H["header.ut<br/>• 注入 MINT_ASSET_REV 动态版本戳<br/>• 级联输出 13 层 CSS & 顶栏导航"]
+        S["sysauth.ut<br/>• 独立原生认证登录页"]
+        F["footer.ut<br/>• 粘性操作底栏与资源挂载"]
+    end
+
+    subgraph CSS["🎨 13 层解耦 CSS 设计系统"]
+        C1["tokens.css: 色彩 / 间距 / 模糊度 Design Tokens"]
+        C2["container.css: .mz-view 单层视效容器 (单一模糊)"]
+        C3["background.css: 四态角色立绘层 (PC/移动 × 亮/暗)"]
+        C4["wallpaper.css: 壁纸分级 (壁纸 ➔ 遮罩 ➔ 视效)"]
+        C5["responsive.css: 响应式断点 (854px 抽屉 / 640px 紧凑)"]
+    end
+
+    subgraph DOM["🖥️ 页面视效渲染模型"]
+        V1["底景层: contain: strict 隔离背景 / 壁纸"]
+        V2["主容器: .mz-view (统一阴影/圆角/单次 blur)"]
+        V3["吸附层: Action Bar 独立功能粘性底栏"]
+    end
+
+    subgraph WallpaperApp["⚙️ 壁纸扩展包 (luci-app-mint-wallpaper)"]
+        CONF["/etc/config/mint (UCI 配置)"]
+        CRON["mz-wallpaper-fetch.sh (定时缓存守护)"]
+        UBUS["rpcd/mint (ubus 接口: 状态/刷新/保存)"]
+        PAGE["/admin/system/mint-wallpaper/settings"]
+    end
+
+    H --> CSS
+    CSS --> DOM
+    WallpaperApp -->|"注入壁纸参数"| H
+
+    style Templates fill:#eff6ff,stroke:#93c5fd,stroke-width:1px
+    style CSS fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px
+    style DOM fill:#f0fdf4,stroke:#86efac,stroke-width:1px
+    style WallpaperApp fill:#faf5ff,stroke:#d8b4fe,stroke-width:1px
+```
+
+---
+
+<a id="wallpaper"></a>
+## 🎨 背景与壁纸机制详解
 
 ### 1. 默认背景：四态角色层（无需任何配置）
-- **零 JS、首帧即渲染**：环境判定与立绘映射完全由纯 CSS 媒体查询和 `data-theme` 属性闭环控制，明暗切换时两层立绘通过 `opacity` 柔和淡入淡出，请求零开销、零白屏闪烁。
-- **高质轻量资产**：内置于 `theme/htdocs/luci-static/mint/images/`，包含 4 张独立四态构成立绘及 2 张三角网格 WebP。
-- **绝对防御布局**：立绘层设置为 `position: fixed` 并置于负 `z-index`，同时设置 `pointer-events: none`，不在普通文档流内，杜绝横向滚动条溢出。
+- **零 JS、首帧极速渲染**：环境判定与立绘映射完全由纯 CSS 媒体查询和 `data-theme` 属性闭环控制，明暗切换时两层立绘通过 `opacity` 柔和淡入淡出，请求零开销、零白屏闪烁。
+- **高质轻量资产**：内置于 `theme/htdocs/luci-static/mint/images/`，包含 4 张独立四态构成立绘及 2 款三角网格 WebP 纹理。
+- **绝对防御布局**：立绘层设置为 `position: fixed` 并置于负 `z-index`，同时设置 `pointer-events: none`，不在普通文档流内，杜绝产生横向滚动条。
 
 ### 2. 用户壁纸（可选，覆盖角色层）
-- **登录页按需加载**：登录页默认仅展示角色背景（Plana），仅当配置为 `mode='custom'`（显式指定直链或上传文件）时才加载用户壁纸。
+- **登录页按需加载**：登录页默认仅展示普拉娜角色背景，仅当配置为 `mode='custom'`（显式指定直链或上传文件）时才加载用户壁纸。
 - **后台随机保护**：后台随机壁纸默认处于关闭状态（`ui_random '0'`），开启后才会在路由导航时按规则拉取远程图。
 - **自动隐退逻辑**：一旦启用了自定义壁纸，角色立绘层将自动设为 `display: none`，容器透明度恢复默认值。
-- **深色模式纯净策略**：暗色模式默认不渲染大面积照片壁纸，直接保留深色底色与 Plana 立绘，杜绝任何外部随机壁纸网络请求。
+- **深色模式纯净策略**：暗色模式默认不渲染大面积照片壁纸，直接保留深色底色与普拉娜立绘，杜绝任何外部随机壁纸网络请求。
 
 ### 3. 离线弹性兜底与执行流程
 
@@ -271,22 +192,18 @@ graph TD
 
 无论外部网络状况如何，页面渲染绝对不会被壁纸资源所阻塞。
 
-### 4. 缓存戳机制
-自 20261019c 起，`MINT_ASSET_REV` 由 `wallpaper.uc#assetRev()` 动态生成：遍历主题静态树（`/www/luci-static/mint` 两层深度，排除壁纸 cron 缓存与用户上传等运行时易变文件）与 `resources/menu-mint.js`、`resources/view/mint/sysauth.js`、`resources/view/mint/wallpaper.js` 的 mtime 并取最大值。包升级重写文件后 mtime 变化，所有 `?v=` 自动失效；两次升级之间数值稳定，正常缓存与 304 复用不受影响。文件系统遍历失败时回退静态戳 `20261019c`。
-
-该值注入至：
-- `header.ut` / `footer.ut` / `sysauth.ut` 模板输出的全部资源 URL
-- `header.ut` 直接输出的 13 个样式层 `<link>`（不再经 `cascade.css` 的 `@import`——静态 CSS 内的 `?v=` 无法被 ucode 重写，是升级后旧缓存存活的死角）
-- `<meta name="mz-asset-rev">`，由 `footer.ut` 写入 `L.env.resource_version`，使主题类模块（`menu-mint.js`、`resources/view/mint/*.js`）随主题修订戳失效
-
-> [!IMPORTANT]
-> 修改 `htdocs/luci-static/mint/` 下的模板可达文件（CSS 层、JS、图片）后**无需**手工递增版本号，升级包安装即自动失效。仅两处静态戳需要手工维护：`cascade.css` 的 `@import` 查询串（回退入口）与 `background.css` 的 6 个内置图片 URL。
+### 4. 动态静态缓存戳机制 (`MINT_ASSET_REV`)
+`MINT_ASSET_REV` 由 `wallpaper.uc#assetRev()` 动态生成：遍历主题静态资源树（排除用户上传等易变文件）的 `mtime` 并取最大值。
+- 升级安装后 `mtime` 变化，所有 `?v=` 查询串自动失效，强制浏览器重新拉取最新样式；
+- 两次升级之间数值高度稳定，正常浏览器缓存与 304 复用不受任何影响；
+- 彻底告别了传统主题升级后用户必须手动按 `Ctrl + F5` 强制刷新浏览器的痛点。
 
 ---
 
-## ⚙️ 壁纸设置
+<a id="config"></a>
+## ⚙️ 壁纸设置 (UCI 参数)
 
-壁纸功能控制面板位于：**系统 → Mint 壁纸**（`/cgi-bin/luci/admin/system/mint-wallpaper/settings`），由独立包 `luci-app-mint-wallpaper` 驱动。
+壁纸功能控制面板位于：**系统 ➔ Mint 壁纸**（`/cgi-bin/luci/admin/system/mint-wallpaper/settings`），由独立包 `luci-app-mint-wallpaper` 驱动。
 
 配置文件：`/etc/config/mint`
 
@@ -305,132 +222,150 @@ graph TD
 | `overlay` | 浮点 | `0.45` | 深色遮罩不透明度（调节范围：`0.0` - `1.0`） |
 | `blur` | 整数 | `0` | 背景模糊像素滤镜半径（单位：`px`，`0` 为禁用，上限 `40`） |
 
-> [!NOTE]
-> 上传的图片自动存放于 `/www/luci-static/mint/wallpapers/`；旧版本的单槽位文件将由 `uci-defaults` 迁移归档至库中，卸载软件包时系统将自动清空此目录。
+> [!TIP]
+> 上传的图片自动存放于 `/www/luci-static/mint/wallpapers/`；卸载软件包时系统将自动清空此目录。
 
 ---
 
-## 🌐 兼容性
+<a id="build"></a>
+## 📦 编译指南
 
-### 兼容的 OpenWrt / ImmortalWrt 版本
+### 1. 云端编译（GitHub Actions）
+推送到 `main` 分支或打版本标签（`v*`）时将自动触发 CI 流水线；可在 Actions 控制台点击 `workflow_dispatch` 手动触发。流水线将一次性打包输出 `luci-theme-mint` 与 `luci-i18n-mint-zh-cn` 的全套 `.apk` 和 `.ipk` 制品。
 
-| 发行版 | 最低支持版本 | 模板引擎 | 包格式 | 状态与架构说明 |
+### 2. 官方预编译 SDK 本地构建（推荐）
+
+```bash
+# 1. 抓取目标架构 SDK（以 x86_64 为例）
+BASE=https://downloads.openwrt.org/snapshots/targets/x86/64
+SDK=$(curl -fsSL "$BASE/" | grep -o 'openwrt-sdk-.*tar.zst' | head -1)
+curl -fsSLO "$BASE/$SDK"
+tar --zstd -xf "$SDK" && mv openwrt-sdk-* sdk && cd sdk
+
+# 2. 更新基础 feeds
+./scripts/feeds update -a
+
+# 3. 注入主题源码并建立链接
+mkdir -p feeds/luci/themes/luci-theme-mint
+cp -a /本地路径/luci-theme-mint/theme/. feeds/luci/themes/luci-theme-mint/
+./scripts/feeds install -a
+mkdir -p package/feeds/luci
+ln -sfn ../../../feeds/luci/themes/luci-theme-mint package/feeds/luci/luci-theme-mint
+
+# 4. 勾选包并生成配置
+echo "CONFIG_PACKAGE_luci-theme-mint=m" >> .config
+echo "CONFIG_PACKAGE_luci-i18n-mint-zh-cn=m" >> .config
+echo "CONFIG_LUCI_JSMIN=y" >> .config
+make defconfig
+
+# 5. 单包快速编译
+make package/feeds/luci/luci-base/host/compile -j$(nproc) V=s
+make package/feeds/luci/luci-theme-mint/compile -j$(nproc) V=s
+```
+
+---
+
+<a id="compatibility"></a>
+## 🌐 兼容性与运行环境
+
+| 发行版体系 | 最低版本 | 模板引擎 | 包管理格式 | 适配状态说明 |
 | :--- | :---: | :---: | :---: | :--- |
-| **OpenWrt** | 23.05+ / main | ucode (`.ut`) | `.ipk` / `.apk` | 23.05+ 已完全过渡至 ucode 架构；main / 25.12+ 推荐 `.apk` |
-| **ImmortalWrt** | 21.02+ | ucode | `.apk` | 全面适配，原生支持基于 apk 工具集的包管理模式 |
-| **LEDE / OpenWrt ≤ 19.07** | — | Lua 模板 | — | ❌ **不支持**：缺乏 ucode 模板引擎与标准 rpcd ACL 通信机制 |
+| **OpenWrt** | 23.05+ / main | ucode (`.ut`) | `.ipk` / `.apk` | 官方主线完美兼容，25.12+ 推荐 `.apk` |
+| **ImmortalWrt** | 21.02+ | ucode | `.apk` / `.ipk` | 全面适配，原生支持基于 apk 的包管理模式 |
+| **LEDE / OpenWrt ≤ 19.07** | — | Lua 模板 | — | ❌ **不支持**（缺少 ucode 模板引擎与 rpcd ACL 体系） |
 
-发布流水线提供架构无关的 `all` / `noarch` 产物，根据路由系统所用的包管理器（opkg 或 apk）挑选对应文件安装即可。
+### 运行时依赖清单
 
-APK 包在元数据中声明 `post-install` / `post-upgrade` / `post-deinstall` 脚本对象，并附带 `/lib/apk/packages/<pkg>.list`，使 `default_postinst()` 能定位包自带的 `uci-defaults`；IPK 包在 `postinst` 中直接执行同一批脚本。两条路径执行后都会删除对应的 `uci-defaults` 文件，因此注册只发生一次，升级时也不会残留到下次开机。
-
-### 运行时依赖
-
-| 依赖包名 | 角色分类 | 必需度 | 说明 |
-| :--- | :--- | :---: | :--- |
-| `luci-base` | 核心基础设施 | **必需** | 驱动模板解析、ACL 权限、ubus 桥接及 cbi 基础组件 |
-| `curl` | 核心网络抓取 | **必需** | 服务端定时缓存脚本 `mz-wallpaper-fetch.sh` 必需依赖（`uclient-fetch` 不满足抓取需求） |
-| `rpcd` (`mint` 命名空间) | RPC 接口 | **必需** | 承载 `dashboard` 实时监控与 `refresh` 壁纸强制刷新 |
-| `luci-i18n-mint-zh-cn` | 本地化包 | 可选 | 主题的简体中文语言包（需要中文界面时与主题成对安装） |
-| `luci-i18n-base-zh-cn` | 系统语言包 | 建议 | LuCI 系统底层原生组件的简体中文翻译包 |
-
-### 浏览器
-
-- **桌面平台**：Google Chrome / Chromium、Mozilla Firefox、Apple Safari、Microsoft Edge（建议使用近 2 年发布的现代版本）。
-- **移动平台**：Android WebView、Chrome for Android、iOS Safari。
-- **渐进增强**：`backdrop-filter` 视效属于渐进增强特性；如浏览器内核不支持毛玻璃，将自动降级为半透明平色渲染。
-- **无障碍保障**：即使在极端场景下禁用 JavaScript，基础后台管理视图与认证逻辑仍可安全访问。
-
-### 已知限制
-
-- 主题采用无源码架构（纯静态资源与 ucode 模板），构建标记为通用全平台支持（`PKGARCH:=all`）。
-- 编译依赖 `luci-base/host` 提供的 `po2lmo` 与 `jsmin` 工具；默认不开启 `csstidy` 以免引入额外的 feed 依赖。
-- 安装与升级均由包管理器钩子即时执行 `uci-defaults`（主题注册、壁纸目录与 `luci.languages.zh_cn` 语言项），随后清理 `/tmp/luci-indexcache*` 与模块缓存并热重载 `rpcd`；不重启服务，不中断已登录管理员的活动会话。
+| 依赖包名 | 必需度 | 用途说明 |
+| :--- | :---: | :--- |
+| `luci-base` | **必需** | 驱动 ucode 模板解析、ACL 权限校验、ubus 桥接及 cbi 核心组件 |
+| `curl` | **必需** | 服务端定时壁纸抓取脚本 `mz-wallpaper-fetch.sh` 必需组件 |
+| `rpcd` (`mint` 命名空间) | **必需** | 承载实时监控 dashboard 与壁纸强制刷新 API |
+| `luci-i18n-mint-zh-cn` | 推荐 | 主题简体中文语言包（需要中文界面时与主题包成对安装） |
 
 ---
 
+<a id="faq"></a>
 ## 🛠️ 故障排查
 
-- **主题无法选择**：正常情况下安装或升级后即刻完成注册，无需重启。若主题列表仍未更新（多见于手动解包覆盖、或安装了 v1.3.2 及更早的旧包体），请通过 SSH 登录执行以下指令强制注册：
-  ```bash
-  sh /etc/uci-defaults/30_luci-theme-mint
-  /etc/init.d/rpcd reload
-  ```
-- **背景壁纸未生效**：随机壁纸由浏览器直接请求外部图源 API；若路由器无外网或外部 API 波动，将自动展示渐变兜底。如需完全离线稳定展示，请在设置中上传自定义图片。
-- **明暗主题切换**：通过左侧栏底部的色彩切换控件进行切换（按照 `跟随系统` → `浅色` → `深色` 顺序循环切换）。
+<details>
+<summary><strong>Q: 安装后主题列表中未出现 Mint 选项？</strong></summary>
+
+> 正常情况下安装完成后即由 `uci-defaults` 自动完成注册。若由于特殊环境未生效，请通过 SSH 执行：
+> ```bash
+> sh /etc/uci-defaults/30_luci-theme-mint
+> /etc/init.d/rpcd reload
+> ```
+</details>
+
+<details>
+<summary><strong>Q: 随机壁纸加载变慢或无法显示？</strong></summary>
+
+> 随机壁纸由浏览器向外部图源发起请求。如果当前路由器网络受限或外部图源波动，主题会自动优雅降级展示内置的四态透明角色立绘。如需完全离线稳定展示，建议在 **系统 ➔ Mint 壁纸** 中上传本地图片。
+</details>
+
+<details>
+<summary><strong>Q: 如何快速切换明亮 / 深色模式？</strong></summary>
+
+> 点击左侧导航栏底部的色彩模式切换按钮，即可在 `跟随系统` ➔ `浅色模式` ➔ `深色模式` 之间顺畅循环切换。
+</details>
 
 ---
 
-## 📄 许可证与版权声明
-
-> 本节为项目对外声明的正式文本。若本节与 [`LICENSE`](./LICENSE) 原文或权利人授权条件冲突，以 `LICENSE` 原文及权利人授权条件为准。本节不构成法律意见。
+<a id="license"></a>
+## 📄 许可证与知识产权声明
 
 ### 1. 开源许可证
 
-本主题以 **GNU General Public License v3.0** 发布，主题代码的使用、复制、修改及分发均须遵守该许可证条款。完整条款见仓库根目录 [`LICENSE`](./LICENSE)。
+本项目主题源码以 **GNU General Public License v3.0**（`GPL-3.0-only`）发布。完整许可证文本见仓库根目录 [`LICENSE`](./LICENSE)。
 
-| 项目 | 内容 |
-|:--|:--|
-| 版权所有者 | `Copyright (C) 2026 LianXia233` |
-| 许可证 | GNU General Public License v3.0 |
-| SPDX 标识 | `GPL-3.0-only` |
-| 版本判定依据 | `LICENSE` 为 GPLv3 全文；`theme/Makefile` 声明 `PKG_LICENSE:=GPL-3.0-only` 并带 `SPDX-License-Identifier` 头；源码头统一为 `Licensed to the public under the GNU General Public License v3.0.`，未声明「or any later version」，故依 GPLv3 第 14 条锁定为 v3.0 |
-| 覆盖范围 | `theme/`（`ucode/` 模板、`htdocs/` 下的 CSS / JS，**不含** `images/` 内的角色素材）、`wallpaper/`、`scripts/`、`docs/` 中的原创文字 |
+- 覆盖范围：`theme/`（`ucode/` 模板、`htdocs/` 下的 CSS / JS，**不含** `images/` 内的角色素材）、`wallpaper/`、`scripts/` 以及 `docs/` 原创文档。
+- 分发约束：分发 `.ipk` / `.apk` 或二次修改版本时，须随附完整的对应源码，并完整保留原有版权与授权声明。
 
-**分发义务**（GPLv3 第 4–6 条、第 10 条）
+### 2. 界面角色素材版权归属
 
-1. 分发 `.ipk` / `.apk` 或修改版时，须随附或以书面方式提供**完整的对应源码**；
-2. 须保留原有版权声明、许可证文本与免责声明（第 0 条「Appropriate Legal Notices」）；
-3. 不得对本许可证授予的权利**附加额外限制**（第 10 条）。
-
-仅在本机安装、使用而不对外分发时，不触发上述义务。
-
-### 2. 界面角色素材版权声明
-
-主题内置**两组来源不同**的角色素材，其权利归属各自独立，且**均不在** GPL-3.0 的授权范围内。
+主题内置两组来源不同的角色美术素材，其权利归属各自独立，**均不在 GPL-3.0 授权范围内**：
 
 **2.1 主题 Logo ——「薄荷」（Mint）**
+- 对应文件：`assets/logo.png`
+- 角色与作品：薄荷（Mint） / 《异环》（Neverness to Everness, NTE）
+- 著作权人：苏州幻塔网络科技有限公司（Hotta Studio，完美世界旗下工作室） / 完美世界游戏
 
-| 项目 | 内容 |
-|:--|:--|
-| 文件 | `assets/logo.png`（720×718 PNG，README 顶部 Logo） |
-| 角色 | 薄荷（Mint） |
-| 作品 | 《异环》（NTE, Neverness to Everness） |
-| 开发 / 著作权人 | 苏州幻塔网络科技有限公司（Hotta Studio，完美世界旗下工作室） |
-| 全球发行 | 完美世界游戏 |
+**2.2 四态背景立绘 ——「阿罗娜」与「普拉娜」**
+- 对应文件：`theme/htdocs/luci-static/mint/images/character-{pc,mobile}-{light,dark}.webp`
+- 角色与作品：阿罗娜（Arona） & 普拉娜（Plana） / 《蔚蓝档案》（Blue Archive）
+- 著作权人：NEXON Games Co., Ltd.
 
-**2.2 四态立绘与登录页立绘 ——「阿罗娜」/「普拉娜」**
+> **特别声明**：素材仅用于个人界面的视觉装饰，不构成商业授权或官方合作背书。本项目与完美世界、Hotta Studio、NEXON Games 及 Yostar 之间均不存在任何明示或暗示的赞助、合作或隶属关系。替换立绘指引请参考 [`docs/character-background.md`](docs/character-background.md)。
 
-| 文件 | 角色 | 作品 | 著作权人 |
-|:--|:--|:--|:--|
-| `theme/htdocs/luci-static/mint/images/character-{pc,mobile}-light.webp` | 阿罗娜（Arona） | 《蔚蓝档案》（Blue Archive） | NEXON Games Co., Ltd. |
-| `theme/htdocs/luci-static/mint/images/character-{pc,mobile}-dark.webp` | 普拉娜（Plana） | 《蔚蓝档案》（Blue Archive） | NEXON Games Co., Ltd. |
+---
 
-《蔚蓝档案》由 NEXON Games Co., Ltd.（原 NAT Games，开发主体 MX Studio）开发；各地区发行由 Yostar（日本）、NEXON Korea（全球）、上海星啸（中国大陆）等获授权主体运营。上述发行商**不是**本主题的授权方。
+## 📂 源码目录结构
 
-**共同约定**
+```text
+luci-theme-mint/
+├── theme/                                        # 主题核心包 (luci-theme-mint)
+│   ├── Makefile                                  # 主题打包规格定义 (PKGARCH:=all)
+│   ├── ucode/template/themes/mint/               # ucode 核心模板 (header.ut / footer.ut / sysauth.ut)
+│   ├── ucode/mint/wallpaper.uc                   # 动态版本戳 MINT_ASSET_REV 与配置解析器
+│   ├── htdocs/luci-static/mint/
+│   │   ├── css/                                  # 13 层解耦 CSS 设计系统
+│   │   ├── images/                               # 四态角色背景与三角网格资产
+│   │   ├── overview-dashboard.js                 # 响应式概览仪表盘组件
+│   │   └── mz-ui.js                              # 原生交互驱动层
+│   └── po/zh_Hans/luci-theme-mint.po             # 主题简体中文语言包
+├── wallpaper/                                    # 壁纸扩展包 (luci-app-mint-wallpaper)
+│   ├── Makefile                                  # 扩展包打包定义
+│   ├── htdocs/luci-static/resources/view/mint/   # 壁纸可视化管理界面 (wallpaper.js)
+│   ├── root/usr/bin/mz-wallpaper-fetch.sh        # 服务端壁纸定时抓取守护脚本
+│   └── root/usr/libexec/rpcd/mint                # ubus RPC 服务端接口
+├── assets/logo.png                               # 主题 Logo 视觉资产
+├── docs/previews/                                # 界面实际运行预览图
+└── README.md                                     # 项目详细使用指南
+```
 
-- 素材仅用于主题界面装饰与交互展示（页面背景四态立绘层、登录页立绘、侧栏 Logo），不构成对上述作品的改编、衍生创作或官方合作；本项目未取得任何商业化授权。
-- 素材以**聚合（aggregate）**形式随包分发（GPLv3 第 5 条末段），其权利状态不因打包或本项目采用 GPL-3.0 而改变。
-- `docs/previews/*.jpg` 等界面截图中出现的角色形象，同受本节约束。
-- 替换立绘的流程见 [`docs/character-background.md`](docs/character-background.md)；替换后须同步更新本节、`THIRD-PARTY-NOTICES.md` 与 `MINT_ASSET_REV`。
+<div align="center">
 
-本项目与苏州幻塔网络科技有限公司、Hotta Studio、完美世界及《异环》官方之间，与 NEXON Games Co., Ltd.、Yostar 及《蔚蓝档案》官方之间，均不存在任何明示或暗示的隶属、合作、赞助或授权关系。
+**如果 Mint 主题让你的路由器控制台焕然一新，欢迎点一个 ⭐️ Star 给予支持！**
 
-### 3. 第三方知识产权说明
-
-GPL-3.0 许可证仅适用于本项目有权以该许可证发布的代码及相关原创内容，**不自动涵盖**「薄荷」「阿罗娜」「普拉娜」等角色形象、游戏原始素材及其他第三方知识产权。对上述内容的使用、复制、修改或再分发，须遵守相关权利人的授权条件及适用法律法规。
-
-> 原 README 中「仅供交流学习与个人非商业部署使用」一句，对 GPL 覆盖的代码构成了额外使用限制，与 GPLv3 第 10 条不符，已从代码授权表述中删除；对第三方素材的使用范围，改由本节按权利人条件单独说明。
-
-逐项清单、权利人、素材指纹与来源说明见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。
-
-### 4. 名称与商标
-
-`OpenWrt`、`ImmortalWrt`、`LuCI` 等名称与标识归各自项目及其权利人所有；`Apple`、`Linear`、`GitHub` 等名称仅在设计风格比较或构建平台说明中作**指示性使用**（nominative use），不主张商标权，亦不表示背书。
-
-### 5. 免责与权利主张
-
-本主题按「现状」提供，适用 GPLv3 第 15–16 条的担保免责与责任限制条款；本节不额外排除或限制 GPL-3.0 已赋予使用者的权利。
-
-如权利人认为本项目的使用超出合理范围，请通过 [GitHub Issues](https://github.com/LianXia233/luci-theme-mint/issues) 提出，并附权利证明与具体文件路径。维护者核实后将及时替换、补充署名或移除相关素材；具体授权事宜以权利人书面许可为准。
+</div>
