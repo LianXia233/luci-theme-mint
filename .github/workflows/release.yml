@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Resolve tag and build run
         id: resolve
@@ -85,7 +85,7 @@ jobs:
 
       - name: Download build artifacts
         if: steps.resolve.outputs.skip == 'false'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           run-id: ${{ steps.resolve.outputs.run }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -110,12 +110,13 @@ jobs:
 
       - name: Publish release
         if: steps.resolve.outputs.skip == 'false'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.resolve.outputs.tag }}
           name: ${{ steps.resolve.outputs.tag == 'nightly' && 'nightly' || steps.resolve.outputs.tag }}
           body_path: release-assets/RELEASE-NOTES.md
           prerelease: ${{ steps.resolve.outputs.tag == 'nightly' }}
           files: release-assets/*
-          allowUpdates: true
-          tag_overwrite: ${{ steps.resolve.outputs.tag == 'nightly' }}
+          # v3 不再接受 allowUpdates / tag_overwrite（v2 中也从未生效）；
+          # 覆盖同名资产由 overwrite_files 控制（v3 默认 true）。
+          overwrite_files: true

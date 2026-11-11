@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout theme sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0   # theme git revision drives package version
 
@@ -106,7 +106,7 @@ jobs:
 
       - name: Upload artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: luci-theme-mint-packages
           path: |
