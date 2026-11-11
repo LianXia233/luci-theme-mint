@@ -8,6 +8,23 @@
 
 ---
 
+## [未发布] - 2026-11-12 · CI：GitHub Actions 升级至 Node 24 运行时
+
+> 本条不含资产变更，**不生成新的 `MINT_ASSET_REV` 修订戳**；修订戳仍由文件 mtime 动态生成。
+
+### Changed 变更
+
+- `.github/workflows/build.yml`、`release.yml` 共 5 处 `uses:` 升级：
+  `actions/checkout@v4` → `v7`、`actions/upload-artifact@v4` → `v7`、
+  `actions/download-artifact@v4` → `v8`、`softprops/action-gh-release@v2` → `v3`。
+- **清理失效输入**：`release.yml` 的 `allowUpdates` / `tag_overwrite` 在 v2 与 v3 的
+  `action.yml` 中都未声明（属早已失效的旧参数，会产生 Unexpected input 警告），
+  已移除并改用 v3 原生支持的 `overwrite_files: true`，覆盖同名资产的行为不变。
+- GitHub 已于 2026-09-23 从托管 runner 移除 Node 20 运行时，仍声明 `node20` 的 action 会被强制跑在 Node 24 上并打印 `Node.js 20 is deprecated` 告警，属于未验证状态；本次按各 action 的 `action.yml` 逐一核对 `runs.using` 后统一升级。
+- **仅改 CI 配置**：项目源码、`node-version` / `python-version` / `go-version` 等工具链版本、产物命名与 Release 流程均未改动。告警指的是 action 自身声明的运行时，不是项目构建所用的 Node 版本。
+  包校验脚本与 Release 说明生成逻辑均未改动。
+- 升级后全仓复扫 59 个工作流/Action 文件：`node20` / `node16` / `node12` 引用残留为 0，所有 YAML 均可解析。
+
 ## [20261019d] - 2026-10-19 · CI 修复：ucode 兼容门禁静默崩溃
 
 ### Fixed 修复
